@@ -822,7 +822,7 @@ function renderData(){
   <div style="font-size:9px;color:var(--dim3);margin-bottom:16px">Restore from a previously exported backup file. This will REPLACE all current data.</div>`;
   
   h+=`<div class="section-title" style="color:var(--toto)">⚠️ Danger Zone</div>
-  <button class="btn btn-outline btn-sm" onclick="deduplicateAll();render()" style="width:100%;margin-bottom:8px;border-color:#333366;color:#8888cc">🧹 Scan & Remove Duplicates</button>
+  <button class="btn btn-outline" onclick="var r=deduplicateAll();if(!r)toast('✅ No duplicates found')" style="width:100%;margin-bottom:8px;border-color:#333366;color:#8888cc">🧹 Scan & Remove Duplicates</button>
   <button class="btn btn-outline" onclick="if(confirm('Reset module weights to default?')){moduleWeights=JSON.parse(JSON.stringify(DEFAULT_WEIGHTS));save(KEYS.weights,moduleWeights);toast('Weights reset');render()}" style="width:100%;margin-bottom:8px;border-color:#441111;color:#884444">🔄 Reset Module Weights</button>
   <button class="btn btn-outline" onclick="if(confirm('Delete ALL data including draws, predictions, and stats? This cannot be undone.')){localStorage.clear();location.reload()}" style="width:100%;border-color:#441111;color:#884444">🗑️ Factory Reset</button>`;
   
@@ -913,10 +913,18 @@ async function autoFetchResults(){
   const results={MAGNUM:null,TOTO:null,DAMACAI:null};
   let fetched=false;
   
-  // Try multiple sources
+  // Year numbers to EXCLUDE from results (these are dates, not 4D numbers)
+  const dateYear=date.slice(0,4);
+  const excludeNums=new Set(['2024','2025','2026','2027','2028',dateYear]);
+  
+  // Filter: only keep valid 4D numbers (exclude years, dates, draw numbers)
+  function cleanNums(nums){
+    return nums.filter(n=>n.length===4 && !excludeNums.has(n) && !/^(19|20)\d{2}$/.test(n) && !/^0{3,}/.test(n));
+  }
+  
   const sources=[
-    {url:`https://4dno.org/en/past-results/${fmt.ddmmyyyy}`,name:'4DNO'},
     {url:`https://gd4d.co/en/past-results-history/${fmt.ddmmyyyy}`,name:'GD4D'},
+    {url:`https://4dno.org/en/past-results/${fmt.ddmmyyyy}`,name:'4DNO'},
     {url:`https://www.check4d.org/4d-result-${fmt.ddmmyyyy}/`,name:'Check4D'},
     {url:`https://www.like4d.com/past-results/${fmt.ddmmyyyy}`,name:'Like4D'},
     {url:`https://4dcombo.com/en/past-results/${fmt.ddmmyyyy}`,name:'4DCombo'}
@@ -928,29 +936,67 @@ async function autoFetchResults(){
       const html=await fetchWithProxy(src.url);
       if(!html||html.length<500)continue;
       
-      // Parse the HTML for 4D results
-      const text=html.replace(/<[^>]*>/g,' ').replace(/\s+/g,' ');
+      // Strategy: Find operator sections, then extract numbers within bounded regions
+      const text=html.replace(/<!--[\s\S]*?-->/g,''); // Remove comments
       
-      // Look for operator sections and extract numbers
-      const extractSection=(text,markers,count)=>{
-        for(const marker of markers){
-          const idx=text.toLowerCase().indexOf(marker.toLowerCase());
-          if(idx>=0){
-            const chunk=text.substring(idx,idx+2000);
-            const nums=[...chunk.matchAll(/\b(\d{4})\b/g)].map(m=>m[1]);
-            if(nums.length>=3)return{top3:nums.slice(0,3),special:nums.slice(3,13),consolation:nums.slice(13,23)};
+      // Try to find structured data first (tables, divs with operator names)
+      const opMarkers=[
+        {name:'MAGNUM',patterns:['magnum','Magnum 4D','MAGNUM 4D','magnum4d']},
+        {name:'TOTO',patterns:['toto','Sports Toto','SportsToto','SPORTS TOTO','Toto 4D','toto4d']},
+        {name:'DAMACAI',patterns:['damacai','Damacai','DaMaCai','DAMACAI','Da Ma Cai','1+3D','pmp']}
+      ];
+      
+      for(const op of opMarkers){
+        if(results[op.name])continue; // Already found
+        
+        for(const pattern of op.patterns){
+          // Find the operator section in HTML
+          const regex=new RegExp(pattern,'gi');
+          let match;
+          while((match=regex.exec(text))!==null){
+            // Get a bounded chunk after the operator marker (not too much, not too little)
+            const startIdx=match.index;
+            
+            // Find the end boundary: next operator marker or 3000 chars, whichever is first
+            let endIdx=startIdx+3000;
+            for(const otherOp of opMarkers){
+              if(otherOp.name===op.name)continue;
+              for(const otherPat of otherOp.patterns){
+                const otherIdx=text.toLowerCase().indexOf(otherPat.toLowerCase(),startIdx+pattern.length+50);
+                if(otherIdx>0&&otherIdx<endIdx)endIdx=otherIdx;
+              }
+            }
+            
+            const chunk=text.substring(startIdx,endIdx);
+            // Strip all HTML tags
+            const cleanText=chunk.replace(/<[^>]*>/g,' ').replace(/&\w+;/g,' ').replace(/\s+/g,' ');
+            
+            // Extract all 4-digit numbers
+            const rawNums=[...cleanText.matchAll(/\b(\d{4})\b/g)].map(m=>m[1]);
+            const nums=cleanNums(rawNums);
+            
+            // We need at least 3 numbers for top 3 prizes
+            if(nums.length>=3){
+              // Skip draw numbers (usually the first number if it looks like a draw ID)
+              let startFrom=0;
+              // Draw IDs are often 3-5 digits preceded by # or "Draw"
+              if(nums.length>23&&/draw|#/i.test(cleanText.substring(0,100)))startFrom=0;
+              
+              // Validate: first 3 numbers should be 4-digit prize numbers
+              const top3=nums.slice(startFrom,startFrom+3);
+              const special=nums.slice(startFrom+3,startFrom+13);
+              const consolation=nums.slice(startFrom+13,startFrom+23);
+              
+              // Sanity check: top 3 shouldn't all be the same
+              if(top3[0]!==top3[1]||top3[1]!==top3[2]){
+                results[op.name]={top3,special,consolation};
+                break;
+              }
+            }
           }
+          if(results[op.name])break;
         }
-        return null;
-      };
-      
-      const magResult=extractSection(text,['magnum','Magnum 4D','MAGNUM'],23);
-      const totoResult=extractSection(text,['toto','Sports Toto','SportsToto','TOTO'],23);
-      const damResult=extractSection(text,['damacai','Damacai','DaMaCai','DAMACAI','1+3D'],23);
-      
-      if(magResult)results.MAGNUM=magResult;
-      if(totoResult)results.TOTO=totoResult;
-      if(damResult)results.DAMACAI=damResult;
+      }
       
       if(results.MAGNUM||results.TOTO||results.DAMACAI){fetched=true;break;}
     }catch(e){continue;}
@@ -959,12 +1005,11 @@ async function autoFetchResults(){
   btn.disabled=false;btn.textContent='⚡ Fetch';
   
   if(fetched){
-    // Auto-fill the form for the current operator
     const opName=operators[addOpIdx].name;
     const r=results[opName];
     
+    // Auto-fill date and day
     document.getElementById('mDate').value=date;
-    // Auto-set day
     const dayOfWeek=new Date(date).getDay();
     const dayMap={0:'Sun',1:'Mon',2:'Tue',3:'Wed',4:'Thu',5:'Fri',6:'Sat'};
     document.getElementById('mDay').value=dayMap[dayOfWeek]||'Sat';
@@ -978,20 +1023,28 @@ async function autoFetchResults(){
       
       statusEl.innerHTML=`<div class="fetch-status success">✅ ${opName} results found and auto-filled!</div>`;
       
-      // Also offer to add other operators
+      // Offer other operators
       const others=Object.entries(results).filter(([k,v])=>v&&k!==opName);
       if(others.length>0){
-        statusEl.innerHTML+=`<div style="font-size:9px;color:var(--dim);margin-top:4px">${others.map(([k])=>`<button class="btn btn-sm btn-outline" style="margin:2px" onclick="quickAddFetched('${k}','${date}',${JSON.stringify(results[k]).replace(/"/g,'&quot;')})">+ Add ${k}</button>`).join('')}</div>`;
+        statusEl.innerHTML+=`<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">${others.map(([k])=>{
+          const c=k==='MAGNUM'?'#D4A017':k==='TOTO'?'#DC2626':'#2563EB';
+          return`<button class="btn btn-sm" style="background:${c};color:#fff" onclick="quickAddFetched('${k}','${date}')">+ Add ${k}</button>`;
+        }).join('')}</div>`;
+        // Store fetched results globally for quick-add
+        window._fetchedResults=results;
       }
     }else{
-      statusEl.innerHTML=`<div class="fetch-status success">✅ Found results but not for ${opName}. ${Object.entries(results).filter(([,v])=>v).map(([k])=>k).join(', ')} available.</div>`;
+      const found=Object.entries(results).filter(([,v])=>v).map(([k])=>k);
+      statusEl.innerHTML=`<div class="fetch-status success">✅ Found results for ${found.join(', ')} but not ${opName}.</div>`;
     }
   }else{
-    statusEl.innerHTML=`<div class="fetch-status error">❌ Could not fetch results for ${date}. Websites may be blocking requests. Please enter manually.</div>`;
+    statusEl.innerHTML=`<div class="fetch-status error">❌ Could not fetch results for ${date}. Please enter manually.</div>`;
   }
 }
 
-function quickAddFetched(opName,date,data){
+function quickAddFetched(opName,date){
+  const data=window._fetchedResults?.[opName];
+  if(!data){toast('⚠️ No data available');return;}
   const opIdx=operators.findIndex(o=>o.name===opName);
   if(opIdx<0)return;
   const dayOfWeek=new Date(date).getDay();
@@ -1017,13 +1070,14 @@ function deduplicateAll(){
   let removed=0;
   operators.forEach(op=>{
     const seen=new Set();
+    const before=op.draws.length;
     op.draws=op.draws.filter(d=>{
       const key=d.date+d.top3.join('');
       if(seen.has(key)){removed++;return false;}
       seen.add(key);return true;
     });
   });
-  if(removed>0){saveAll();toast(`🧹 Removed ${removed} duplicate(s)`);}
+  if(removed>0){saveAll();toast(`🧹 Removed ${removed} duplicate(s)`);render();}
   return removed;
 }
 
