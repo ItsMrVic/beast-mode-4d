@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v2</title>
+<title>Beast Mode 4D v2.5</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -161,6 +161,18 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
 
 /* Migration/Recycling alerts */
 .alert-box{background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(139,92,246,0.1));border:1px solid #3333aa;border-radius:10px;padding:10px;margin-bottom:8px}
+
+/* Auto-fetch UI */
+.fetch-bar{display:flex;gap:6px;margin-bottom:10px;align-items:flex-end}
+.fetch-bar .ctrl-group{flex:1}
+.fetch-btn{padding:10px 14px;border-radius:8px;border:none;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}
+.fetch-btn:active{transform:scale(0.96)}
+.fetch-btn:disabled{background:#333;color:#666}
+.fetch-status{font-size:9px;padding:6px 10px;border-radius:6px;margin-bottom:8px}
+.fetch-status.loading{background:rgba(99,102,241,0.1);color:#8b5cf6;border:1px solid #3333aa}
+.fetch-status.success{background:rgba(34,197,94,0.1);color:var(--green);border:1px solid #226633}
+.fetch-status.error{background:rgba(220,38,38,0.1);color:var(--toto);border:1px solid #662222}
+.dup-warn{background:rgba(245,158,11,0.1);border:1px solid #665511;border-radius:8px;padding:8px 10px;font-size:10px;color:var(--amber);margin-bottom:8px;display:flex;align-items:center;gap:6px}
 .alert-box .at{font-size:10px;font-weight:700;color:#8b5cf6;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px}
 .alert-box .ai{font-size:11px;color:#ccc;margin-bottom:3px;display:flex;align-items:center;gap:6px}
 .alert-box .ai .anum{font-family:'JetBrains Mono',monospace;font-weight:700;letter-spacing:2px;color:#fff}
@@ -173,7 +185,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v2.0</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v2.5</span>
       <div class="sub">Self-Learning Prediction Engine</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
@@ -194,10 +206,23 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <button onclick="navTo('Data')"><span class="ico">💾</span>Data</button>
 </div>
 
-<!-- Add Draw Modal -->
+<!-- Add Draw Modal (Enhanced with Auto-Fetch) -->
 <div class="modal-bg" id="modalAdd">
   <div class="modal" onclick="event.stopPropagation()">
     <h3 id="modalAddTitle">Add Draw</h3>
+    
+    <div style="background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(139,92,246,0.05));border:1px solid #3333aa;border-radius:10px;padding:12px;margin-bottom:14px">
+      <div style="font-size:10px;font-weight:700;color:#8b5cf6;margin-bottom:8px">⚡ AUTO-FETCH FROM WEB</div>
+      <div class="fetch-bar">
+        <div class="ctrl-group"><label>Date</label><input type="date" id="fetchDate"></div>
+        <button class="fetch-btn" id="fetchBtn" onclick="autoFetchResults()">⚡ Fetch</button>
+      </div>
+      <div id="fetchStatus"></div>
+      <div style="font-size:8px;color:var(--dim3)">Auto-fills from 4D results websites. Select date & tap Fetch.</div>
+    </div>
+    
+    <div style="font-size:9px;color:var(--dim3);text-align:center;margin-bottom:10px">— or enter manually —</div>
+    
     <div class="field"><label>Date</label><input type="date" id="mDate"></div>
     <div class="field"><label>Day</label>
       <select id="mDay"><option value="Sat">Saturday</option><option value="Sun">Sunday</option><option value="Wed">Wednesday</option><option value="Tue">Tuesday (Special)</option></select>
@@ -211,6 +236,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
     </div>
     <div class="field"><label>Special (comma separated)</label><input id="mSp" placeholder="1234, 5678..." style="font-size:11px;font-family:monospace"></div>
     <div class="field"><label>Consolation (comma separated)</label><input id="mCn" placeholder="1234, 5678..." style="font-size:11px;font-family:monospace"></div>
+    <div id="dupWarning"></div>
     <div class="actions">
       <button class="btn btn-outline" onclick="closeModal('modalAdd')">Cancel</button>
       <button class="btn btn-fire" onclick="saveDraw()">Add Draw</button>
@@ -599,7 +625,7 @@ function renderPredict(){
   const pg=document.getElementById('pgPredict');
   
   // Controls
-  let h=`<div class="controls" style="padding:12px 0"><div class="ctrl-group"><label>Target Day</label><select id="tDay" onchange="render()"><option value="Sat">Saturday</option><option value="Sun">Sunday</option><option value="Wed">Wednesday</option></select></div>
+  let h=`<div class="controls" style="padding:12px 0"><div class="ctrl-group"><label>Target Day</label><select id="tDay" onchange="render()"><option value="Sat">Saturday</option><option value="Sun">Sunday</option><option value="Wed">Wednesday</option><option value="Tue">Tuesday (Special)</option></select></div>
   <button class="btn btn-fire" onclick="runBeast()" id="runBtn">🔥 RUN</button></div>`;
   
   // Op tabs
@@ -796,6 +822,7 @@ function renderData(){
   <div style="font-size:9px;color:var(--dim3);margin-bottom:16px">Restore from a previously exported backup file. This will REPLACE all current data.</div>`;
   
   h+=`<div class="section-title" style="color:var(--toto)">⚠️ Danger Zone</div>
+  <button class="btn btn-outline btn-sm" onclick="deduplicateAll();render()" style="width:100%;margin-bottom:8px;border-color:#333366;color:#8888cc">🧹 Scan & Remove Duplicates</button>
   <button class="btn btn-outline" onclick="if(confirm('Reset module weights to default?')){moduleWeights=JSON.parse(JSON.stringify(DEFAULT_WEIGHTS));save(KEYS.weights,moduleWeights);toast('Weights reset');render()}" style="width:100%;margin-bottom:8px;border-color:#441111;color:#884444">🔄 Reset Module Weights</button>
   <button class="btn btn-outline" onclick="if(confirm('Delete ALL data including draws, predictions, and stats? This cannot be undone.')){localStorage.clear();location.reload()}" style="width:100%;border-color:#441111;color:#884444">🗑️ Factory Reset</button>`;
   
@@ -835,6 +862,171 @@ function runBeast(){
   },200);
 }
 
+// ============================================================
+// AUTO-FETCH FROM WEB
+// ============================================================
+const CORS_PROXIES=[
+  url=>`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+  url=>`https://corsproxy.io/?${encodeURIComponent(url)}`,
+  url=>`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
+];
+
+async function fetchWithProxy(url){
+  for(const proxy of CORS_PROXIES){
+    try{
+      const resp=await fetch(proxy(url),{signal:AbortSignal.timeout(10000)});
+      if(resp.ok)return await resp.text();
+    }catch(e){continue;}
+  }
+  // Direct attempt (might work if CORS allows)
+  try{const resp=await fetch(url,{signal:AbortSignal.timeout(8000)});if(resp.ok)return await resp.text();}catch(e){}
+  return null;
+}
+
+function parseNumbersFromHTML(html){
+  // Extract 4-digit numbers from HTML text
+  const nums=[...html.matchAll(/\b(\d{4})\b/g)].map(m=>m[1]);
+  return[...new Set(nums)];
+}
+
+function formatDateForFetch(dateStr){
+  // Convert 2026-04-08 to various formats needed by sites
+  const d=new Date(dateStr);
+  const dd=String(d.getDate()).padStart(2,'0');
+  const mm=String(d.getMonth()+1).padStart(2,'0');
+  const yyyy=d.getFullYear();
+  return{ddmmyyyy:`${dd}-${mm}-${yyyy}`,iso:dateStr,display:`${dd}/${mm}/${yyyy}`};
+}
+
+async function autoFetchResults(){
+  const dateInput=document.getElementById('fetchDate');
+  const statusEl=document.getElementById('fetchStatus');
+  const btn=document.getElementById('fetchBtn');
+  const date=dateInput.value;
+  
+  if(!date){statusEl.innerHTML=`<div class="fetch-status error">⚠️ Please select a date first</div>`;return;}
+  
+  btn.disabled=true;btn.textContent='⏳ Fetching...';
+  statusEl.innerHTML=`<div class="fetch-status loading">🔍 Searching results for ${date}...</div>`;
+  
+  const fmt=formatDateForFetch(date);
+  const results={MAGNUM:null,TOTO:null,DAMACAI:null};
+  let fetched=false;
+  
+  // Try multiple sources
+  const sources=[
+    {url:`https://4dno.org/en/past-results/${fmt.ddmmyyyy}`,name:'4DNO'},
+    {url:`https://gd4d.co/en/past-results-history/${fmt.ddmmyyyy}`,name:'GD4D'},
+    {url:`https://www.check4d.org/4d-result-${fmt.ddmmyyyy}/`,name:'Check4D'},
+    {url:`https://www.like4d.com/past-results/${fmt.ddmmyyyy}`,name:'Like4D'},
+    {url:`https://4dcombo.com/en/past-results/${fmt.ddmmyyyy}`,name:'4DCombo'}
+  ];
+  
+  for(const src of sources){
+    statusEl.innerHTML=`<div class="fetch-status loading">🔍 Trying ${src.name}...</div>`;
+    try{
+      const html=await fetchWithProxy(src.url);
+      if(!html||html.length<500)continue;
+      
+      // Parse the HTML for 4D results
+      const text=html.replace(/<[^>]*>/g,' ').replace(/\s+/g,' ');
+      
+      // Look for operator sections and extract numbers
+      const extractSection=(text,markers,count)=>{
+        for(const marker of markers){
+          const idx=text.toLowerCase().indexOf(marker.toLowerCase());
+          if(idx>=0){
+            const chunk=text.substring(idx,idx+2000);
+            const nums=[...chunk.matchAll(/\b(\d{4})\b/g)].map(m=>m[1]);
+            if(nums.length>=3)return{top3:nums.slice(0,3),special:nums.slice(3,13),consolation:nums.slice(13,23)};
+          }
+        }
+        return null;
+      };
+      
+      const magResult=extractSection(text,['magnum','Magnum 4D','MAGNUM'],23);
+      const totoResult=extractSection(text,['toto','Sports Toto','SportsToto','TOTO'],23);
+      const damResult=extractSection(text,['damacai','Damacai','DaMaCai','DAMACAI','1+3D'],23);
+      
+      if(magResult)results.MAGNUM=magResult;
+      if(totoResult)results.TOTO=totoResult;
+      if(damResult)results.DAMACAI=damResult;
+      
+      if(results.MAGNUM||results.TOTO||results.DAMACAI){fetched=true;break;}
+    }catch(e){continue;}
+  }
+  
+  btn.disabled=false;btn.textContent='⚡ Fetch';
+  
+  if(fetched){
+    // Auto-fill the form for the current operator
+    const opName=operators[addOpIdx].name;
+    const r=results[opName];
+    
+    document.getElementById('mDate').value=date;
+    // Auto-set day
+    const dayOfWeek=new Date(date).getDay();
+    const dayMap={0:'Sun',1:'Mon',2:'Tue',3:'Wed',4:'Thu',5:'Fri',6:'Sat'};
+    document.getElementById('mDay').value=dayMap[dayOfWeek]||'Sat';
+    
+    if(r){
+      document.getElementById('mP1').value=r.top3[0]||'';
+      document.getElementById('mP2').value=r.top3[1]||'';
+      document.getElementById('mP3').value=r.top3[2]||'';
+      document.getElementById('mSp').value=(r.special||[]).join(', ');
+      document.getElementById('mCn').value=(r.consolation||[]).join(', ');
+      
+      statusEl.innerHTML=`<div class="fetch-status success">✅ ${opName} results found and auto-filled!</div>`;
+      
+      // Also offer to add other operators
+      const others=Object.entries(results).filter(([k,v])=>v&&k!==opName);
+      if(others.length>0){
+        statusEl.innerHTML+=`<div style="font-size:9px;color:var(--dim);margin-top:4px">${others.map(([k])=>`<button class="btn btn-sm btn-outline" style="margin:2px" onclick="quickAddFetched('${k}','${date}',${JSON.stringify(results[k]).replace(/"/g,'&quot;')})">+ Add ${k}</button>`).join('')}</div>`;
+      }
+    }else{
+      statusEl.innerHTML=`<div class="fetch-status success">✅ Found results but not for ${opName}. ${Object.entries(results).filter(([,v])=>v).map(([k])=>k).join(', ')} available.</div>`;
+    }
+  }else{
+    statusEl.innerHTML=`<div class="fetch-status error">❌ Could not fetch results for ${date}. Websites may be blocking requests. Please enter manually.</div>`;
+  }
+}
+
+function quickAddFetched(opName,date,data){
+  const opIdx=operators.findIndex(o=>o.name===opName);
+  if(opIdx<0)return;
+  const dayOfWeek=new Date(date).getDay();
+  const dayMap={0:'Sun',1:'Mon',2:'Tue',3:'Wed',4:'Thu',5:'Fri',6:'Sat'};
+  
+  // Check duplicate
+  const dup=operators[opIdx].draws.find(d=>d.date===date);
+  if(dup){toast(`⚠️ ${opName} ${date} already exists — skipped`);return;}
+  
+  operators[opIdx].draws.unshift({date,day:dayMap[dayOfWeek],top3:data.top3||[],special:data.special||[],consolation:data.consolation||[]});
+  operators[opIdx].draws.sort((a,b)=>b.date.localeCompare(a.date));
+  saveAll();toast(`✅ ${opName} ${date} added!`);render();
+}
+
+// ============================================================
+// DUPLICATE DETECTION
+// ============================================================
+function checkDuplicate(opIdx,date){
+  return operators[opIdx].draws.find(d=>d.date===date);
+}
+
+function deduplicateAll(){
+  let removed=0;
+  operators.forEach(op=>{
+    const seen=new Set();
+    op.draws=op.draws.filter(d=>{
+      const key=d.date+d.top3.join('');
+      if(seen.has(key)){removed++;return false;}
+      seen.add(key);return true;
+    });
+  });
+  if(removed>0){saveAll();toast(`🧹 Removed ${removed} duplicate(s)`);}
+  return removed;
+}
+
 function saveDraw(){
   const date=document.getElementById('mDate').value;
   const day=document.getElementById('mDay').value;
@@ -842,10 +1034,19 @@ function saveDraw(){
   if(!date||p.some(n=>n.length!==4||n==='0000')){alert('Fill in date and all 3 prizes');return;}
   const sp=document.getElementById('mSp').value.split(/[,\s]+/).filter(n=>n.length===4);
   const cn=document.getElementById('mCn').value.split(/[,\s]+/).filter(n=>n.length===4);
+  
+  // DUPLICATE CHECK
+  const existing=checkDuplicate(addOpIdx,date);
+  if(existing){
+    if(!confirm(`⚠️ ${operators[addOpIdx].name} already has a draw on ${date}.\n\n1st: ${existing.top3[0]}, 2nd: ${existing.top3[1]}, 3rd: ${existing.top3[2]}\n\nReplace with new data?`))return;
+    // Remove old one
+    operators[addOpIdx].draws=operators[addOpIdx].draws.filter(d=>d.date!==date);
+  }
+  
   operators[addOpIdx].draws.unshift({date,day,top3:p,special:sp,consolation:cn});
   operators[addOpIdx].draws.sort((a,b)=>b.date.localeCompare(a.date));
   saveAll();closeModal('modalAdd');render();
-  toast('Draw added to '+operators[addOpIdx].name);
+  toast(existing?'♻️ Draw replaced for '+operators[addOpIdx].name:'✅ Draw added to '+operators[addOpIdx].name);
 }
 
 function checkResults(){
@@ -948,6 +1149,7 @@ document.querySelectorAll('.num-in').forEach(el=>{el.addEventListener('input',e=
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').then(()=>{}).catch(()=>{});}
 
 // Init
+deduplicateAll(); // Auto-scan for duplicates on startup
 render();
 </script>
 </body>
