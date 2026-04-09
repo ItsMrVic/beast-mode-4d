@@ -9,687 +9,946 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D</title>
+<title>Beast Mode 4D v2</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-:root{--bg:#0a0a1a;--bg2:#12122a;--bg3:#1a1a2e;--border:#2a2a4a;--text:#fff;--dim:#888;--dim2:#555;--dim3:#333;--mag:#D4A017;--toto:#DC2626;--dam:#2563EB;--fire:linear-gradient(135deg,#ff4444,#ff8800)}
+:root{--bg:#0a0a1a;--bg2:#12122a;--bg3:#1a1a2e;--border:#2a2a4a;--text:#fff;--dim:#888;--dim2:#555;--dim3:#333;--mag:#D4A017;--toto:#DC2626;--dam:#2563EB;--fire:linear-gradient(135deg,#ff4444,#ff8800);--green:#22c55e;--amber:#f59e0b}
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Outfit',system-ui,sans-serif;overflow-x:hidden}
 .mono{font-family:'JetBrains Mono','Fira Code',monospace}
-
-/* Scrollbar */
-::-webkit-scrollbar{width:4px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:#333;border-radius:4px}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#333;border-radius:4px}
 
 /* Header */
-.header{padding:env(safe-area-inset-top,20px) 20px 16px;background:linear-gradient(180deg,rgba(255,68,68,0.1) 0%,transparent 100%);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
-.header h1{font-size:22px;font-weight:900;letter-spacing:-0.5px;background:var(--fire);-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:inline}
-.header .sub{font-size:10px;color:var(--dim3);letter-spacing:2px;text-transform:uppercase;margin-top:2px}
+.header{padding:env(safe-area-inset-top,20px) 20px 12px;background:linear-gradient(180deg,rgba(255,68,68,0.1) 0%,transparent 100%);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.header h1{font-size:20px;font-weight:900;letter-spacing:-0.5px;background:var(--fire);-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:inline}
+.header .ver{font-size:9px;color:var(--dim3);background:#1a1a2e;padding:2px 6px;border-radius:4px;margin-left:6px;vertical-align:middle}
+.header .sub{font-size:9px;color:var(--dim3);letter-spacing:2px;text-transform:uppercase;margin-top:2px}
 
-/* Controls */
-.controls{padding:14px 20px;display:flex;gap:10px;align-items:flex-end;border-bottom:1px solid #1a1a2a}
+/* Bottom Nav */
+.bnav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--bg2);border-top:1px solid var(--border);padding:6px 0 env(safe-area-inset-bottom,8px);z-index:60}
+.bnav button{flex:1;background:none;border:none;color:var(--dim2);font-size:9px;font-family:inherit;cursor:pointer;padding:6px 0 2px;display:flex;flex-direction:column;align-items:center;gap:3px;font-weight:600;letter-spacing:0.5px}
+.bnav button.active{color:var(--text)}
+.bnav button .ico{font-size:20px}
+.bnav button.active .ico{filter:drop-shadow(0 0 6px rgba(255,68,68,0.5))}
+
+/* Page containers */
+.page{display:none;padding:14px 20px 90px;min-height:calc(100vh - 60px)}
+.page.active{display:block}
+
+/* Common */
+.section-title{font-size:11px;color:var(--dim2);text-transform:uppercase;letter-spacing:1.5px;margin:16px 0 10px;font-weight:700;display:flex;align-items:center;gap:8px}
+.card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px}
+.btn{padding:10px 18px;border-radius:10px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all 0.15s}
+.btn:active{transform:scale(0.96)}
+.btn-fire{background:var(--fire);color:#fff;box-shadow:0 4px 20px rgba(255,68,68,0.3)}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--dim)}
+.btn-green{background:var(--green);color:#fff}
+.btn-amber{background:var(--amber);color:#000}
+.btn-sm{padding:6px 12px;font-size:11px;border-radius:8px}
+.badge{font-size:8px;padding:2px 5px;border-radius:3px;font-weight:700;white-space:nowrap;color:#fff;display:inline-block}
+.mono-num{font-family:'JetBrains Mono',monospace;font-weight:700;letter-spacing:3px}
+select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--dim3);background:var(--bg3);color:var(--text);font-size:14px;font-family:inherit}
+.row{display:flex;gap:8px}
+.row>*{flex:1}
+
+/* Controls bar */
+.controls{padding:12px 20px;display:flex;gap:10px;align-items:flex-end;border-bottom:1px solid #1a1a2a}
 .ctrl-group{flex:1}
 .ctrl-group label{font-size:9px;color:var(--dim2);text-transform:uppercase;letter-spacing:1.5px;display:block;margin-bottom:4px;font-weight:600}
-.ctrl-group select{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;font-weight:600;font-family:inherit;appearance:none;-webkit-appearance:none}
-.run-btn{padding:12px 20px;border-radius:12px;border:none;background:var(--fire);color:#fff;font-size:13px;font-weight:800;cursor:pointer;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;box-shadow:0 4px 20px rgba(255,68,68,0.3);transition:all 0.2s;font-family:inherit}
-.run-btn:active{transform:scale(0.96)}
-.run-btn.loading{background:#333;box-shadow:none;color:#888}
 
-/* Tabs */
-.tabs{display:flex;padding:0 20px;gap:4px;margin-top:14px}
-.tab{flex:1;padding:10px 0;border-radius:10px 10px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--dim2);font-size:11px;font-weight:800;cursor:pointer;letter-spacing:1px;font-family:inherit;transition:all 0.2s}
-.tab.active{border-color:var(--tab-color);background:rgba(255,255,255,0.03);color:var(--tab-color);border-bottom:2px solid var(--tab-color)}
-.tab .count{font-size:8px;color:var(--dim3);margin-top:2px;font-weight:400}
+/* Operator tabs */
+.optabs{display:flex;padding:0 20px;gap:4px;margin-top:12px}
+.optab{flex:1;padding:8px 0;border-radius:10px 10px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--dim2);font-size:10px;font-weight:800;cursor:pointer;letter-spacing:1px;font-family:inherit}
+.optab.active{border-color:var(--tab-color);background:rgba(255,255,255,0.03);color:var(--tab-color);border-bottom:2px solid var(--tab-color)}
+.optab .ct{font-size:8px;color:var(--dim3);margin-top:1px;font-weight:400}
 
-/* Content */
-.content{padding:14px 20px 100px}
-.section-title{font-size:11px;color:var(--dim2);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;font-weight:700;display:flex;align-items:center;gap:8px}
-
-/* Add button */
-.add-btn{width:100%;padding:12px;border-radius:10px;border:1px dashed var(--border);background:transparent;color:var(--dim2);font-size:12px;cursor:pointer;margin-bottom:16px;font-family:inherit;transition:all 0.2s}
-.add-btn:active{background:rgba(255,255,255,0.02)}
-
-/* Draw list */
-.draw-item{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg3);border-radius:8px;border:1px solid #1f1f3a;margin-bottom:4px;font-size:12px}
-.draw-item .date{color:var(--dim2);font-size:10px;width:72px;flex-shrink:0}
-.draw-item .day-tag{color:var(--dim3);font-size:9px;width:26px;flex-shrink:0}
-.draw-item .nums{display:flex;gap:10px}
-.draw-item .nums span{font-family:'JetBrains Mono',monospace;font-weight:700;letter-spacing:2px;font-size:13px}
-.draw-item .nums .p1{color:#ffcc00}
-.draw-item .nums .p2{color:#aaa}
-.draw-item .nums .p3{color:#886633}
-.draw-item .extra{font-size:8px;color:var(--dim3);margin-left:auto}
-.draw-item .del-btn{background:none;border:none;color:#441111;font-size:14px;cursor:pointer;padding:2px 6px;border-radius:4px}
-.draw-item .del-btn:active{color:#ff4444;background:rgba(255,0,0,0.1)}
+/* Draw items */
+.draw-item{display:flex;align-items:center;gap:6px;padding:7px 10px;background:var(--bg3);border-radius:8px;border:1px solid #1f1f3a;margin-bottom:3px;font-size:11px}
+.draw-item .dt{color:var(--dim2);font-size:9px;width:68px;flex-shrink:0}
+.draw-item .dy{color:var(--dim3);font-size:8px;width:22px;flex-shrink:0}
+.draw-item .nums{display:flex;gap:8px}
+.draw-item .nums span{font-family:'JetBrains Mono',monospace;font-weight:700;letter-spacing:2px;font-size:12px}
+.draw-item .p1{color:#ffcc00}.draw-item .p2{color:#aaa}.draw-item .p3{color:#886633}
+.draw-item .extra{font-size:7px;color:var(--dim3);margin-left:auto}
+.draw-item .xbtn{background:none;border:none;color:#441111;font-size:12px;cursor:pointer;padding:2px 4px}
 
 /* Prediction cards */
-.pred-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all 0.15s;position:relative;overflow:hidden}
-.pred-card:active{transform:scale(0.98)}
-.pred-card.top3{border-color:var(--accent)}
-.pred-card.top3::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent)}
-.rank-badge{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
-.rank-badge.top{background:var(--accent);color:#fff}
-.rank-badge.normal{background:#2a2a3a;color:#888}
-.pred-num{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:800;letter-spacing:5px}
-.pred-score{margin-left:auto;text-align:right}
-.pred-score .label{font-size:9px;color:var(--dim3)}
-.pred-score .val{font-size:14px;font-weight:700}
-.signals{display:flex;gap:3px;flex-wrap:wrap;max-width:100px}
-.signal{font-size:8px;padding:2px 5px;border-radius:3px;font-weight:700;white-space:nowrap;color:#fff}
-.signal.repeat{background:#cc3333}
-.signal.cross{background:#2266aa}
-.signal.sum{background:#226633}
-.signal.mirror{background:#8833aa}
-.signal.hot{background:#cc6600}
+.pred{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all 0.15s;position:relative;overflow:hidden}
+.pred:active{transform:scale(0.98)}
+.pred.top::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent)}
+.pred .rk{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.pred .rk.t{color:#fff}.pred .rk.n{background:#2a2a3a;color:#888}
+.pred .nm{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:800;letter-spacing:4px}
+.pred .sc{margin-left:auto;text-align:right}
+.pred .sc .l{font-size:8px;color:var(--dim3)}.pred .sc .v{font-size:13px;font-weight:700}
+.perms-row{padding:4px 10px 4px 48px;font-size:10px;color:var(--dim2);font-family:'JetBrains Mono',monospace}
+.perms-row span{margin-right:8px;color:#aaa}
+.conf-bar{height:3px;border-radius:2px;background:#1a1a2e;margin-top:3px;overflow:hidden;width:100px}
+.conf-bar .fill{height:100%;border-radius:2px}
 
-/* Permutations */
-.perms{padding:6px 14px 6px 52px;font-size:11px;color:var(--dim2);font-family:'JetBrains Mono',monospace;letter-spacing:1px}
-.perms span{margin-right:10px;color:#aaa}
+/* Dashboard */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center}
+.stat-card .num{font-size:28px;font-weight:900;font-family:'JetBrains Mono',monospace}
+.stat-card .lbl{font-size:9px;color:var(--dim2);text-transform:uppercase;letter-spacing:1px;margin-top:4px}
+.stat-big{grid-column:span 2}
 
-/* Analysis panel */
-.analysis-toggle{width:100%;padding:10px;margin-top:10px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--dim);font-size:11px;cursor:pointer;font-family:inherit;letter-spacing:0.5px}
-.analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
-.analysis-box{background:var(--bg3);border-radius:10px;padding:12px;border:1px solid var(--border)}
-.analysis-box .title{font-size:9px;color:var(--dim2);margin-bottom:8px;font-weight:700;text-transform:uppercase;letter-spacing:1px}
-.analysis-box .item{font-size:11px;margin-bottom:2px}
-.analysis-box .hot{color:#ff8800}
-.analysis-box .up{color:#44ff88}
-.analysis-box .info{color:#aaa}
+/* History items */
+.hist-item{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px}
+.hist-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.hist-date{font-size:12px;font-weight:700}
+.hist-target{font-size:10px;color:var(--dim2)}
+.hist-nums{display:flex;flex-wrap:wrap;gap:4px}
+.hist-num{font-family:'JetBrains Mono',monospace;font-size:12px;padding:3px 8px;border-radius:6px;background:#1a1a2e;border:1px solid #2a2a3a;font-weight:700;letter-spacing:2px}
+.hist-num.hit{background:#22c55e20;border-color:#22c55e;color:#22c55e}
+.hist-num.miss{opacity:0.5}
+
+/* Module weights */
+.weight-bar{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:11px}
+.weight-bar .name{width:120px;color:var(--dim);font-size:10px}
+.weight-bar .bar{flex:1;height:8px;background:#1a1a2e;border-radius:4px;overflow:hidden}
+.weight-bar .bar .fill{height:100%;border-radius:4px;transition:width 0.4s}
+.weight-bar .val{width:35px;text-align:right;font-weight:700;font-size:10px;color:var(--dim)}
 
 /* Modal */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px}
-.modal{background:var(--bg2);border-radius:18px;padding:24px;width:100%;max-width:440px;border:1px solid var(--border);max-height:90vh;overflow-y:auto}
-.modal h3{font-size:17px;margin-bottom:18px;font-weight:800}
-.modal label{font-size:10px;color:var(--dim2);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px;font-weight:600}
-.modal input,.modal select{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--dim3);background:var(--bg3);color:var(--text);font-size:14px;font-family:inherit;margin-bottom:12px}
-.modal input.num-input{font-family:'JetBrains Mono',monospace;text-align:center;letter-spacing:4px;font-size:18px;font-weight:700}
-.modal .row{display:flex;gap:8px}
-.modal .row>div{flex:1}
-.modal .row .sub-label{font-size:9px;color:var(--dim3);margin-bottom:2px}
-.modal .actions{display:flex;gap:10px;margin-top:6px}
-.modal .actions button{flex:1;padding:12px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;border:none}
-.modal .cancel-btn{background:transparent;border:1px solid var(--dim3)!important;color:var(--dim)}
-.modal .save-btn{background:var(--fire);color:#fff}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;z-index:200;padding:16px}
+.modal-bg.show{display:flex}
+.modal{background:var(--bg2);border-radius:16px;padding:22px;width:100%;max-width:440px;border:1px solid var(--border);max-height:85vh;overflow-y:auto}
+.modal h3{font-size:16px;margin-bottom:16px;font-weight:800}
+.modal label{font-size:9px;color:var(--dim2);display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:1px;font-weight:600}
+.modal .field{margin-bottom:10px}
+.modal .num-in{font-family:'JetBrains Mono',monospace;text-align:center;letter-spacing:4px;font-size:18px;font-weight:700}
+.modal .actions{display:flex;gap:8px;margin-top:12px}
+.modal .actions button{flex:1}
 
-/* Empty state */
-.empty{text-align:center;padding:50px 20px;color:var(--dim3)}
-.empty .icon{font-size:52px;margin-bottom:14px}
-.empty .text{font-size:13px;color:var(--dim2)}
-.empty .sub{font-size:10px;margin-top:6px}
+/* Analysis boxes */
+.analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.abox{background:var(--bg3);border-radius:10px;padding:10px;border:1px solid var(--border)}
+.abox .t{font-size:8px;color:var(--dim2);margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:1px}
+.abox .i{font-size:10px;margin-bottom:2px}
+.abox .hot{color:#ff8800}.abox .up{color:#44ff88}.abox .info{color:#aaa}
 
-/* Footer disclaimer */
-.footer{padding:16px 20px 40px;text-align:center}
-.footer p{font-size:8px;color:#222;line-height:1.6}
+/* Toast */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#22c55e;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:700;z-index:300;display:none;box-shadow:0 4px 20px rgba(34,197,94,0.3)}
+.toast.show{display:block;animation:fadeInOut 2.5s ease}
+@keyframes fadeInOut{0%{opacity:0;transform:translateX(-50%) translateY(-10px)}10%{opacity:1;transform:translateX(-50%) translateY(0)}80%{opacity:1}100%{opacity:0}}
 
-/* Loading animation */
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
-.loading-dots span{animation:pulse 1.2s infinite;display:inline-block}
-.loading-dots span:nth-child(2){animation-delay:0.2s}
-.loading-dots span:nth-child(3){animation-delay:0.4s}
+/* Learning indicator */
+.learning-badge{display:inline-flex;align-items:center;gap:4px;font-size:9px;background:linear-gradient(135deg,#8b5cf6,#6366f1);color:#fff;padding:3px 8px;border-radius:10px;font-weight:700}
+.learning-badge::before{content:'🧠';font-size:10px}
 
-/* Confidence bar */
-.conf-bar{height:4px;border-radius:2px;background:#1a1a2e;margin-top:4px;overflow:hidden}
-.conf-bar .fill{height:100%;border-radius:2px;transition:width 0.6s ease}
+.add-btn{width:100%;padding:10px;border-radius:10px;border:1px dashed var(--border);background:transparent;color:var(--dim2);font-size:11px;cursor:pointer;margin-bottom:12px;font-family:inherit}
+.toggle-btn{width:100%;padding:8px;margin-top:8px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--dim);font-size:10px;cursor:pointer;font-family:inherit}
+
+/* Scored Permutations */
+.sperm{display:flex;align-items:center;gap:6px;padding:4px 10px 4px 48px;font-size:11px}
+.sperm .pn{font-family:'JetBrains Mono',monospace;font-weight:700;letter-spacing:2px;color:#ccc;font-size:13px}
+.sperm .ps{font-size:9px;color:var(--dim2);background:#1a1a2e;padding:2px 6px;border-radius:4px}
+.sperm .ptag{font-size:7px;padding:1px 4px;border-radius:3px;font-weight:700;color:#fff}
+
+/* Buy List */
+.buy-section{background:linear-gradient(135deg,rgba(255,68,68,0.05),rgba(255,136,0,0.05));border:1px solid #332211;border-radius:14px;padding:16px;margin-top:16px}
+.buy-section h3{font-size:14px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.buy-op{margin-bottom:14px}
+.buy-op .op-header{font-size:12px;font-weight:800;margin-bottom:6px;padding-left:4px;display:flex;align-items:center;gap:6px}
+.buy-op .op-header .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.buy-row{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg3);border-radius:8px;margin-bottom:4px;font-size:11px}
+.buy-row .bnum{font-family:'JetBrains Mono',monospace;font-weight:800;letter-spacing:3px;font-size:15px}
+.buy-row .btype{font-size:8px;color:var(--dim2);background:#1a1a2e;padding:2px 6px;border-radius:4px}
+.buy-row .btag{font-size:7px;padding:1px 4px;border-radius:3px;font-weight:700;color:#fff;background:#555}
+.buy-row .bamt{margin-left:auto;font-weight:700;font-size:12px}
+.buy-total{display:flex;justify-content:space-between;padding:10px;background:#1a1a2e;border-radius:8px;margin-top:8px;font-weight:800}
+
+/* Migration/Recycling alerts */
+.alert-box{background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(139,92,246,0.1));border:1px solid #3333aa;border-radius:10px;padding:10px;margin-bottom:8px}
+.alert-box .at{font-size:10px;font-weight:700;color:#8b5cf6;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px}
+.alert-box .ai{font-size:11px;color:#ccc;margin-bottom:3px;display:flex;align-items:center;gap:6px}
+.alert-box .ai .anum{font-family:'JetBrains Mono',monospace;font-weight:700;letter-spacing:2px;color:#fff}
+.alert-box .arrow{color:#8b5cf6;font-weight:700}
 </style>
 </head>
 <body>
 
 <div class="header">
   <div style="display:flex;align-items:center;gap:8px">
-    <span style="font-size:26px">🔥</span>
+    <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1>
-      <div class="sub">14-Module Fusion Prediction Engine</div>
+      <h1>BEAST MODE 4D</h1><span class="ver">v2.0</span>
+      <div class="sub">Self-Learning Prediction Engine</div>
     </div>
+    <div style="margin-left:auto" id="learningBadge"></div>
   </div>
 </div>
 
-<div class="controls">
-  <div class="ctrl-group">
-    <label>Target Day</label>
-    <select id="targetDay">
-      <option value="Sat">Saturday</option>
-      <option value="Sun">Sunday</option>
-      <option value="Wed">Wednesday</option>
-    </select>
-  </div>
-  <button class="run-btn" id="runBtn" onclick="runAnalysis()">🔥 RUN</button>
+<!-- Pages -->
+<div class="page active" id="pgPredict"></div>
+<div class="page" id="pgHistory"></div>
+<div class="page" id="pgDashboard"></div>
+<div class="page" id="pgData"></div>
+
+<!-- Bottom Nav -->
+<div class="bnav">
+  <button class="active" onclick="navTo('Predict')"><span class="ico">🎯</span>Predict</button>
+  <button onclick="navTo('History')"><span class="ico">📜</span>History</button>
+  <button onclick="navTo('Dashboard')"><span class="ico">📊</span>Dashboard</button>
+  <button onclick="navTo('Data')"><span class="ico">💾</span>Data</button>
 </div>
 
-<div class="tabs" id="tabsContainer"></div>
-
-<div class="content" id="mainContent">
-  <div class="empty">
-    <div class="icon">🎰</div>
-    <div class="text">Select target day & hit RUN</div>
-    <div class="sub">14 modules • 30K Monte Carlo sims • Markov chains</div>
-  </div>
-</div>
-
-<div class="footer">
-  <p>⚠️ Statistical pattern analysis only. Every draw is independent & random.<br>
-  Past patterns do NOT guarantee future results. Gamble responsibly.</p>
-</div>
-
-<div class="modal-overlay" id="modalOverlay" style="display:none" onclick="closeModal()">
+<!-- Add Draw Modal -->
+<div class="modal-bg" id="modalAdd">
   <div class="modal" onclick="event.stopPropagation()">
-    <h3 id="modalTitle">Add Draw</h3>
-    <label>Date</label>
-    <input type="date" id="drawDate">
-    <label>Day</label>
-    <select id="drawDay">
-      <option value="Sat">Saturday</option>
-      <option value="Sun">Sunday</option>
-      <option value="Wed">Wednesday</option>
-      <option value="Tue">Tuesday (Special)</option>
-    </select>
-    <label>Top 3 Prizes</label>
-    <div class="row">
-      <div><div class="sub-label">1st Prize</div><input class="num-input" id="p1" maxlength="4" placeholder="0000" inputmode="numeric"></div>
-      <div><div class="sub-label">2nd Prize</div><input class="num-input" id="p2" maxlength="4" placeholder="0000" inputmode="numeric"></div>
-      <div><div class="sub-label">3rd Prize</div><input class="num-input" id="p3" maxlength="4" placeholder="0000" inputmode="numeric"></div>
+    <h3 id="modalAddTitle">Add Draw</h3>
+    <div class="field"><label>Date</label><input type="date" id="mDate"></div>
+    <div class="field"><label>Day</label>
+      <select id="mDay"><option value="Sat">Saturday</option><option value="Sun">Sunday</option><option value="Wed">Wednesday</option><option value="Tue">Tuesday (Special)</option></select>
     </div>
-    <label>Special (comma separated, optional)</label>
-    <input id="drawSpecial" placeholder="1234, 5678, 9012..." style="font-family:'JetBrains Mono',monospace;font-size:12px">
-    <label>Consolation (comma separated, optional)</label>
-    <input id="drawConsolation" placeholder="1234, 5678, 9012..." style="font-family:'JetBrains Mono',monospace;font-size:12px">
+    <div class="field"><label>Top 3 Prizes</label>
+      <div class="row">
+        <div><div style="font-size:8px;color:var(--dim3)">1st</div><input class="num-in" id="mP1" maxlength="4" placeholder="0000" inputmode="numeric"></div>
+        <div><div style="font-size:8px;color:var(--dim3)">2nd</div><input class="num-in" id="mP2" maxlength="4" placeholder="0000" inputmode="numeric"></div>
+        <div><div style="font-size:8px;color:var(--dim3)">3rd</div><input class="num-in" id="mP3" maxlength="4" placeholder="0000" inputmode="numeric"></div>
+      </div>
+    </div>
+    <div class="field"><label>Special (comma separated)</label><input id="mSp" placeholder="1234, 5678..." style="font-size:11px;font-family:monospace"></div>
+    <div class="field"><label>Consolation (comma separated)</label><input id="mCn" placeholder="1234, 5678..." style="font-size:11px;font-family:monospace"></div>
     <div class="actions">
-      <button class="cancel-btn" onclick="closeModal()">Cancel</button>
-      <button class="save-btn" onclick="saveDraw()">Add Draw</button>
+      <button class="btn btn-outline" onclick="closeModal('modalAdd')">Cancel</button>
+      <button class="btn btn-fire" onclick="saveDraw()">Add Draw</button>
     </div>
   </div>
 </div>
+
+<!-- Check Results Modal -->
+<div class="modal-bg" id="modalCheck">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3>📋 Check Results Against Predictions</h3>
+    <p style="font-size:11px;color:var(--dim);margin-bottom:14px">Enter actual winning numbers to check how your predictions performed. This updates the accuracy tracker and adjusts module weights.</p>
+    <div class="field"><label>Draw Date</label><input type="date" id="chkDate"></div>
+    <div class="field"><label>Operator</label>
+      <select id="chkOp"><option value="MAGNUM">Magnum</option><option value="TOTO">Sports Toto</option><option value="DAMACAI">Damacai</option></select>
+    </div>
+    <div class="field"><label>Top 3 Prizes</label>
+      <div class="row">
+        <input class="num-in" id="chk1" maxlength="4" placeholder="1st" inputmode="numeric">
+        <input class="num-in" id="chk2" maxlength="4" placeholder="2nd" inputmode="numeric">
+        <input class="num-in" id="chk3" maxlength="4" placeholder="3rd" inputmode="numeric">
+      </div>
+    </div>
+    <div class="field"><label>Special (comma separated)</label><input id="chkSp" placeholder="1234, 5678..." style="font-size:11px;font-family:monospace"></div>
+    <div class="field"><label>Consolation (comma separated)</label><input id="chkCn" placeholder="1234, 5678..." style="font-size:11px;font-family:monospace"></div>
+    <div class="actions">
+      <button class="btn btn-outline" onclick="closeModal('modalCheck')">Cancel</button>
+      <button class="btn btn-green" onclick="checkResults()">✓ Check & Learn</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
 
 <script>
 // ============================================================
-// DATA & STATE
+// STATE
 // ============================================================
-const DIGITS = "0123456789".split("");
-let activeTab = 0;
-let analysisResults = null;
-let showPerms = {};
-let showAnalysisPanel = {};
-let addDrawOpIdx = 0;
-
-const DEFAULT_DATA = [
-  {name:"MAGNUM",color:"#D4A017",draws:[
-    {date:"2026-04-08",day:"Wed",top3:["6204","4904","1739"],special:["1844","7941","6586","0130","2477","7292","2957","7420","3532","3270"],consolation:["7003","1746","5381","5199","8103","4904","0705","6831","4515","9084"]},
-    {date:"2026-04-07",day:"Tue",top3:["4253","1551","2292"],special:["0999","0944","3712","5403","8636","4835","3953","1443","7611","9618"],consolation:["6955","2349","5667","1817","5360","7465","0869","3676","3531","6885"]},
-    {date:"2026-04-05",day:"Sun",top3:["9089","8692","5801"],special:["4849","5904","9504","4006","0462","5546","0525","2198","2751","0430"],consolation:["7098","0973","1750","0473","9715","8511","3347","9713","7470","0150"]},
-    {date:"2026-04-04",day:"Sat",top3:["2575","4182","7158"],special:["7238","4332","0272","6998","2669","0481","1380","2614","2219","2778"],consolation:["9365","9237","1759","0484","0609","1370","1151","4738","2505","5880"]},
-    {date:"2026-04-01",day:"Wed",top3:["4167","6654","4476"],special:["8805","2530","5215","6696","0630","4931","8181","8756","3770","5745"],consolation:["2066","7607","3578","8231","6157","9894","8952","4814","5874","5805"]},
-    {date:"2026-03-29",day:"Sun",top3:["7559","4229","4917"],special:[],consolation:[]},
-    {date:"2026-03-28",day:"Sat",top3:["8670","6581","5322"],special:[],consolation:[]},
-    {date:"2026-03-25",day:"Wed",top3:["0342","6100","3212"],special:[],consolation:[]},
-    {date:"2026-03-22",day:"Sun",top3:["4260","1368","1493"],special:[],consolation:[]},
-    {date:"2026-03-21",day:"Sat",top3:["0198","2030","1197"],special:[],consolation:[]},
-    {date:"2026-03-18",day:"Wed",top3:["9991","2289","3337"],special:[],consolation:[]},
-    {date:"2026-03-15",day:"Sun",top3:["6069","8893","3082"],special:[],consolation:[]},
-    {date:"2026-03-14",day:"Sat",top3:["6921","9955","3226"],special:[],consolation:[]},
-    {date:"2026-03-11",day:"Wed",top3:["6230","2031","0301"],special:[],consolation:[]},
-    {date:"2026-03-08",day:"Sun",top3:["9595","0001","3320"],special:[],consolation:[]},
-    {date:"2026-03-07",day:"Sat",top3:["2580","7199","8046"],special:[],consolation:[]},
-    {date:"2026-03-04",day:"Wed",top3:["9680","0400","9570"],special:[],consolation:[]},
-    {date:"2026-03-01",day:"Sun",top3:["3737","2866","9791"],special:[],consolation:[]},
-    {date:"2026-02-28",day:"Sat",top3:["8609","9592","2529"],special:[],consolation:[]},
-    {date:"2026-02-25",day:"Wed",top3:["0913","1992","6129"],special:[],consolation:[]}
-  ]},
-  {name:"TOTO",color:"#DC2626",draws:[
-    {date:"2026-04-08",day:"Wed",top3:["7498","1568","3021"],special:["9287","0696","4288","1990","3553","9588","9041","2136","8546","7701"],consolation:["0261","6544","1272","8052","2135","5667","9356","1624","4560","2640"]},
-    {date:"2026-04-07",day:"Tue",top3:["0249","4974","7584"],special:["0422","1185","1430","1829","1901","4989","5952","7589","9251","9515"],consolation:["1485","3106","4112","5417","6856","7822","8027","8113","9202","9212"]},
-    {date:"2026-04-05",day:"Sun",top3:["5884","3282","1175"],special:[],consolation:[]},
-    {date:"2026-04-04",day:"Sat",top3:["8077","0522","6556"],special:[],consolation:[]},
-    {date:"2026-04-01",day:"Wed",top3:["7497","6981","7696"],special:["5993","3740","8943","4956","2875","5215","0739","1433","9597","5283"],consolation:["0603","2256","4811","3199","4666","7163","3843","1646","7199","4665"]},
-    {date:"2026-03-29",day:"Sun",top3:["6889","7350","1031"],special:[],consolation:[]},
-    {date:"2026-03-22",day:"Sun",top3:["2956","6464","3967"],special:[],consolation:[]}
-  ]},
-  {name:"DAMACAI",color:"#2563EB",draws:[
-    {date:"2026-04-08",day:"Wed",top3:["7878","7586","9509"],special:["0354","1598","0688","0316","2603","9951","4400","0153","2891","5217"],consolation:["5208","9229","8909","9815","1673","3708","8852","8383","7475","0729"]},
-    {date:"2026-04-07",day:"Tue",top3:["6459","4225","1605"],special:["4813","2914","1681","4190","4456","3751","5619","8137","1027","1925"],consolation:["6999","7130","2683","6223","5651","8987","9303","9017","5856","4030"]},
-    {date:"2026-04-05",day:"Sun",top3:["2325","7330","0920"],special:["3410","4366","4811","5657","6230","7248","7782","7803","7810","7891"],consolation:["1774","2346","2523","2991","6137","7068","7318","7491","8945","9508"]},
-    {date:"2026-04-04",day:"Sat",top3:["9196","0313","6348"],special:["1273","6094","6815","6895","7018","7706","8048","8213","9347","9583"],consolation:["0483","0606","0743","1638","4053","5060","5623","5888","6526","9080"]},
-    {date:"2026-04-01",day:"Wed",top3:["5766","6730","0610"],special:[],consolation:[]},
-    {date:"2026-03-29",day:"Sun",top3:["9984","5322","4836"],special:["1883","1914","2395","2901","3084","3170","5686","7201","8169","8479"],consolation:["0561","0593","0644","1056","4055","5540","7132","8670","8856","9038"]},
-    {date:"2026-03-28",day:"Sat",top3:["4963","3969","8799"],special:["0202","2621","2767","4106","4741","5785","6671","6701","8104","8698"],consolation:["0923","1430","1504","4635","5587","5773","6764","8204","8246","9418"]},
-    {date:"2026-03-25",day:"Wed",top3:["5129","5428","0215"],special:["0755","1136","1409","3103","3486","4338","4551","6903","7866","9363"],consolation:["0522","2363","2670","3264","3659","4082","8091","8663","9275","9645"]},
-    {date:"2026-03-22",day:"Sun",top3:["4955","5172","5964"],special:["2367","2410","2961","4313","6354","6400","6562","7926","8817","9599"],consolation:["0187","0659","1830","3569","3593","6174","7952","8400","8552","9934"]},
-    {date:"2026-03-21",day:"Sat",top3:["8154","4579","1226"],special:["1223","2948","3074","3183","3261","3514","3946","5611","7428","9005"],consolation:["0286","4061","4617","4723","5031","6004","6006","6970","8826","9428"]},
-    {date:"2026-03-18",day:"Wed",top3:["9009","0016","1123"],special:["0201","1268","3063","3942","4338","4527","5584","6465","7403","9258"],consolation:["1544","1879","2571","3399","3588","4831","6091","7050","7691","8058"]},
-    {date:"2026-03-15",day:"Sun",top3:["9872","1674","3855"],special:["0212","0265","0663","0863","1327","3073","3255","5368","8581","9806"],consolation:["0072","1597","2009","2852","3037","3039","4150","4497","4751","5709"]},
-    {date:"2026-03-14",day:"Sat",top3:["1994","4307","9514"],special:["0520","1993","3223","5238","5866","6700","7717","8785","9019","9117"],consolation:["0385","2540","3050","3484","3872","7143","7340","9606","9852","9922"]},
-    {date:"2026-03-11",day:"Wed",top3:["9638","2439","5327"],special:["0630","2922","4401","4736","4993","5909","6459","7053","7095","8289"],consolation:["1228","4459","5974","6232","6419","7049","7858","8082","8551","9276"]},
-    {date:"2026-03-08",day:"Sun",top3:["1790","1484","3659"],special:["0651","1166","3796","4683","5196","6691","6742","6988","7154","7505"],consolation:["0291","0707","0843","1381","2942","2951","3544","4540","8343","9998"]}
-  ]}
-];
-
-let operators = JSON.parse(JSON.stringify(DEFAULT_DATA));
-
-// Load from localStorage
-function loadData(){
-  try{const s=localStorage.getItem('beast4d_data');if(s)operators=JSON.parse(s);}catch(e){}
-}
-function saveData(){
-  try{localStorage.setItem('beast4d_data',JSON.stringify(operators));}catch(e){}
-}
-loadData();
+const DIGITS="0123456789".split("");
+let activeNav="Predict",activeOp=0,showPermsMap={},showAnal={};
+let addOpIdx=0;
 
 // ============================================================
-// ANALYSIS ENGINE (all 14 modules)
+// DATA STORE (localStorage)
 // ============================================================
-function getDigitFreq(numbers){
-  const f=[{},{},{},{}];DIGITS.forEach(d=>f.forEach(x=>x[d]=0));
-  numbers.forEach(n=>{if(n&&n.length===4)for(let i=0;i<4;i++)f[i][n[i]]++});return f;
+const KEYS={ops:'b4d_ops',hist:'b4d_hist',weights:'b4d_weights',stats:'b4d_stats'};
+
+const DEFAULT_OPS=[
+{name:"MAGNUM",color:"#D4A017",draws:[
+{date:"2026-04-08",day:"Wed",top3:["6204","4904","1739"],special:["1844","7941","6586","0130","2477","7292","2957","7420","3532","3270"],consolation:["7003","1746","5381","5199","8103","4904","0705","6831","4515","9084"]},
+{date:"2026-04-07",day:"Tue",top3:["4253","1551","2292"],special:["0999","0944","3712","5403","8636","4835","3953","1443","7611","9618"],consolation:["6955","2349","5667","1817","5360","7465","0869","3676","3531","6885"]},
+{date:"2026-04-05",day:"Sun",top3:["9089","8692","5801"],special:["4849","5904","9504","4006","0462","5546","0525","2198","2751","0430"],consolation:["7098","0973","1750","0473","9715","8511","3347","9713","7470","0150"]},
+{date:"2026-04-04",day:"Sat",top3:["2575","4182","7158"],special:["7238","4332","0272","6998","2669","0481","1380","2614","2219","2778"],consolation:["9365","9237","1759","0484","0609","1370","1151","4738","2505","5880"]},
+{date:"2026-04-01",day:"Wed",top3:["4167","6654","4476"],special:["8805","2530","5215","6696","0630","4931","8181","8756","3770","5745"],consolation:["2066","7607","3578","8231","6157","9894","8952","4814","5874","5805"]},
+{date:"2026-03-29",day:"Sun",top3:["7559","4229","4917"],special:[],consolation:[]},
+{date:"2026-03-28",day:"Sat",top3:["8670","6581","5322"],special:[],consolation:[]},
+{date:"2026-03-25",day:"Wed",top3:["0342","6100","3212"],special:[],consolation:[]},
+{date:"2026-03-22",day:"Sun",top3:["4260","1368","1493"],special:[],consolation:[]},
+{date:"2026-03-21",day:"Sat",top3:["0198","2030","1197"],special:[],consolation:[]},
+{date:"2026-03-18",day:"Wed",top3:["9991","2289","3337"],special:[],consolation:[]},
+{date:"2026-03-15",day:"Sun",top3:["6069","8893","3082"],special:[],consolation:[]},
+{date:"2026-03-14",day:"Sat",top3:["6921","9955","3226"],special:[],consolation:[]},
+{date:"2026-03-11",day:"Wed",top3:["6230","2031","0301"],special:[],consolation:[]},
+{date:"2026-03-08",day:"Sun",top3:["9595","0001","3320"],special:[],consolation:[]},
+{date:"2026-03-07",day:"Sat",top3:["2580","7199","8046"],special:[],consolation:[]},
+{date:"2026-03-04",day:"Wed",top3:["9680","0400","9570"],special:[],consolation:[]},
+{date:"2026-03-01",day:"Sun",top3:["3737","2866","9791"],special:[],consolation:[]},
+{date:"2026-02-28",day:"Sat",top3:["8609","9592","2529"],special:[],consolation:[]},
+{date:"2026-02-25",day:"Wed",top3:["0913","1992","6129"],special:[],consolation:[]}
+]},
+{name:"TOTO",color:"#DC2626",draws:[
+{date:"2026-04-08",day:"Wed",top3:["7498","1568","3021"],special:["9287","0696","4288","1990","3553","9588","9041","2136","8546","7701"],consolation:["0261","6544","1272","8052","2135","5667","9356","1624","4560","2640"]},
+{date:"2026-04-07",day:"Tue",top3:["0249","4974","7584"],special:["0422","1185","1430","1829","1901","4989","5952","7589","9251","9515"],consolation:["1485","3106","4112","5417","6856","7822","8027","8113","9202","9212"]},
+{date:"2026-04-05",day:"Sun",top3:["5884","3282","1175"],special:[],consolation:[]},
+{date:"2026-04-04",day:"Sat",top3:["8077","0522","6556"],special:[],consolation:[]},
+{date:"2026-04-01",day:"Wed",top3:["7497","6981","7696"],special:["5993","3740","8943","4956","2875","5215","0739","1433","9597","5283"],consolation:["0603","2256","4811","3199","4666","7163","3843","1646","7199","4665"]},
+{date:"2026-03-29",day:"Sun",top3:["6889","7350","1031"],special:[],consolation:[]},
+{date:"2026-03-22",day:"Sun",top3:["2956","6464","3967"],special:[],consolation:[]}
+]},
+{name:"DAMACAI",color:"#2563EB",draws:[
+{date:"2026-04-08",day:"Wed",top3:["7878","7586","9509"],special:["0354","1598","0688","0316","2603","9951","4400","0153","2891","5217"],consolation:["5208","9229","8909","9815","1673","3708","8852","8383","7475","0729"]},
+{date:"2026-04-07",day:"Tue",top3:["6459","4225","1605"],special:["4813","2914","1681","4190","4456","3751","5619","8137","1027","1925"],consolation:["6999","7130","2683","6223","5651","8987","9303","9017","5856","4030"]},
+{date:"2026-04-05",day:"Sun",top3:["2325","7330","0920"],special:["3410","4366","4811","5657","6230","7248","7782","7803","7810","7891"],consolation:["1774","2346","2523","2991","6137","7068","7318","7491","8945","9508"]},
+{date:"2026-04-04",day:"Sat",top3:["9196","0313","6348"],special:["1273","6094","6815","6895","7018","7706","8048","8213","9347","9583"],consolation:["0483","0606","0743","1638","4053","5060","5623","5888","6526","9080"]},
+{date:"2026-04-01",day:"Wed",top3:["5766","6730","0610"],special:[],consolation:[]},
+{date:"2026-03-29",day:"Sun",top3:["9984","5322","4836"],special:["1883","1914","2395","2901","3084","3170","5686","7201","8169","8479"],consolation:["0561","0593","0644","1056","4055","5540","7132","8670","8856","9038"]},
+{date:"2026-03-28",day:"Sat",top3:["4963","3969","8799"],special:["0202","2621","2767","4106","4741","5785","6671","6701","8104","8698"],consolation:["0923","1430","1504","4635","5587","5773","6764","8204","8246","9418"]},
+{date:"2026-03-25",day:"Wed",top3:["5129","5428","0215"],special:["0755","1136","1409","3103","3486","4338","4551","6903","7866","9363"],consolation:["0522","2363","2670","3264","3659","4082","8091","8663","9275","9645"]},
+{date:"2026-03-22",day:"Sun",top3:["4955","5172","5964"],special:["2367","2410","2961","4313","6354","6400","6562","7926","8817","9599"],consolation:["0187","0659","1830","3569","3593","6174","7952","8400","8552","9934"]},
+{date:"2026-03-21",day:"Sat",top3:["8154","4579","1226"],special:["1223","2948","3074","3183","3261","3514","3946","5611","7428","9005"],consolation:["0286","4061","4617","4723","5031","6004","6006","6970","8826","9428"]},
+{date:"2026-03-18",day:"Wed",top3:["9009","0016","1123"],special:["0201","1268","3063","3942","4338","4527","5584","6465","7403","9258"],consolation:["1544","1879","2571","3399","3588","4831","6091","7050","7691","8058"]},
+{date:"2026-03-15",day:"Sun",top3:["9872","1674","3855"],special:["0212","0265","0663","0863","1327","3073","3255","5368","8581","9806"],consolation:["0072","1597","2009","2852","3037","3039","4150","4497","4751","5709"]},
+{date:"2026-03-14",day:"Sat",top3:["1994","4307","9514"],special:["0520","1993","3223","5238","5866","6700","7717","8785","9019","9117"],consolation:["0385","2540","3050","3484","3872","7143","7340","9606","9852","9922"]},
+{date:"2026-03-11",day:"Wed",top3:["9638","2439","5327"],special:["0630","2922","4401","4736","4993","5909","6459","7053","7095","8289"],consolation:["1228","4459","5974","6232","6419","7049","7858","8082","8551","9276"]},
+{date:"2026-03-08",day:"Sun",top3:["1790","1484","3659"],special:["0651","1166","3796","4683","5196","6691","6742","6988","7154","7505"],consolation:["0291","0707","0843","1381","2942","2951","3544","4540","8343","9998"]}
+]}];
+
+// Default module weights (self-learning adjusts these)
+const DEFAULT_WEIGHTS={position:1,daySpecific:1.3,markov:1,monteCarlo:0.8,chiSquare:1,momentum:1,digitSum:0.9,pairs:0.8,oddEven:0.5,repeat:1.5,crossOp:1.2,mirror:0.6,elimination:1.1,streak:1};
+
+function load(key,def){try{const s=localStorage.getItem(key);return s?JSON.parse(s):JSON.parse(JSON.stringify(def));}catch(e){return JSON.parse(JSON.stringify(def));}}
+function save(key,val){try{localStorage.setItem(key,JSON.stringify(val));}catch(e){}}
+
+let operators=load(KEYS.ops,DEFAULT_OPS);
+let history=load(KEYS.hist,[]);
+let moduleWeights=load(KEYS.weights,DEFAULT_WEIGHTS);
+let stats=load(KEYS.stats,{totalPredictions:0,totalChecks:0,top3Hits:0,specialHits:0,consolationHits:0,anyHits:0,checksLog:[]});
+
+function saveAll(){save(KEYS.ops,operators);save(KEYS.hist,history);save(KEYS.weights,moduleWeights);save(KEYS.stats,stats);}
+
+// ============================================================
+// ANALYSIS ENGINE (14 modules + elimination + streak)
+// ============================================================
+function getDigitFreq(nums){const f=[{},{},{},{}];DIGITS.forEach(d=>f.forEach(x=>x[d]=0));nums.forEach(n=>{if(n&&n.length===4)for(let i=0;i<4;i++)f[i][n[i]]++});return f;}
+function getWeighted(draws){const f=[{},{},{},{}];DIGITS.forEach(d=>f.forEach(x=>x[d]=0));draws.forEach((dr,idx)=>{const w=idx<5?3:idx<10?2:1;[...dr.top3,...(dr.special||[]),...(dr.consolation||[])].filter(Boolean).forEach(n=>{if(n.length===4)for(let i=0;i<4;i++)f[i][n[i]]+=w});});return f;}
+function getDayFreq(draws,day){const dd=draws.filter(d=>d.day===day);const all=[],t3=[];dd.forEach(d=>{t3.push(...d.top3);all.push(...d.top3,...(d.special||[]),...(d.consolation||[]));});return{allF:getDigitFreq(all.filter(Boolean)),t3F:getDigitFreq(t3),count:dd.length};}
+function buildMarkov(nums){const t={};DIGITS.forEach(d=>{t[d]={};DIGITS.forEach(d2=>t[d][d2]=0)});nums.forEach(n=>{if(n&&n.length===4)for(let i=0;i<3;i++)t[n[i]][n[i+1]]++});const p={};DIGITS.forEach(fr=>{const tot=Object.values(t[fr]).reduce((a,b)=>a+b,0);p[fr]={};DIGITS.forEach(to=>p[fr][to]=tot>0?t[fr][to]/tot:0.1)});return p;}
+function monteCarlo(nums,n=30000){const pp=[0,1,2,3].map(pos=>{const f={};DIGITS.forEach(d=>f[d]=0);nums.forEach(num=>{if(num&&num.length===4)f[num[pos]]++});const tot=Object.values(f).reduce((a,b)=>a+b,0)||1;let cum=0;return DIGITS.map(d=>{cum+=f[d]/tot;return{d,cum}})});const r={};for(let i=0;i<n;i++){let num="";for(let pos=0;pos<4;pos++){const rv=Math.random();const ch=pp[pos].find(({cum})=>rv<=cum)||pp[pos][9];num+=ch.d}r[num]=(r[num]||0)+1}return r;}
+function chiSquare(nums){return[0,1,2,3].map(pos=>{const f={};DIGITS.forEach(d=>f[d]=0);nums.forEach(n=>{if(n&&n.length===4)f[n[pos]]++});const tot=Object.values(f).reduce((a,b)=>a+b,0);const exp=tot/10;let chi=0;const digits={};DIGITS.forEach(d=>{const o=f[d];chi+=((o-exp)**2)/(exp||1);const z=(o-exp)/Math.sqrt(exp||1);digits[d]={o,exp:exp.toFixed(1),z:z.toFixed(2),s:z>1.5?"HOT":z<-1.5?"COLD":"OK"}});return{chi:chi.toFixed(2),sig:chi>16.92,digits}});}
+function momentum(draws){const rc=[],ol=[];draws.forEach((dr,idx)=>{const nums=[...dr.top3,...(dr.special||[]),...(dr.consolation||[])].filter(Boolean);if(idx<5)rc.push(...nums);else if(idx<10)ol.push(...nums)});return[0,1,2,3].map(pos=>{const rf={},of={};DIGITS.forEach(d=>{rf[d]=0;of[d]=0});rc.forEach(n=>{if(n.length===4)rf[n[pos]]++});ol.forEach(n=>{if(n.length===4)of[n[pos]]++});const rt=Math.max(Object.values(rf).reduce((a,b)=>a+b,0),1);const ot=Math.max(Object.values(of).reduce((a,b)=>a+b,0),1);const m={};DIGITS.forEach(d=>{const ch=rf[d]/rt-of[d]/ot;m[d]={ch,tr:ch>0.03?"UP":ch<-0.03?"DOWN":"FLAT"}});return m});}
+function findRepeats(draws){const c={},dt={};draws.forEach(dr=>{[...dr.top3,...(dr.special||[]),...(dr.consolation||[])].filter(Boolean).forEach(n=>{c[n]=(c[n]||0)+1;if(!dt[n])dt[n]=[];if(!dt[n].includes(dr.date))dt[n].push(dr.date)})});return Object.entries(c).filter(([,v])=>v>=2).map(([n,v])=>({n,c:v,d:dt[n]}));}
+function crossOp(ops){const sets=ops.map(op=>{const s=new Set();op.draws.forEach(dr=>{[...dr.top3,...(dr.special||[]),...(dr.consolation||[])].filter(Boolean).forEach(n=>s.add(n))});return s});const shared=new Set();for(let i=0;i<sets.length;i++)for(let j=i+1;j<sets.length;j++)[...sets[i]].filter(n=>sets[j].has(n)).forEach(n=>shared.add(n));return shared;}
+function digitSumZone(draws){const sums=[];draws.forEach(dr=>dr.top3.forEach(n=>{if(n.length===4)sums.push([...n].reduce((a,d)=>a+parseInt(d),0))}));const freq={};sums.forEach(s=>freq[s]=(freq[s]||0)+1);let bz=[0,5],bc=0;for(let s=0;s<=32;s++){let c=0;for(let i=s;i<=s+5;i++)c+=freq[i]||0;if(c>bc){bc=c;bz=[s,s+5]}}return{freq,zone:bz,total:sums.length,cov:bc};}
+function pairFreq(nums){const p=[{},{},{}];nums.forEach(n=>{if(n&&n.length===4)for(let i=0;i<3;i++){const pp=n.slice(i,i+2);p[i][pp]=(p[i][pp]||0)+1}});return p;}
+function oddEvenTop(draws){const pat={};draws.forEach(dr=>dr.top3.forEach(n=>{const p=[...n].map(d=>parseInt(d)%2===1?"O":"E").join("");pat[p]=(pat[p]||0)+1}));return new Set(Object.entries(pat).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([p])=>p));}
+
+// NEW: Digit Elimination Filter
+function getEliminatedDigits(draws){
+  const chi=chiSquare([...draws.flatMap(d=>[...d.top3,...(d.special||[]),...(d.consolation||[])].filter(Boolean))]);
+  const eliminated=[new Set(),new Set(),new Set(),new Set()];
+  chi.forEach((pos,i)=>{DIGITS.forEach(d=>{if(pos.digits[d].s==="COLD"&&parseFloat(pos.digits[d].z)<-2)eliminated[i].add(d)})});
+  return eliminated;
 }
-function getWeightedFreq(draws){
-  const f=[{},{},{},{}];DIGITS.forEach(d=>f.forEach(x=>x[d]=0));
-  draws.forEach((dr,idx)=>{
-    const w=idx<5?3:idx<10?2:1;
+
+// NEW: Streak Detector
+function streakDetect(draws){
+  const streaks={};
+  const last5=draws.slice(0,5);
+  last5.forEach(dr=>{
     [...dr.top3,...(dr.special||[]),...(dr.consolation||[])].filter(Boolean).forEach(n=>{
-      if(n.length===4)for(let i=0;i<4;i++)f[i][n[i]]+=w;
-    });
-  });return f;
-}
-function getDayFreq(draws,day){
-  const dd=draws.filter(d=>d.day===day);
-  const all=[],t3=[];
-  dd.forEach(d=>{t3.push(...d.top3);all.push(...d.top3,...(d.special||[]),...(d.consolation||[]));});
-  return{allFreq:getDigitFreq(all.filter(Boolean)),top3Freq:getDigitFreq(t3),count:dd.length};
-}
-function buildMarkov(numbers){
-  const t={};DIGITS.forEach(d=>{t[d]={};DIGITS.forEach(d2=>t[d][d2]=0)});
-  numbers.forEach(n=>{if(n&&n.length===4)for(let i=0;i<3;i++)t[n[i]][n[i+1]]++});
-  const p={};DIGITS.forEach(fr=>{const tot=Object.values(t[fr]).reduce((a,b)=>a+b,0);
-    p[fr]={};DIGITS.forEach(to=>p[fr][to]=tot>0?t[fr][to]/tot:0.1)});return p;
-}
-function monteCarlo(numbers,n=30000){
-  const pp=[0,1,2,3].map(pos=>{
-    const f={};DIGITS.forEach(d=>f[d]=0);
-    numbers.forEach(num=>{if(num&&num.length===4)f[num[pos]]++});
-    const tot=Object.values(f).reduce((a,b)=>a+b,0)||1;
-    let cum=0;return DIGITS.map(d=>{cum+=f[d]/tot;return{d,cum}});
-  });
-  const r={};
-  for(let i=0;i<n;i++){
-    let num="";for(let pos=0;pos<4;pos++){
-      const rv=Math.random();const ch=pp[pos].find(({cum})=>rv<=cum)||pp[pos][9];num+=ch.d;
-    }r[num]=(r[num]||0)+1;
-  }return r;
-}
-function chiSquare(numbers){
-  return[0,1,2,3].map(pos=>{
-    const f={};DIGITS.forEach(d=>f[d]=0);
-    numbers.forEach(n=>{if(n&&n.length===4)f[n[pos]]++});
-    const tot=Object.values(f).reduce((a,b)=>a+b,0);const exp=tot/10;let chi=0;
-    const digits={};DIGITS.forEach(d=>{
-      const o=f[d];chi+=((o-exp)**2)/(exp||1);
-      const z=(o-exp)/Math.sqrt(exp||1);
-      digits[d]={obs:o,exp:exp.toFixed(1),z:z.toFixed(2),status:z>1.5?"HOT":z<-1.5?"COLD":"NORMAL"};
-    });return{chiSq:chi.toFixed(2),sig:chi>16.92,digits};
-  });
-}
-function momentum(draws){
-  const recent=[],older=[];
-  draws.forEach((dr,idx)=>{
-    const nums=[...dr.top3,...(dr.special||[]),...(dr.consolation||[])].filter(Boolean);
-    if(idx<5)recent.push(...nums);else if(idx<10)older.push(...nums);
-  });
-  return[0,1,2,3].map(pos=>{
-    const rf={},of={};DIGITS.forEach(d=>{rf[d]=0;of[d]=0});
-    recent.forEach(n=>{if(n.length===4)rf[n[pos]]++});
-    older.forEach(n=>{if(n.length===4)of[n[pos]]++});
-    const rt=Math.max(Object.values(rf).reduce((a,b)=>a+b,0),1);
-    const ot=Math.max(Object.values(of).reduce((a,b)=>a+b,0),1);
-    const m={};DIGITS.forEach(d=>{
-      const ch=rf[d]/rt-of[d]/ot;m[d]={change:ch,trend:ch>0.03?"UP":ch<-0.03?"DOWN":"FLAT"};
-    });return m;
-  });
-}
-function findRepeats(draws){
-  const cnt={},dts={};
-  draws.forEach(dr=>{
-    [...dr.top3,...(dr.special||[]),...(dr.consolation||[])].filter(Boolean).forEach(n=>{
-      cnt[n]=(cnt[n]||0)+1;if(!dts[n])dts[n]=[];if(!dts[n].includes(dr.date))dts[n].push(dr.date);
+      streaks[n]=(streaks[n]||0)+1;
     });
   });
-  return Object.entries(cnt).filter(([,c])=>c>=2).map(([n,c])=>({number:n,count:c,dates:dts[n]}));
-}
-function crossOp(ops){
-  const sets=ops.map(op=>{const s=new Set();
-    op.draws.forEach(dr=>{[...dr.top3,...(dr.special||[]),...(dr.consolation||[])].filter(Boolean).forEach(n=>s.add(n))});
-    return{name:op.name,nums:s};
-  });
-  const shared=[];
-  for(let i=0;i<sets.length;i++)for(let j=i+1;j<sets.length;j++){
-    const common=[...sets[i].nums].filter(n=>sets[j].nums.has(n));
-    if(common.length>0)shared.push({ops:`${sets[i].name}&${sets[j].name}`,numbers:common});
-  }return shared;
-}
-function digitSumZone(draws){
-  const sums=[];draws.forEach(dr=>dr.top3.forEach(n=>{
-    if(n.length===4)sums.push([...n].reduce((a,d)=>a+parseInt(d),0));
-  }));
-  const freq={};sums.forEach(s=>freq[s]=(freq[s]||0)+1);
-  let bz=[0,5],bc=0;
-  for(let s=0;s<=32;s++){let c=0;for(let i=s;i<=s+5;i++)c+=freq[i]||0;if(c>bc){bc=c;bz=[s,s+5];}}
-  return{freq,zone:bz,total:sums.length,coverage:bc};
-}
-function pairFreq(numbers){
-  const p=[{},{},{}];
-  numbers.forEach(n=>{if(n&&n.length===4)for(let i=0;i<3;i++){const pp=n.slice(i,i+2);p[i][pp]=(p[i][pp]||0)+1;}});return p;
-}
-function oddEvenTop(draws){
-  const pat={};draws.forEach(dr=>dr.top3.forEach(n=>{
-    const p=[...n].map(d=>parseInt(d)%2===1?"O":"E").join("");pat[p]=(pat[p]||0)+1;
-  }));
-  return new Set(Object.entries(pat).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([p])=>p));
-}
-function getPerms(num){
-  const perms=new Set();
-  function perm(arr,l=0){if(l===arr.length-1){perms.add(arr.join(""));return;}
-    for(let i=l;i<arr.length;i++){[arr[l],arr[i]]=[arr[i],arr[l]];perm([...arr],l+1);}
-  }perm(num.split(""));perms.delete(num);return[...perms];
+  return Object.entries(streaks).filter(([,c])=>c>=2).sort((a,b)=>b[1]-a[1]);
 }
 
-// MASTER FUSION
-function masterFusion(opDraws,targetDay,allOps){
-  const allNums=[];
-  opDraws.forEach(d=>allNums.push(...d.top3,...(d.special||[]),...(d.consolation||[]).filter(Boolean)));
-  const nums=allNums.filter(Boolean);
-  const wf=getWeightedFreq(opDraws);
-  const df=getDayFreq(opDraws,targetDay);
-  const mk=buildMarkov(nums);
-  const mc=monteCarlo(nums,30000);
+function getPerms(num){const perms=new Set();function p(arr,l=0){if(l===arr.length-1){perms.add(arr.join(""));return}for(let i=l;i<arr.length;i++){[arr[l],arr[i]]=[arr[i],arr[l]];p([...arr],l+1)}}p(num.split(""));perms.delete(num);return[...perms];}
+
+// NEW: Number Migration Tracker — numbers that appeared in one operator then another
+function numberMigration(ops){
+  const migrations=[];
+  const opNums=ops.map(op=>{
+    const byDate={};
+    op.draws.forEach(dr=>{
+      const nums=[...dr.top3,...(dr.special||[]),...(dr.consolation||[])].filter(Boolean);
+      byDate[dr.date]=nums;
+    });
+    return{name:op.name,color:op.color,byDate,allDates:op.draws.map(d=>d.date).sort()};
+  });
+  
+  // For each number, check if it appeared in op A then later in op B
+  const numHistory={};
+  opNums.forEach(op=>{
+    Object.entries(op.byDate).forEach(([date,nums])=>{
+      nums.forEach(n=>{
+        if(!numHistory[n])numHistory[n]=[];
+        numHistory[n].push({op:op.name,color:op.color,date});
+      });
+    });
+  });
+  
+  Object.entries(numHistory).forEach(([num,appearances])=>{
+    const uniqueOps=new Set(appearances.map(a=>a.op));
+    if(uniqueOps.size>=2){
+      appearances.sort((a,b)=>a.date.localeCompare(b.date));
+      const latest=appearances[appearances.length-1];
+      const prev=appearances.find(a=>a.op!==latest.op);
+      if(prev){
+        migrations.push({number:num,from:{op:prev.op,color:prev.color,date:prev.date},to:{op:latest.op,color:latest.color,date:latest.date}});
+      }
+    }
+  });
+  
+  migrations.sort((a,b)=>b.to.date.localeCompare(a.to.date));
+  return migrations.slice(0,15);
+}
+
+// NEW: Recycling Detector — past winners that reappear
+function recyclingDetector(draws){
+  const recycled=[];
+  const seen={};
+  
+  draws.forEach((dr,drawIdx)=>{
+    const allNums=[...dr.top3,...(dr.special||[]),...(dr.consolation||[])].filter(Boolean);
+    allNums.forEach(n=>{
+      if(seen[n]){
+        const gap=drawIdx-seen[n].drawIdx;
+        const wasTop3=seen[n].wasTop3;
+        const isTop3Now=dr.top3.includes(n);
+        recycled.push({number:n,firstDate:seen[n].date,secondDate:dr.date,gap,wasTop3,isTop3Now,category:isTop3Now?'TOP3':dr.special?.includes(n)?'SPECIAL':'CONSOLATION'});
+      }else{
+        seen[n]={drawIdx,date:dr.date,wasTop3:dr.top3.includes(n)};
+      }
+    });
+  });
+  
+  recycled.sort((a,b)=>a.gap-b.gap);
+  return recycled.slice(0,10);
+}
+
+// NEW: Score permutations using fusion scores
+function scorePermutations(num,fusionScores,topN=3){
+  const perms=getPerms(num);
+  const scored=perms.map(p=>({num:p,score:fusionScores[p]||0}));
+  scored.sort((a,b)=>b.score-a.score);
+  return scored.slice(0,topN);
+}
+
+// NEW: Generate Buy List with budget allocation
+function generateBuyList(allResults,budget=50){
+  const list=[];
+  const opOrder=["MAGNUM","TOTO","DAMACAI"];
+  
+  opOrder.forEach(opName=>{
+    if(!allResults[opName])return;
+    const preds=allResults[opName].predictions;
+    
+    // Top 3 straight picks
+    preds.slice(0,3).forEach(([num,score],i)=>{
+      list.push({op:opName,num,score,type:'STRAIGHT',rank:i+1,isTop:true});
+      
+      // Best permutation for each top pick
+      const bestPerm=scorePermutations(num,Object.fromEntries(preds),1);
+      if(bestPerm.length>0&&bestPerm[0].score>0){
+        list.push({op:opName,num:bestPerm[0].num,score:bestPerm[0].score,type:'PERM',rank:i+1,parentNum:num,isTop:false});
+      }
+    });
+  });
+  
+  // Sort by score descending
+  list.sort((a,b)=>b.score-a.score);
+  
+  // Allocate budget — higher scores get more
+  const totalScore=list.reduce((a,b)=>a+b.score,0);
+  list.forEach(item=>{
+    const rawAmt=Math.round((item.score/totalScore)*budget);
+    item.amount=Math.max(1,Math.min(rawAmt,item.isTop?5:3));
+    item.betType=item.amount>=3?'Big+Small':'Big';
+  });
+  
+  // Adjust to fit budget
+  let total=list.reduce((a,b)=>a+b.amount,0);
+  while(total>budget&&list.length>0){
+    const last=list[list.length-1];
+    if(last.amount>1){last.amount--;total--;}
+    else{list.pop();total-=1;}
+  }
+  
+  return list;
+}
+
+// MASTER FUSION with self-learning weights
+function masterFusion(opDraws,targetDay,allOps,w=moduleWeights){
+  const allNums=opDraws.flatMap(d=>[...d.top3,...(d.special||[]),...(d.consolation||[])].filter(Boolean));
+  const wf=getWeighted(opDraws),df=getDayFreq(opDraws,targetDay);
+  const mk=buildMarkov(allNums),mc=monteCarlo(allNums,30000);
   const mcMax=Math.max(...Object.values(mc),1);
-  const chi=chiSquare(nums);
-  const mom=momentum(opDraws);
-  const reps=findRepeats(opDraws);
-  const repSet=new Set(reps.map(r=>r.number));
-  const repCnt={};reps.forEach(r=>repCnt[r.number]=r.count);
-  const sz=digitSumZone(opDraws);
-  const pf=pairFreq(nums);
-  const topOE=oddEvenTop(opDraws);
+  const chi=chiSquare(allNums),mom=momentum(opDraws);
+  const reps=findRepeats(opDraws),repSet=new Set(reps.map(r=>r.n)),repCnt={};reps.forEach(r=>repCnt[r.n]=r.c);
+  const sz=digitSumZone(opDraws),pf=pairFreq(allNums),topOE=oddEvenTop(opDraws);
+  const crossNums=allOps?crossOp(allOps):new Set();
+  const eliminated=getEliminatedDigits(opDraws);
+  const streaks=streakDetect(opDraws);
+  const streakSet=new Set(streaks.map(([n])=>n));
 
-  const crossNums=new Set();
-  if(allOps){crossOp(allOps).forEach(c=>c.numbers.forEach(n=>crossNums.add(n)));}
-
-  const hotPos=[0,1,2,3].map(p=>{const h=new Set();DIGITS.forEach(d=>{if(chi[p].digits[d].status==="HOT")h.add(d)});return h});
-  const upPos=[0,1,2,3].map(p=>{const u=new Set();DIGITS.forEach(d=>{if(mom[p][d].trend==="UP")u.add(d)});return u});
+  const hotPos=[0,1,2,3].map(p=>{const h=new Set();DIGITS.forEach(d=>{if(chi[p].digits[d].s==="HOT")h.add(d)});return h});
+  const upPos=[0,1,2,3].map(p=>{const u=new Set();DIGITS.forEach(d=>{if(mom[p][d].tr==="UP")u.add(d)});return u});
   const mirrors=new Set((opDraws[0]?.top3||[]).map(n=>n.split("").reverse().join("")).filter(r=>!(opDraws[0]?.top3||[]).includes(r)));
 
   const wProbs=wf.map(f=>{const t=Object.values(f).reduce((a,b)=>a+b,0)||1;const p={};DIGITS.forEach(d=>p[d]=f[d]/t);return p});
-  const dProbs=df.allFreq.map(f=>{const t=Object.values(f).reduce((a,b)=>a+b,0)||1;const p={};DIGITS.forEach(d=>p[d]=f[d]/t);return p});
+  const dProbs=df.allF.map(f=>{const t=Object.values(f).reduce((a,b)=>a+b,0)||1;const p={};DIGITS.forEach(d=>p[d]=f[d]/t);return p});
 
   const topD=[0,1,2,3].map(pos=>{
-    const c={};DIGITS.forEach(d=>c[d]=(wf[pos][d]||0)*2+(df.allFreq[pos][d]||0)*5+(df.top3Freq[pos][d]||0)*8);
+    const c={};DIGITS.forEach(d=>c[d]=(wf[pos][d]||0)*2+(df.allF[pos][d]||0)*5+(df.t3F[pos][d]||0)*8);
     return Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([d])=>d);
   });
 
   const scores={};
   for(const d1 of topD[0])for(const d2 of topD[1])for(const d3 of topD[2])for(const d4 of topD[3]){
     const num=d1+d2+d3+d4;let s=0;
-    let ps=1,ds=1;
-    for(let i=0;i<4;i++){ps*=wProbs[i][num[i]]||0.05;ds*=dProbs[i][num[i]]||0.05;}
-    s+=ps*15000+ds*20000;
-    for(let i=0;i<4;i++){if(hotPos[i].has(num[i]))s+=3.75;if(upPos[i].has(num[i]))s+=2.5;}
+    // Elimination filter - skip numbers with deeply cold digits
+    let elim=false;
+    for(let i=0;i<4;i++)if(eliminated[i].has(num[i])){s-=10*w.elimination;elim=true;}
+    
+    let ps=1,ds=1;for(let i=0;i<4;i++){ps*=wProbs[i][num[i]]||0.05;ds*=dProbs[i][num[i]]||0.05;}
+    s+=ps*15000*w.position+ds*20000*w.daySpecific;
+    for(let i=0;i<4;i++){if(hotPos[i].has(num[i]))s+=3.75*w.chiSquare;if(upPos[i].has(num[i]))s+=2.5*w.momentum;}
     const dsum=[...num].reduce((a,d)=>a+parseInt(d),0);
-    if(dsum>=sz.zone[0]&&dsum<=sz.zone[1])s+=10;
-    s+=Math.min(((pf[0][num.slice(0,2)]||0)+(pf[1][num.slice(1,3)]||0)+(pf[2][num.slice(2,4)]||0))*0.5,10);
-    const oe=[...num].map(d=>parseInt(d)%2===1?"O":"E").join("");
-    if(topOE.has(oe))s+=5;
+    if(dsum>=sz.zone[0]&&dsum<=sz.zone[1])s+=10*w.digitSum;
+    s+=Math.min(((pf[0][num.slice(0,2)]||0)+(pf[1][num.slice(1,3)]||0)+(pf[2][num.slice(2,4)]||0))*0.5*w.pairs,10);
+    if(topOE.has([...num].map(d=>parseInt(d)%2===1?"O":"E").join("")))s+=5*w.oddEven;
     scores[num]=s;
   }
 
-  nums.forEach(num=>{
-    if(num.length===4&&!(num in scores)){
-      let s=0,ps=1,ds=1;
-      for(let i=0;i<4;i++){ps*=wProbs[i][num[i]]||0.05;ds*=dProbs[i][num[i]]||0.05;}
-      s+=ps*15000+ds*20000;
-      const dsum=[...num].reduce((a,d)=>a+parseInt(d),0);
-      if(dsum>=sz.zone[0]&&dsum<=sz.zone[1])s+=10;
-      for(let i=0;i<4;i++){if(hotPos[i].has(num[i]))s+=3.75;if(upPos[i].has(num[i]))s+=2.5;}
-      scores[num]=s;
-    }
-  });
+  allNums.forEach(num=>{if(num.length===4&&!(num in scores)){let s=0,ps=1,ds=1;for(let i=0;i<4;i++){ps*=wProbs[i][num[i]]||0.05;ds*=dProbs[i][num[i]]||0.05;}s+=ps*15000*w.position+ds*20000*w.daySpecific;const dsum=[...num].reduce((a,d)=>a+parseInt(d),0);if(dsum>=sz.zone[0]&&dsum<=sz.zone[1])s+=10*w.digitSum;for(let i=0;i<4;i++){if(hotPos[i].has(num[i]))s+=3.75*w.chiSquare;if(upPos[i].has(num[i]))s+=2.5*w.momentum;}scores[num]=s;}});
 
   Object.keys(scores).forEach(num=>{
     let mp=1;for(let i=0;i<3;i++)mp*=mk[num[i]]?.[num[i+1]]||0.1;
-    scores[num]+=mp*1500;
-    scores[num]+=((mc[num]||0)/mcMax)*10;
-    if(mirrors.has(num))scores[num]+=8;
-    if(repSet.has(num))scores[num]+=(repCnt[num]||1)*25;
-    if(crossNums.has(num))scores[num]+=20;
+    scores[num]+=mp*1500*w.markov;
+    scores[num]+=((mc[num]||0)/mcMax)*10*w.monteCarlo;
+    if(mirrors.has(num))scores[num]+=8*w.mirror;
+    if(repSet.has(num))scores[num]+=(repCnt[num]||1)*25*w.repeat;
+    if(crossNums.has(num))scores[num]+=20*w.crossOp;
+    if(streakSet.has(num))scores[num]+=15*w.streak;
   });
 
   const sorted=Object.entries(scores).sort((a,b)=>b[1]-a[1]);
-
-  // Markov top sequences
-  const mTop=[];
-  DIGITS.forEach(start=>{
-    let beams=[{seq:start,prob:1}];
-    for(let step=0;step<3;step++){
-      const nb=[];beams.forEach(({seq,prob})=>{
-        const cur=seq[seq.length-1];
-        DIGITS.slice().sort((a,b)=>(mk[cur]?.[b]||0)-(mk[cur]?.[a]||0)).slice(0,4).forEach(next=>{
-          nb.push({seq:seq+next,prob:prob*(mk[cur]?.[next]||0.1)});
-        });
-      });nb.sort((a,b)=>b.prob-a.prob);beams=nb.slice(0,6);
-    }
-    mTop.push(...beams.slice(0,2));
-  });
-  mTop.sort((a,b)=>b.prob-a.prob);
-
-  return{
-    predictions:sorted.slice(0,20),
-    analysis:{
-      chiSquare:chi,momentum:mom,digitSumZone:sz,
-      repeats:reps,crossOperator:crossNums.size,
-      markovTop:mTop.slice(0,5),mirrorCandidates:[...mirrors],
-      daySpecificCount:df.count
-    }
-  };
+  const recycled=recyclingDetector(opDraws);
+  return{predictions:sorted.slice(0,20),allScores:Object.fromEntries(sorted.slice(0,200)),analysis:{chi,mom,sz,reps,crossOp:crossNums.size,mirrors:[...mirrors],dayCount:df.count,eliminated,streaks:streaks.slice(0,5),recycled}};
 }
 
 // ============================================================
-// UI RENDERING
+// SELF-LEARNING: Adjust weights based on check results
 // ============================================================
-function renderTabs(){
-  const c=document.getElementById('tabsContainer');
-  c.innerHTML=operators.map((op,i)=>`
-    <button class="tab${i===activeTab?' active':''}" style="--tab-color:${op.color}" onclick="switchTab(${i})">
-      ${op.name}<div class="count">${op.draws.length} draws</div>
-    </button>
-  `).join('');
-}
-
-function switchTab(idx){activeTab=idx;renderTabs();renderContent();}
-
-function renderContent(){
-  const op=operators[activeTab];
-  const res=analysisResults?.[op.name];
-  const maxScore=res?res.predictions[0]?.[1]||1:1;
+function adjustWeights(predictions,actualNums){
+  // Find which predictions hit
+  const predNums=predictions.map(([n])=>n);
+  const hits=predNums.filter(n=>actualNums.includes(n));
   
-  let html=`
-    <button class="add-btn" onclick="openAddDraw(${activeTab})">+ Add New Draw Result</button>
-    <div class="section-title">📋 Recent Draws</div>
-    <div style="max-height:200px;overflow-y:auto;margin-bottom:20px">
-      ${op.draws.slice(0,10).map((dr,i)=>`
-        <div class="draw-item">
-          <span class="date">${dr.date}</span>
-          <span class="day-tag">${dr.day}</span>
-          <div class="nums">
-            <span class="p1">${dr.top3[0]}</span>
-            <span class="p2">${dr.top3[1]}</span>
-            <span class="p3">${dr.top3[2]}</span>
-          </div>
-          ${(dr.special?.length>0)?`<span class="extra">+${(dr.special?.length||0)+(dr.consolation?.length||0)}</span>`:''}
-          <button class="del-btn" onclick="deleteDraw(${activeTab},${i})" title="Delete">✕</button>
-        </div>
-      `).join('')}
-    </div>
-  `;
+  if(hits.length>0){
+    // Boost all weights slightly (the engine is working)
+    Object.keys(moduleWeights).forEach(k=>{moduleWeights[k]=Math.min(moduleWeights[k]*1.05,3)});
+  }else{
+    // Check if any permutations hit
+    let permHit=false;
+    predNums.slice(0,5).forEach(n=>{
+      getPerms(n).forEach(p=>{if(actualNums.includes(p))permHit=true;});
+    });
+    if(permHit){
+      // Slight boost — close but not exact
+      Object.keys(moduleWeights).forEach(k=>{moduleWeights[k]=Math.min(moduleWeights[k]*1.02,3)});
+    }else{
+      // Slight penalty — reduce dominant weights toward 1
+      Object.keys(moduleWeights).forEach(k=>{
+        if(moduleWeights[k]>1)moduleWeights[k]=Math.max(moduleWeights[k]*0.97,0.5);
+        else moduleWeights[k]=Math.min(moduleWeights[k]*1.01,3);
+      });
+    }
+  }
+  save(KEYS.weights,moduleWeights);
+  return hits;
+}
 
-  if(res){
-    const targetDay=document.getElementById('targetDay').value;
-    html+=`
-      <div class="section-title" style="color:${op.color}">
-        🏆 ${op.name} — Top Predictions <span style="font-size:9px;color:#555">(${targetDay})</span>
-      </div>
-    `;
+// ============================================================
+// UI NAVIGATION
+// ============================================================
+function navTo(page){
+  activeNav=page;
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('pg'+page).classList.add('active');
+  document.querySelectorAll('.bnav button').forEach((b,i)=>{b.classList.toggle('active',['Predict','History','Dashboard','Data'][i]===page)});
+  render();
+}
+
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+function openModal(id){document.getElementById(id).classList.add('show');}
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+
+// ============================================================
+// RENDER FUNCTIONS
+// ============================================================
+let lastResults=null;
+
+function render(){
+  if(activeNav==='Predict')renderPredict();
+  else if(activeNav==='History')renderHistory();
+  else if(activeNav==='Dashboard')renderDashboard();
+  else if(activeNav==='Data')renderData();
+  // Learning badge
+  const lrn=stats.totalChecks;
+  document.getElementById('learningBadge').innerHTML=lrn>0?`<span class="learning-badge">${lrn} learned</span>`:'';
+}
+
+function renderPredict(){
+  const op=operators[activeOp];
+  const pg=document.getElementById('pgPredict');
+  
+  // Controls
+  let h=`<div class="controls" style="padding:12px 0"><div class="ctrl-group"><label>Target Day</label><select id="tDay" onchange="render()"><option value="Sat">Saturday</option><option value="Sun">Sunday</option><option value="Wed">Wednesday</option></select></div>
+  <button class="btn btn-fire" onclick="runBeast()" id="runBtn">🔥 RUN</button></div>`;
+  
+  // Op tabs
+  h+=`<div class="optabs" style="padding:0">`;
+  operators.forEach((o,i)=>{h+=`<button class="optab${i===activeOp?' active':''}" style="--tab-color:${o.color}" onclick="activeOp=${i};render()">${o.name}<div class="ct">${o.draws.length} draws</div></button>`});
+  h+=`</div>`;
+  
+  h+=`<button class="add-btn" onclick="addOpIdx=${activeOp};document.getElementById('modalAddTitle').textContent='Add Draw — ${op.name}';openModal('modalAdd')">+ Add New Draw Result</button>`;
+  
+  // Recent draws
+  h+=`<div class="section-title">📋 Recent Draws</div><div style="max-height:160px;overflow-y:auto;margin-bottom:12px">`;
+  op.draws.slice(0,8).forEach((dr,i)=>{
+    h+=`<div class="draw-item"><span class="dt">${dr.date}</span><span class="dy">${dr.day}</span><div class="nums"><span class="p1">${dr.top3[0]}</span><span class="p2">${dr.top3[1]}</span><span class="p3">${dr.top3[2]}</span></div>${(dr.special?.length>0)?`<span class="extra">+${(dr.special?.length||0)+(dr.consolation?.length||0)}</span>`:''}
+    <button class="xbtn" onclick="operators[${activeOp}].draws.splice(${i},1);saveAll();render()">✕</button></div>`;
+  });
+  h+=`</div>`;
+
+  // Results
+  if(lastResults&&lastResults[op.name]){
+    const res=lastResults[op.name];
+    const maxS=res.predictions[0]?.[1]||1;
+    const tDay=document.getElementById('tDay')?.value||'Sat';
+    
+    h+=`<div class="section-title" style="color:${op.color}">🏆 ${op.name} — Predictions <span style="font-size:9px;color:var(--dim2)">(${tDay})</span></div>`;
     
     res.predictions.slice(0,10).forEach(([num,score],i)=>{
+      const isTop=i<3;const pct=Math.round((score/maxS)*100);
       const signals=[];
-      const a=res.analysis;
-      if(a.repeats.find(r=>r.number===num))signals.push({text:'🔄 REPEAT',cls:'repeat'});
-      if(a.mirrorCandidates.includes(num))signals.push({text:'🪞 MIRROR',cls:'mirror'});
+      if(res.analysis.reps.find(r=>r.n===num))signals.push(['🔄 REPEAT','repeat']);
+      if(res.analysis.mirrors.includes(num))signals.push(['🪞 MIRROR','mirror']);
       const dsum=[...num].reduce((a,d)=>a+parseInt(d),0);
-      if(dsum>=a.digitSumZone.zone[0]&&dsum<=a.digitSumZone.zone[1])signals.push({text:`✅ SUM=${dsum}`,cls:'sum'});
+      const z=res.analysis.sz.zone;
+      if(dsum>=z[0]&&dsum<=z[1])signals.push([`✅ SUM=${dsum}`,'sum']);
+      if(res.analysis.streaks.find(([n])=>n===num))signals.push(['🔥 STREAK','hot']);
       
-      const isTop=i<3;
-      const pct=Math.round((score/maxScore)*100);
-      
-      html+=`
-        <div class="pred-card${isTop?' top3':''}" style="--accent:${op.color}" onclick="togglePerms('${num}')">
-          <div class="rank-badge ${isTop?'top':'normal'}" style="${isTop?`background:${op.color}`:''}">${i+1}</div>
-          <div>
-            <div class="pred-num" style="color:${isTop?'#fff':'#ccc'}">${num}</div>
-            <div class="conf-bar" style="width:120px"><div class="fill" style="width:${pct}%;background:${op.color}"></div></div>
-          </div>
-          <div style="display:flex;gap:3px;flex-wrap:wrap;margin-left:8px">
-            ${signals.map(s=>`<span class="signal ${s.cls}">${s.text}</span>`).join('')}
-          </div>
-          <div class="pred-score">
-            <div class="label">Score</div>
-            <div class="val" style="color:${isTop?op.color:'#aaa'}">${score.toFixed(1)}</div>
-          </div>
-        </div>
-        <div class="perms" id="perms_${num}" style="display:${showPerms[num]?'block':'none'}">
-          <span style="color:#555">Permutations:</span> ${getPerms(num).slice(0,8).map(p=>`<span>${p}</span>`).join('')}
-        </div>
-      `;
+      h+=`<div class="pred${isTop?' top':''}" style="--accent:${op.color}" onclick="togglePerm('${num}')">
+        <div class="rk ${isTop?'t':'n'}" style="${isTop?`background:${op.color}`:''}">${i+1}</div>
+        <div><div class="nm" style="color:${isTop?'#fff':'#ccc'}">${num}</div><div class="conf-bar"><div class="fill" style="width:${pct}%;background:${op.color}"></div></div></div>
+        <div style="display:flex;gap:2px;flex-wrap:wrap;max-width:90px">${signals.map(([t,c])=>`<span class="badge" style="background:${c==='repeat'?'#c33':c==='mirror'?'#83a':c==='hot'?'#c60':'#263'}">${t}</span>`).join('')}</div>
+        <div class="sc"><div class="l">Score</div><div class="v" style="color:${isTop?op.color:'#aaa'}">${score.toFixed(1)}</div></div>
+      </div>
+      <div class="perms-row" id="pm_${num}" style="display:${showPermsMap[num]?'block':'none'}">
+        ${(()=>{
+          const sp=scorePermutations(num,res.allScores||{},5);
+          if(sp.length===0||sp[0].score===0)return`<span style="color:var(--dim3)">Perms:</span> ${getPerms(num).slice(0,6).map(p=>'<span>'+p+'</span>').join('')}`;
+          return`<div style="font-size:9px;color:var(--dim3);margin-bottom:4px">🔀 RANKED PERMUTATIONS:</div>${sp.map((p,pi)=>'<div class="sperm"><span class="pn">'+p.num+'</span><span class="ps">score: '+p.score.toFixed(1)+'</span>'+(pi===0?'<span class="ptag" style="background:var(--green)">BEST</span>':'')+'</div>').join('')}`;
+        })()}
+      </div>`;
     });
 
     // Analysis toggle
-    const showA=showAnalysisPanel[op.name];
-    html+=`<button class="analysis-toggle" onclick="toggleAnalysis('${op.name}')">${showA?'▼ Hide':'▶ Show'} Analysis Details</button>`;
-    
-    if(showA){
+    const sa=showAnal[op.name];
+    h+=`<button class="toggle-btn" onclick="showAnal['${op.name}']=!showAnal['${op.name}'];render()">${sa?'▼ Hide':'▶ Show'} Analysis Details</button>`;
+    if(sa){
       const a=res.analysis;
-      html+=`<div class="analysis-grid">
-        <div class="analysis-box">
-          <div class="title">Chi-Square Hot Digits</div>
-          ${[0,1,2,3].map(p=>{
-            const hot=DIGITS.filter(d=>a.chiSquare[p].digits[d].status==="HOT");
-            return hot.length?`<div class="item hot">Pos ${p+1}: ${hot.join(", ")} 🔥</div>`:'';
-          }).join('')}
-          ${[0,1,2,3].every(p=>!DIGITS.some(d=>a.chiSquare[p].digits[d].status==="HOT"))?'<div class="item info">No significant deviations</div>':''}
-        </div>
-        <div class="analysis-box">
-          <div class="title">Momentum Trending Up</div>
-          ${[0,1,2,3].map(p=>{
-            const up=DIGITS.filter(d=>a.momentum[p][d].trend==="UP");
-            return up.length?`<div class="item up">Pos ${p+1}: ${up.join(", ")} 📈</div>`:'';
-          }).join('')}
-        </div>
-        <div class="analysis-box">
-          <div class="title">Digit Sum Zone</div>
-          <div class="item" style="font-size:15px;font-weight:700;color:#fff">Sum ${a.digitSumZone.zone[0]}-${a.digitSumZone.zone[1]}</div>
-          <div class="item info">${a.digitSumZone.coverage}/${a.digitSumZone.total} winners (${Math.round(a.digitSumZone.coverage/a.digitSumZone.total*100)}%)</div>
-        </div>
-        <div class="analysis-box">
-          <div class="title">Signals Found</div>
-          ${a.repeats.length?`<div class="item info">🔄 ${a.repeats.length} repeat numbers</div>`:''}
-          ${a.crossOperator?`<div class="item info">🌐 ${a.crossOperator} cross-op numbers</div>`:''}
-          ${a.mirrorCandidates.length?`<div class="item info">🪞 ${a.mirrorCandidates.join(", ")}</div>`:''}
-          <div class="item info">📅 ${a.daySpecificCount} day-specific draws</div>
-          <div class="item info">🤖 Markov: ${a.markovTop.slice(0,3).map(m=>m.seq).join(", ")}</div>
+      h+=`<div class="analysis-grid">
+        <div class="abox"><div class="t">Chi² Hot Digits</div>${[0,1,2,3].map(p=>{const hot=DIGITS.filter(d=>a.chi[p].digits[d].s==="HOT");return hot.length?`<div class="i hot">Pos ${p+1}: ${hot.join(", ")} 🔥</div>`:''}).join('')||'<div class="i info">None significant</div>'}</div>
+        <div class="abox"><div class="t">Momentum Up</div>${[0,1,2,3].map(p=>{const up=DIGITS.filter(d=>a.mom[p][d].tr==="UP");return up.length?`<div class="i up">Pos ${p+1}: ${up.join(", ")} 📈</div>`:''}).join('')||'<div class="i info">Flat</div>'}</div>
+        <div class="abox"><div class="t">Digit Sum Zone</div><div class="i" style="font-size:14px;font-weight:700">${a.sz.zone[0]}-${a.sz.zone[1]}</div><div class="i info">${a.sz.cov}/${a.sz.total} (${Math.round(a.sz.cov/Math.max(a.sz.total,1)*100)}%)</div></div>
+        <div class="abox"><div class="t">Signals</div>
+          ${a.reps.length?`<div class="i info">🔄 ${a.reps.length} repeats</div>`:''}
+          ${a.crossOp?`<div class="i info">🌐 ${a.crossOp} cross-op</div>`:''}
+          ${a.streaks.length?`<div class="i info">🔥 ${a.streaks.length} streaking</div>`:''}
+          <div class="i info">📅 ${a.dayCount} day draws</div>
         </div>
       </div>`;
     }
-  }else{
-    html+=`
-      <div class="empty">
-        <div class="icon">🎰</div>
-        <div class="text">Select target day & hit 🔥 RUN</div>
-        <div class="sub">14 modules • 30K Monte Carlo sims • Markov chains</div>
-      </div>
-    `;
+    
+    // Migration alerts
+    const migrations=numberMigration(operators);
+    if(migrations.length>0){
+      h+=`<div class="alert-box" style="margin-top:12px"><div class="at">🔄 Number Migration Tracker</div>
+        <div style="font-size:9px;color:var(--dim2);margin-bottom:6px">Numbers that jumped between operators:</div>
+        ${migrations.slice(0,8).map(m=>`<div class="ai"><span class="anum">${m.number}</span><span style="color:${m.from.color};font-size:9px;font-weight:700">${m.from.op}</span><span class="arrow">→</span><span style="color:${m.to.color};font-size:9px;font-weight:700">${m.to.op}</span><span style="font-size:8px;color:var(--dim3)">${m.to.date}</span></div>`).join('')}
+      </div>`;
+    }
+    
+    // Recycling alerts
+    if(res.analysis.recycled&&res.analysis.recycled.length>0){
+      h+=`<div class="alert-box" style="border-color:#226633;background:linear-gradient(135deg,rgba(34,197,94,0.05),rgba(34,197,94,0.02))"><div class="at" style="color:var(--green)">♻️ Recycled Numbers</div>
+        <div style="font-size:9px;color:var(--dim2);margin-bottom:6px">Past winners that reappeared (likely to recycle again):</div>
+        ${res.analysis.recycled.slice(0,6).map(r=>`<div class="ai"><span class="anum">${r.number}</span><span style="font-size:8px;color:var(--dim)">${r.firstDate}</span><span class="arrow" style="color:var(--green)">→</span><span style="font-size:8px;color:var(--dim)">${r.secondDate}</span><span class="badge" style="background:${r.category==='TOP3'?'#c90':r.category==='SPECIAL'?'#36a':'#555'};font-size:7px">${r.category}</span><span style="font-size:8px;color:var(--dim3)">gap:${r.gap}</span></div>`).join('')}
+      </div>`;
+    }
+    
+    // BUY LIST
+    if(lastResults&&Object.keys(lastResults).length===operators.length){
+      const buyList=generateBuyList(lastResults,50);
+      const opColors={MAGNUM:'#D4A017',TOTO:'#DC2626',DAMACAI:'#2563EB'};
+      h+=`<div class="buy-section"><h3>🛒 Ready-to-Buy List <span style="font-size:10px;font-weight:400;color:var(--dim)">RM50 budget</span></h3>`;
+      ["MAGNUM","TOTO","DAMACAI"].forEach(opName=>{
+        const opItems=buyList.filter(b=>b.op===opName);
+        if(opItems.length===0)return;
+        h+=`<div class="buy-op"><div class="op-header"><span class="dot" style="background:${opColors[opName]}"></span>${opName}</div>`;
+        opItems.forEach(item=>{
+          h+=`<div class="buy-row"><span class="bnum" style="color:${item.isTop?'#fff':'#aaa'}">${item.num}</span><span class="btag" style="background:${item.type==='STRAIGHT'?opColors[opName]:'#555'}">${item.type==='STRAIGHT'?'STRAIGHT':'PERM'}</span><span class="btype">${item.betType}</span><span class="bamt" style="color:${opColors[opName]}">RM${item.amount}</span></div>`;
+        });
+        h+=`</div>`;
+      });
+      const total=buyList.reduce((a,b)=>a+b.amount,0);
+      h+=`<div class="buy-total"><span>SATURDAY TOTAL</span><span>RM${total}</span></div>`;
+      if(total<50)h+=`<div style="font-size:9px;color:var(--dim2);margin-top:4px;text-align:center">💰 RM${50-total} reserved for next draw</div>`;
+      h+=`</div>`;
+    }
+  }else if(!lastResults){
+    h+=`<div style="text-align:center;padding:40px 0;color:var(--dim3)"><div style="font-size:44px;margin-bottom:10px">🎰</div><div style="font-size:12px;color:var(--dim2)">Hit 🔥 RUN to generate predictions</div><div style="font-size:9px;margin-top:4px">14 modules • Self-learning • 30K simulations</div></div>`;
   }
-
-  document.getElementById('mainContent').innerHTML=html;
-}
-
-function togglePerms(num){showPerms[num]=!showPerms[num];const el=document.getElementById('perms_'+num);if(el)el.style.display=showPerms[num]?'block':'none';}
-function toggleAnalysis(name){showAnalysisPanel[name]=!showAnalysisPanel[name];renderContent();}
-
-function deleteDraw(opIdx,drawIdx){
-  if(!confirm('Delete this draw?'))return;
-  operators[opIdx].draws.splice(drawIdx,1);saveData();renderTabs();renderContent();
-}
-
-// ============================================================
-// RUN ANALYSIS
-// ============================================================
-function runAnalysis(){
-  const btn=document.getElementById('runBtn');
-  btn.classList.add('loading');btn.innerHTML='<span class="loading-dots"><span>⏳</span> <span>A</span><span>N</span><span>A</span><span>L</span><span>Y</span><span>Z</span><span>I</span><span>N</span><span>G</span></span>';
-  btn.disabled=true;
   
-  const targetDay=document.getElementById('targetDay').value;
+  pg.innerHTML=h;
+}
+
+function renderHistory(){
+  const pg=document.getElementById('pgHistory');
+  let h=`<div class="section-title">📜 Prediction History</div>`;
+  h+=`<button class="btn btn-green btn-sm" onclick="openModal('modalCheck')" style="width:100%;margin-bottom:14px">📋 Check Results & Train AI</button>`;
+  
+  if(history.length===0){
+    h+=`<div style="text-align:center;padding:40px 0;color:var(--dim3)"><div style="font-size:40px;margin-bottom:10px">📜</div><div style="font-size:12px;color:var(--dim2)">No predictions yet</div><div style="font-size:9px;margin-top:4px">Run Beast Mode to start building history</div></div>`;
+  }else{
+    history.slice().reverse().forEach((entry,i)=>{
+      h+=`<div class="hist-item">
+        <div class="hist-header">
+          <div><span class="hist-date">${entry.date}</span> <span style="font-size:10px;color:${operators.find(o=>o.name===entry.operator)?.color||'#888'}">${entry.operator}</span></div>
+          <span class="hist-target">${entry.targetDay} target</span>
+        </div>
+        <div class="hist-nums">${entry.predictions.map(n=>`<span class="hist-num ${entry.checked?(entry.hits?.includes(n)?'hit':'miss'):''}">${n}</span>`).join('')}</div>
+        ${entry.checked?`<div style="margin-top:8px;font-size:10px">${entry.hits?.length>0?`<span style="color:var(--green)">✅ ${entry.hits.length} hit(s)!</span>`:'<span style="color:var(--dim2)">No direct hits</span>'} ${entry.permHits>0?`<span style="color:var(--amber)"> | ${entry.permHits} perm hit(s)</span>`:''}</div>`:'<div style="margin-top:6px;font-size:9px;color:var(--dim3)">⏳ Not checked yet</div>'}
+      </div>`;
+    });
+  }
+  pg.innerHTML=h;
+}
+
+function renderDashboard(){
+  const pg=document.getElementById('pgDashboard');
+  const hitRate=stats.totalChecks>0?Math.round(stats.anyHits/stats.totalChecks*100):0;
+  const totalNums=operators.reduce((a,o)=>a+o.draws.length,0);
+  
+  let h=`<div class="section-title">📊 Performance Dashboard</div>`;
+  h+=`<div class="stat-grid">
+    <div class="stat-card"><div class="num" style="color:var(--green)">${hitRate}%</div><div class="lbl">Hit Rate</div></div>
+    <div class="stat-card"><div class="num">${stats.totalChecks}</div><div class="lbl">Draws Checked</div></div>
+    <div class="stat-card"><div class="num" style="color:#ffcc00">${stats.top3Hits}</div><div class="lbl">Top 3 Hits</div></div>
+    <div class="stat-card"><div class="num" style="color:var(--amber)">${stats.specialHits}</div><div class="lbl">Special Hits</div></div>
+    <div class="stat-card"><div class="num">${stats.consolationHits}</div><div class="lbl">Consolation Hits</div></div>
+    <div class="stat-card"><div class="num">${stats.anyHits}</div><div class="lbl">Total Any Hits</div></div>
+    <div class="stat-card"><div class="num">${history.length}</div><div class="lbl">Predictions Made</div></div>
+    <div class="stat-card"><div class="num">${totalNums}</div><div class="lbl">Draws in Database</div></div>
+  </div>`;
+  
+  // Module weights visualization
+  h+=`<div class="section-title">🧠 Self-Learning Module Weights</div><div class="card">`;
+  const maxW=Math.max(...Object.values(moduleWeights));
+  const wNames={position:"Position Freq",daySpecific:"Day-Specific",markov:"Markov Chain",monteCarlo:"Monte Carlo",chiSquare:"Chi-Square",momentum:"Momentum",digitSum:"Digit Sum",pairs:"Pair Freq",oddEven:"Odd/Even",repeat:"Repeat Detect",crossOp:"Cross-Operator",mirror:"Mirror Pattern",elimination:"Elimination",streak:"Streak Detect"};
+  Object.entries(moduleWeights).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{
+    const pct=Math.round(v/maxW*100);
+    const color=v>1.2?'var(--green)':v<0.8?'var(--toto)':'var(--amber)';
+    h+=`<div class="weight-bar"><span class="name">${wNames[k]||k}</span><div class="bar"><div class="fill" style="width:${pct}%;background:${color}"></div></div><span class="val">${v.toFixed(2)}</span></div>`;
+  });
+  h+=`<div style="font-size:9px;color:var(--dim3);margin-top:8px">Weights auto-adjust when you check results. Green = boosted, Red = reduced.</div></div>`;
+  
+  // Check history log
+  if(stats.checksLog.length>0){
+    h+=`<div class="section-title">📋 Check History</div>`;
+    stats.checksLog.slice(-10).reverse().forEach(log=>{
+      h+=`<div class="card" style="padding:10px;margin-bottom:6px"><div style="display:flex;justify-content:space-between;font-size:11px"><span>${log.date} — ${log.operator}</span><span style="color:${log.hits>0?'var(--green)':'var(--dim2)'}">${log.hits} hit(s)</span></div></div>`;
+    });
+  }
+  
+  pg.innerHTML=h;
+}
+
+function renderData(){
+  const pg=document.getElementById('pgData');
+  const totalDraws=operators.reduce((a,o)=>a+o.draws.length,0);
+  const totalNums=operators.reduce((a,o)=>a+o.draws.reduce((b,d)=>b+d.top3.length+(d.special?.length||0)+(d.consolation?.length||0),0),0);
+  
+  let h=`<div class="section-title">💾 Data Management</div>`;
+  h+=`<div class="card">
+    <div style="font-size:13px;font-weight:700;margin-bottom:8px">📦 Database Stats</div>
+    <div style="font-size:11px;color:var(--dim)">Total draws: <b style="color:var(--text)">${totalDraws}</b></div>
+    <div style="font-size:11px;color:var(--dim)">Total numbers: <b style="color:var(--text)">${totalNums}</b></div>
+    <div style="font-size:11px;color:var(--dim)">Predictions saved: <b style="color:var(--text)">${history.length}</b></div>
+    <div style="font-size:11px;color:var(--dim)">Checks performed: <b style="color:var(--text)">${stats.totalChecks}</b></div>
+  </div>`;
+  
+  h+=`<div class="section-title">📤 Export & Backup</div>
+  <button class="btn btn-outline" onclick="exportData()" style="width:100%;margin-bottom:8px">📥 Export All Data (JSON)</button>
+  <div style="font-size:9px;color:var(--dim3);margin-bottom:16px">Downloads a JSON file with all draws, predictions, weights, and stats. Save this file to back up your data.</div>`;
+  
+  h+=`<div class="section-title">📥 Import & Restore</div>
+  <input type="file" id="importFile" accept=".json" onchange="importData(event)" style="display:none">
+  <button class="btn btn-outline" onclick="document.getElementById('importFile').click()" style="width:100%;margin-bottom:8px">📤 Import Data (JSON)</button>
+  <div style="font-size:9px;color:var(--dim3);margin-bottom:16px">Restore from a previously exported backup file. This will REPLACE all current data.</div>`;
+  
+  h+=`<div class="section-title" style="color:var(--toto)">⚠️ Danger Zone</div>
+  <button class="btn btn-outline" onclick="if(confirm('Reset module weights to default?')){moduleWeights=JSON.parse(JSON.stringify(DEFAULT_WEIGHTS));save(KEYS.weights,moduleWeights);toast('Weights reset');render()}" style="width:100%;margin-bottom:8px;border-color:#441111;color:#884444">🔄 Reset Module Weights</button>
+  <button class="btn btn-outline" onclick="if(confirm('Delete ALL data including draws, predictions, and stats? This cannot be undone.')){localStorage.clear();location.reload()}" style="width:100%;border-color:#441111;color:#884444">🗑️ Factory Reset</button>`;
+  
+  pg.innerHTML=h;
+}
+
+// ============================================================
+// ACTIONS
+// ============================================================
+function togglePerm(num){showPermsMap[num]=!showPermsMap[num];const el=document.getElementById('pm_'+num);if(el)el.style.display=showPermsMap[num]?'block':'none';}
+
+function runBeast(){
+  const btn=document.getElementById('runBtn');
+  if(!btn)return;
+  btn.classList.add('loading');btn.textContent='⏳ ANALYZING...';btn.disabled=true;
   
   setTimeout(()=>{
+    const tDay=document.getElementById('tDay')?.value||'Sat';
     const allOps=operators.map(op=>({name:op.name,draws:op.draws}));
-    analysisResults={};
+    lastResults={};
+    operators.forEach(op=>{lastResults[op.name]=masterFusion(op.draws,tDay,allOps)});
+    
+    // Save predictions to history
+    const now=new Date().toISOString().slice(0,10);
     operators.forEach(op=>{
-      analysisResults[op.name]=masterFusion(op.draws,targetDay,allOps);
+      const preds=lastResults[op.name].predictions.slice(0,10).map(([n])=>n);
+      history.push({date:now,operator:op.name,targetDay:tDay,predictions:preds,checked:false,hits:[],permHits:0});
     });
-    btn.classList.remove('loading');btn.innerHTML='🔥 RUN';btn.disabled=false;
-    showPerms={};
-    renderContent();
-  },150);
+    saveAll();
+    
+    stats.totalPredictions+=operators.length;save(KEYS.stats,stats);
+    
+    btn.classList.remove('loading');btn.textContent='🔥 RUN';btn.disabled=false;
+    showPermsMap={};
+    render();
+    toast('Beast Mode complete! Predictions saved.');
+  },200);
 }
 
-// ============================================================
-// ADD DRAW MODAL
-// ============================================================
-function openAddDraw(opIdx){
-  addDrawOpIdx=opIdx;
-  document.getElementById('modalTitle').textContent='Add Draw — '+operators[opIdx].name;
-  document.getElementById('modalOverlay').style.display='flex';
-  document.getElementById('drawDate').value='';
-  document.getElementById('p1').value='';document.getElementById('p2').value='';document.getElementById('p3').value='';
-  document.getElementById('drawSpecial').value='';document.getElementById('drawConsolation').value='';
-}
-function closeModal(){document.getElementById('modalOverlay').style.display='none';}
 function saveDraw(){
-  const date=document.getElementById('drawDate').value;
-  const day=document.getElementById('drawDay').value;
-  const p1=document.getElementById('p1').value.padStart(4,'0');
-  const p2=document.getElementById('p2').value.padStart(4,'0');
-  const p3=document.getElementById('p3').value.padStart(4,'0');
-  if(!date||p1.length!==4||p2.length!==4||p3.length!==4){alert('Please fill in date and all 3 prizes');return;}
-  const sp=document.getElementById('drawSpecial').value.split(/[,\s]+/).filter(n=>n.length===4);
-  const cn=document.getElementById('drawConsolation').value.split(/[,\s]+/).filter(n=>n.length===4);
-  operators[addDrawOpIdx].draws.unshift({date,day,top3:[p1,p2,p3],special:sp,consolation:cn});
-  operators[addDrawOpIdx].draws.sort((a,b)=>b.date.localeCompare(a.date));
-  saveData();closeModal();renderTabs();renderContent();
+  const date=document.getElementById('mDate').value;
+  const day=document.getElementById('mDay').value;
+  const p=[document.getElementById('mP1').value,document.getElementById('mP2').value,document.getElementById('mP3').value].map(v=>v.replace(/\D/g,'').padStart(4,'0'));
+  if(!date||p.some(n=>n.length!==4||n==='0000')){alert('Fill in date and all 3 prizes');return;}
+  const sp=document.getElementById('mSp').value.split(/[,\s]+/).filter(n=>n.length===4);
+  const cn=document.getElementById('mCn').value.split(/[,\s]+/).filter(n=>n.length===4);
+  operators[addOpIdx].draws.unshift({date,day,top3:p,special:sp,consolation:cn});
+  operators[addOpIdx].draws.sort((a,b)=>b.date.localeCompare(a.date));
+  saveAll();closeModal('modalAdd');render();
+  toast('Draw added to '+operators[addOpIdx].name);
 }
 
-// Numeric only on prize inputs
-document.querySelectorAll('.num-input').forEach(el=>{
-  el.addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'');});
-});
-
-// ============================================================
-// SERVICE WORKER REGISTRATION
-// ============================================================
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('sw.js').then(()=>console.log('SW registered')).catch(()=>{});
+function checkResults(){
+  const date=document.getElementById('chkDate').value;
+  const opName=document.getElementById('chkOp').value;
+  const t3=[document.getElementById('chk1').value,document.getElementById('chk2').value,document.getElementById('chk3').value].map(v=>v.replace(/\D/g,'').padStart(4,'0'));
+  const sp=document.getElementById('chkSp').value.split(/[,\s]+/).filter(n=>n.length===4);
+  const cn=document.getElementById('chkCn').value.split(/[,\s]+/).filter(n=>n.length===4);
+  
+  if(!date||t3.some(n=>n==='0000')){alert('Fill in date and top 3 prizes');return;}
+  
+  const allActual=[...t3,...sp,...cn];
+  
+  // Find matching predictions in history
+  let totalHits=0,permHitsTotal=0,t3Hits=0,spHits=0,cnHits=0;
+  
+  history.forEach(entry=>{
+    if(entry.operator===opName&&!entry.checked){
+      const hits=entry.predictions.filter(n=>allActual.includes(n));
+      let permHits=0;
+      entry.predictions.forEach(n=>{
+        if(!allActual.includes(n)){
+          const perms=getPerms(n);
+          if(perms.some(p=>allActual.includes(p)))permHits++;
+        }
+      });
+      entry.checked=true;
+      entry.hits=hits;
+      entry.permHits=permHits;
+      
+      totalHits+=hits.length;
+      permHitsTotal+=permHits;
+      hits.forEach(h=>{
+        if(t3.includes(h))t3Hits++;
+        else if(sp.includes(h))spHits++;
+        else if(cn.includes(h))cnHits++;
+      });
+      
+      // Self-learning: adjust weights
+      if(lastResults&&lastResults[opName]){
+        adjustWeights(lastResults[opName].predictions.slice(0,10),allActual);
+      }
+    }
+  });
+  
+  stats.totalChecks++;
+  stats.top3Hits+=t3Hits;
+  stats.specialHits+=spHits;
+  stats.consolationHits+=cnHits;
+  stats.anyHits+=(totalHits>0?1:0);
+  stats.checksLog.push({date,operator:opName,hits:totalHits,permHits:permHitsTotal});
+  
+  // Also add as draw data
+  const opIdx=operators.findIndex(o=>o.name===opName);
+  if(opIdx>=0){
+    const exists=operators[opIdx].draws.find(d=>d.date===date);
+    if(!exists){
+      const dayMap={'0':'Sun','1':'Mon','2':'Tue','3':'Wed','4':'Thu','5':'Fri','6':'Sat'};
+      const dayOfWeek=dayMap[new Date(date).getDay()];
+      operators[opIdx].draws.unshift({date,day:dayOfWeek,top3:t3,special:sp,consolation:cn});
+      operators[opIdx].draws.sort((a,b)=>b.date.localeCompare(a.date));
+    }
+  }
+  
+  saveAll();closeModal('modalCheck');render();
+  
+  if(totalHits>0)toast(`🎉 ${totalHits} HIT(S)! ${permHitsTotal>0?`+${permHitsTotal} perm hits!`:''} Weights updated.`);
+  else if(permHitsTotal>0)toast(`Close! ${permHitsTotal} permutation hit(s). Weights adjusted.`);
+  else toast('No hits this round. Weights adjusted for next prediction.');
 }
 
-// INIT
-renderTabs();
-renderContent();
+function exportData(){
+  const data={version:'2.0',exported:new Date().toISOString(),operators,history,moduleWeights,stats};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`beast4d-backup-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+  toast('Data exported successfully!');
+}
+
+function importData(event){
+  const file=event.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const data=JSON.parse(e.target.result);
+      if(!data.operators){alert('Invalid backup file');return;}
+      if(!confirm('Replace ALL current data with this backup?'))return;
+      operators=data.operators;history=data.history||[];moduleWeights=data.moduleWeights||DEFAULT_WEIGHTS;stats=data.stats||stats;
+      saveAll();render();toast('Data imported successfully!');
+    }catch(err){alert('Error reading file: '+err.message);}
+  };
+  reader.readAsText(file);event.target.value='';
+}
+
+// Numeric inputs
+document.querySelectorAll('.num-in').forEach(el=>{el.addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'')})});
+
+// Service Worker
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').then(()=>{}).catch(()=>{});}
+
+// Init
+render();
 </script>
 </body>
 </html>
