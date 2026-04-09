@@ -58,9 +58,13 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
 
 /* Operator tabs */
 .optabs{display:flex;padding:0 20px;gap:4px;margin-top:12px}
-.optab{flex:1;padding:8px 0;border-radius:10px 10px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--dim2);font-size:10px;font-weight:800;cursor:pointer;letter-spacing:1px;font-family:inherit}
+.optab{flex:1;padding:10px 4px 8px;border-radius:12px 12px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--dim2);font-size:9px;font-weight:800;cursor:pointer;letter-spacing:0.5px;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:4px;transition:all 0.2s}
+.optab:active{transform:scale(0.97)}
 .optab.active{border-color:var(--tab-color);background:rgba(255,255,255,0.03);color:var(--tab-color);border-bottom:2px solid var(--tab-color)}
-.optab .ct{font-size:8px;color:var(--dim3);margin-top:1px;font-weight:400}
+.optab .op-logo{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
+.optab .op-logo svg{width:100%;height:100%}
+.optab .op-name{font-size:9px;font-weight:800;letter-spacing:0.5px}
+.optab .ct{font-size:7px;color:var(--dim3);font-weight:400}
 
 /* Draw items */
 .draw-item{display:flex;align-items:center;gap:6px;padding:7px 10px;background:var(--bg3);border-radius:8px;border:1px solid #1f1f3a;margin-bottom:3px;font-size:11px}
@@ -629,8 +633,22 @@ function renderPredict(){
   <button class="btn btn-fire" onclick="runBeast()" id="runBtn">🔥 RUN</button></div>`;
   
   // Op tabs
+  // Operator logo SVGs
+  const opLogos={
+    MAGNUM:`<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect width="40" height="40" rx="8" fill="#D4A017"/><path d="M8 28V14l6 10 6-10v14h-3V21l-3 5-3-5v7H8zm16 0V14l3 5 3-5v14h-3V21l-1.5 2.5" fill="#fff" opacity="0.95"/></svg>`,
+    TOTO:`<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect width="40" height="40" rx="8" fill="#DC2626"/><circle cx="20" cy="20" r="13" fill="none" stroke="#fff" stroke-width="2" opacity="0.3"/><text x="20" y="17" text-anchor="middle" font-size="9" font-weight="900" fill="#fff" font-family="sans-serif">4D</text><text x="20" y="27" text-anchor="middle" font-size="6" font-weight="700" fill="#ffa" font-family="sans-serif">TOTO</text></svg>`,
+    DAMACAI:`<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect width="40" height="40" rx="8" fill="#1a3a6a"/><path d="M6 26c2-1 4-3 7-3 1 0 2 0 3 1l3-5c1-2 3-3 5-3 2 0 3 1 4 2l4-3.5c1-0.8 2-0.8 2.5 0 0.5 0.8 0 1.5-0.5 2L30 19c-0.5 0.5-1.5 0.5-2 0l-3.5-2c-1-0.5-2 0-2.5 1l-3 5c-0.5 1-1.5 1-2.5 0.5l-2-1.5c-1-0.5-2-0.5-3 0.5l-3 3.5c-0.5 0.5-1.5 0.5-2 0S5.5 26.5 6 26z" fill="#DC2626" opacity="0.9"/><text x="20" y="35" text-anchor="middle" font-size="5.5" font-weight="700" fill="#fff" opacity="0.7" font-family="sans-serif">DAMACAI</text></svg>`
+  };
+  
   h+=`<div class="optabs" style="padding:0">`;
-  operators.forEach((o,i)=>{h+=`<button class="optab${i===activeOp?' active':''}" style="--tab-color:${o.color}" onclick="activeOp=${i};render()">${o.name}<div class="ct">${o.draws.length} draws</div></button>`});
+  operators.forEach((o,i)=>{
+    const logo=opLogos[o.name]||'';
+    h+=`<button class="optab${i===activeOp?' active':''}" style="--tab-color:${o.color}" onclick="activeOp=${i};render()">
+      <div class="op-logo">${logo}</div>
+      <div class="op-name">${o.name}</div>
+      <div class="ct">${o.draws.length} draws</div>
+    </button>`;
+  });
   h+=`</div>`;
   
   h+=`<button class="add-btn" onclick="addOpIdx=${activeOp};document.getElementById('modalAddTitle').textContent='Add Draw — ${op.name}';openModal('modalAdd')">+ Add New Draw Result</button>`;
@@ -957,13 +975,15 @@ async function autoFetchResults(){
             // Get a bounded chunk after the operator marker (not too much, not too little)
             const startIdx=match.index;
             
-            // Find the end boundary: next operator marker or 3000 chars, whichever is first
-            let endIdx=startIdx+3000;
+            // Find the end boundary: next operator marker or 6000 chars
+            // Minimum 2000 chars guaranteed so all 23 numbers (top3+special+consolation) are captured
+            let endIdx=startIdx+6000;
+            const minEndIdx=startIdx+2000;
             for(const otherOp of opMarkers){
               if(otherOp.name===op.name)continue;
               for(const otherPat of otherOp.patterns){
-                const otherIdx=text.toLowerCase().indexOf(otherPat.toLowerCase(),startIdx+pattern.length+50);
-                if(otherIdx>0&&otherIdx<endIdx)endIdx=otherIdx;
+                const otherIdx=text.toLowerCase().indexOf(otherPat.toLowerCase(),startIdx+pattern.length+100);
+                if(otherIdx>minEndIdx&&otherIdx<endIdx)endIdx=otherIdx;
               }
             }
             
@@ -977,15 +997,24 @@ async function autoFetchResults(){
             
             // We need at least 3 numbers for top 3 prizes
             if(nums.length>=3){
-              // Skip draw numbers (usually the first number if it looks like a draw ID)
+              // Skip draw/round numbers that appear before actual prizes
+              // Draw IDs like "352/26" or "#6115" often have nearby 4-digit fragments
               let startFrom=0;
-              // Draw IDs are often 3-5 digits preceded by # or "Draw"
-              if(nums.length>23&&/draw|#/i.test(cleanText.substring(0,100)))startFrom=0;
               
-              // Validate: first 3 numbers should be 4-digit prize numbers
-              const top3=nums.slice(startFrom,startFrom+3);
-              const special=nums.slice(startFrom+3,startFrom+13);
-              const consolation=nums.slice(startFrom+13,startFrom+23);
+              // Look at context before first number - if it mentions "draw", "round", "#", skip first num
+              const beforeNums=cleanText.substring(0,cleanText.indexOf(nums[0])||100).toLowerCase();
+              if(/draw|round|cabutan|#|no\.|nombor/.test(beforeNums)&&nums.length>23){
+                startFrom=1;
+              }
+              
+              // Also filter: if a number appears in the date string, skip it
+              const dateNums=date.replace(/-/g,'').match(/\d{4}/g)||[];
+              const filtered=nums.filter(n=>!dateNums.includes(n));
+              const useNums=filtered.length>=3?filtered:nums;
+              
+              const top3=useNums.slice(startFrom,startFrom+3);
+              const special=useNums.slice(startFrom+3,startFrom+13);
+              const consolation=useNums.slice(startFrom+13,startFrom+23);
               
               // Sanity check: top 3 shouldn't all be the same
               if(top3[0]!==top3[1]||top3[1]!==top3[2]){
@@ -1026,9 +1055,9 @@ async function autoFetchResults(){
       // Offer other operators
       const others=Object.entries(results).filter(([k,v])=>v&&k!==opName);
       if(others.length>0){
-        statusEl.innerHTML+=`<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">${others.map(([k])=>{
+        statusEl.innerHTML+=`<div style="margin-top:8px;display:flex;gap:8px">${others.map(([k])=>{
           const c=k==='MAGNUM'?'#D4A017':k==='TOTO'?'#DC2626':'#2563EB';
-          return`<button class="btn btn-sm" style="background:${c};color:#fff" onclick="quickAddFetched('${k}','${date}')">+ Add ${k}</button>`;
+          return`<button class="btn btn-sm" style="flex:1;background:${c};color:#fff;text-align:center;padding:10px 0;font-size:12px;border-radius:8px" onclick="quickAddFetched('${k}','${date}')">+ Add ${k}</button>`;
         }).join('')}</div>`;
         // Store fetched results globally for quick-add
         window._fetchedResults=results;
