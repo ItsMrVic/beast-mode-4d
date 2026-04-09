@@ -166,6 +166,20 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
 /* Migration/Recycling alerts */
 .alert-box{background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(139,92,246,0.1));border:1px solid #3333aa;border-radius:10px;padding:10px;margin-bottom:8px}
 
+/* Module Toggle Switches */
+.mod-toggles{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:12px}
+.mod-toggles .mt-title{font-size:10px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.mod-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1a1a2e}
+.mod-row:last-child{border-bottom:none}
+.mod-row .mod-name{font-size:11px;color:var(--dim)}
+.mod-row .mod-name.on{color:var(--text)}
+.toggle{position:relative;width:38px;height:20px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle .slider{position:absolute;cursor:pointer;inset:0;background:#333;border-radius:20px;transition:0.2s}
+.toggle .slider::before{content:'';position:absolute;width:16px;height:16px;left:2px;bottom:2px;background:#888;border-radius:50%;transition:0.2s}
+.toggle input:checked+.slider{background:var(--green)}
+.toggle input:checked+.slider::before{transform:translateX(18px);background:#fff}
+
 /* Auto-fetch UI */
 .fetch-bar{display:flex;gap:6px;margin-bottom:10px;align-items:flex-end}
 .fetch-bar .ctrl-group{flex:1}
@@ -286,7 +300,7 @@ let addOpIdx=0;
 // ============================================================
 // DATA STORE (localStorage)
 // ============================================================
-const KEYS={ops:'b4d_ops',hist:'b4d_hist',weights:'b4d_weights',stats:'b4d_stats'};
+const KEYS={ops:'b4d_ops',hist:'b4d_hist',weights:'b4d_weights',stats:'b4d_stats',toggles:'b4d_toggles'};
 
 const DEFAULT_OPS=[
 {name:"MAGNUM",color:"#D4A017",draws:[
@@ -341,15 +355,19 @@ const DEFAULT_OPS=[
 // Default module weights (self-learning adjusts these)
 const DEFAULT_WEIGHTS={position:1,daySpecific:1.3,markov:1,monteCarlo:0.8,chiSquare:1,momentum:1,digitSum:0.9,pairs:0.8,oddEven:0.5,repeat:1.5,crossOp:1.2,mirror:0.6,elimination:1.1,streak:1,entropy:1,genetic:1.2};
 
+// Module on/off toggles
+const DEFAULT_TOGGLES={position:true,daySpecific:true,markov:true,monteCarlo:true,chiSquare:true,momentum:true,digitSum:true,pairs:true,oddEven:true,repeat:true,crossOp:true,mirror:true,elimination:true,streak:true,entropy:true,genetic:true};
+
 function load(key,def){try{const s=localStorage.getItem(key);return s?JSON.parse(s):JSON.parse(JSON.stringify(def));}catch(e){return JSON.parse(JSON.stringify(def));}}
 function save(key,val){try{localStorage.setItem(key,JSON.stringify(val));}catch(e){}}
 
 let operators=load(KEYS.ops,DEFAULT_OPS);
 let history=load(KEYS.hist,[]);
 let moduleWeights=load(KEYS.weights,DEFAULT_WEIGHTS);
+let moduleToggles=load(KEYS.toggles,DEFAULT_TOGGLES);
 let stats=load(KEYS.stats,{totalPredictions:0,totalChecks:0,top3Hits:0,specialHits:0,consolationHits:0,anyHits:0,checksLog:[]});
 
-function saveAll(){save(KEYS.ops,operators);save(KEYS.hist,history);save(KEYS.weights,moduleWeights);save(KEYS.stats,stats);}
+function saveAll(){save(KEYS.ops,operators);save(KEYS.hist,history);save(KEYS.weights,moduleWeights);save(KEYS.stats,stats);save(KEYS.toggles,moduleToggles);}
 
 // ============================================================
 // ANALYSIS ENGINE (14 modules + elimination + streak)
@@ -675,7 +693,7 @@ function generateBuyList(allResults,budget=50){
 }
 
 // MASTER FUSION with self-learning weights
-function masterFusion(opDraws,targetDay,allOps,w=moduleWeights){
+function masterFusion(opDraws,targetDay,allOps,w=moduleWeights,t=moduleToggles){
   const allNums=opDraws.flatMap(d=>[...d.top3,...(d.special||[]),...(d.consolation||[])].filter(Boolean));
   const wf=getWeighted(opDraws),df=getDayFreq(opDraws,targetDay);
   const mk=buildMarkov(allNums),mc=monteCarlo(allNums,30000);
@@ -703,39 +721,43 @@ function masterFusion(opDraws,targetDay,allOps,w=moduleWeights){
   const scores={};
   for(const d1 of topD[0])for(const d2 of topD[1])for(const d3 of topD[2])for(const d4 of topD[3]){
     const num=d1+d2+d3+d4;let s=0;
-    // Elimination filter - skip numbers with deeply cold digits
-    let elim=false;
-    for(let i=0;i<4;i++)if(eliminated[i].has(num[i])){s-=10*w.elimination;elim=true;}
+    // Elimination filter
+    if(t.elimination!==false){
+      for(let i=0;i<4;i++)if(eliminated[i].has(num[i]))s-=10*w.elimination;
+    }
     
     let ps=1,ds=1;for(let i=0;i<4;i++){ps*=wProbs[i][num[i]]||0.05;ds*=dProbs[i][num[i]]||0.05;}
-    s+=ps*15000*w.position+ds*20000*w.daySpecific;
-    for(let i=0;i<4;i++){if(hotPos[i].has(num[i]))s+=3.75*w.chiSquare;if(upPos[i].has(num[i]))s+=2.5*w.momentum;}
+    if(t.position!==false)s+=ps*15000*w.position;
+    if(t.daySpecific!==false)s+=ds*20000*w.daySpecific;
+    for(let i=0;i<4;i++){
+      if(t.chiSquare!==false&&hotPos[i].has(num[i]))s+=3.75*w.chiSquare;
+      if(t.momentum!==false&&upPos[i].has(num[i]))s+=2.5*w.momentum;
+    }
     const dsum=[...num].reduce((a,d)=>a+parseInt(d),0);
-    if(dsum>=sz.zone[0]&&dsum<=sz.zone[1])s+=10*w.digitSum;
-    s+=Math.min(((pf[0][num.slice(0,2)]||0)+(pf[1][num.slice(1,3)]||0)+(pf[2][num.slice(2,4)]||0))*0.5*w.pairs,10);
-    if(topOE.has([...num].map(d=>parseInt(d)%2===1?"O":"E").join("")))s+=5*w.oddEven;
+    if(t.digitSum!==false&&dsum>=sz.zone[0]&&dsum<=sz.zone[1])s+=10*w.digitSum;
+    if(t.pairs!==false)s+=Math.min(((pf[0][num.slice(0,2)]||0)+(pf[1][num.slice(1,3)]||0)+(pf[2][num.slice(2,4)]||0))*0.5*w.pairs,10);
+    if(t.oddEven!==false&&topOE.has([...num].map(d=>parseInt(d)%2===1?"O":"E").join("")))s+=5*w.oddEven;
     scores[num]=s;
   }
 
-  allNums.forEach(num=>{if(num.length===4&&!(num in scores)){let s=0,ps=1,ds=1;for(let i=0;i<4;i++){ps*=wProbs[i][num[i]]||0.05;ds*=dProbs[i][num[i]]||0.05;}s+=ps*15000*w.position+ds*20000*w.daySpecific;const dsum=[...num].reduce((a,d)=>a+parseInt(d),0);if(dsum>=sz.zone[0]&&dsum<=sz.zone[1])s+=10*w.digitSum;for(let i=0;i<4;i++){if(hotPos[i].has(num[i]))s+=3.75*w.chiSquare;if(upPos[i].has(num[i]))s+=2.5*w.momentum;}scores[num]=s;}});
+  allNums.forEach(num=>{if(num.length===4&&!(num in scores)){let s=0,ps=1,ds=1;for(let i=0;i<4;i++){ps*=wProbs[i][num[i]]||0.05;ds*=dProbs[i][num[i]]||0.05;}if(t.position!==false)s+=ps*15000*w.position;if(t.daySpecific!==false)s+=ds*20000*w.daySpecific;const dsum=[...num].reduce((a,d)=>a+parseInt(d),0);if(t.digitSum!==false&&dsum>=sz.zone[0]&&dsum<=sz.zone[1])s+=10*w.digitSum;for(let i=0;i<4;i++){if(t.chiSquare!==false&&hotPos[i].has(num[i]))s+=3.75*w.chiSquare;if(t.momentum!==false&&upPos[i].has(num[i]))s+=2.5*w.momentum;}scores[num]=s;}});
 
   Object.keys(scores).forEach(num=>{
-    let mp=1;for(let i=0;i<3;i++)mp*=mk[num[i]]?.[num[i+1]]||0.1;
-    scores[num]+=mp*1500*w.markov;
-    scores[num]+=((mc[num]||0)/mcMax)*10*w.monteCarlo;
-    if(mirrors.has(num))scores[num]+=8*w.mirror;
-    if(repSet.has(num))scores[num]+=(repCnt[num]||1)*25*w.repeat;
-    if(crossNums.has(num))scores[num]+=20*w.crossOp;
-    if(streakSet.has(num))scores[num]+=15*w.streak;
+    if(t.markov!==false){let mp=1;for(let i=0;i<3;i++)mp*=mk[num[i]]?.[num[i+1]]||0.1;scores[num]+=mp*1500*w.markov;}
+    if(t.monteCarlo!==false)scores[num]+=((mc[num]||0)/mcMax)*10*w.monteCarlo;
+    if(t.mirror!==false&&mirrors.has(num))scores[num]+=8*w.mirror;
+    if(t.repeat!==false&&repSet.has(num))scores[num]+=(repCnt[num]||1)*25*w.repeat;
+    if(t.crossOp!==false&&crossNums.has(num))scores[num]+=20*w.crossOp;
+    if(t.streak!==false&&streakSet.has(num))scores[num]+=15*w.streak;
   });
 
   const sorted=Object.entries(scores).sort((a,b)=>b[1]-a[1]);
   const recycled=recyclingDetector(opDraws);
-  const entropy=entropyScoring(opDraws);
-  const gaTop=geneticAlgorithm(opDraws,targetDay,150,80);
+  const entropy=t.entropy!==false?entropyScoring(opDraws):null;
+  const gaTop=t.genetic!==false?geneticAlgorithm(opDraws,targetDay,150,80):[];
   
-  // Boost GA winners in fusion scores
-  gaTop.forEach(({n,f},i)=>{if(scores[n])scores[n]+=f*0.3*(1-i*0.05);});
+  // Boost GA winners in fusion scores (only if GA enabled)
+  if(t.genetic!==false)gaTop.forEach(({n,f},i)=>{if(scores[n])scores[n]+=f*0.3*(1-i*0.05);});
   
   const finalSorted=Object.entries(scores).sort((a,b)=>b[1]-a[1]);
   const analysisData={chi,mom,sz,reps,crossOp:crossNums.size,mirrors:[...mirrors],dayCount:df.count,eliminated,streaks:streaks.slice(0,5),recycled,entropy,gaTop};
@@ -839,6 +861,22 @@ function renderPredict(){
     </button>`;
   });
   h+=`</div>`;
+  
+  // Module toggles (collapsible)
+  const modNames={position:"Position Frequency",daySpecific:"Day-Specific Filter",markov:"Markov Chain",monteCarlo:"Monte Carlo (30K sims)",chiSquare:"Chi-Square Test",momentum:"Momentum Tracker",digitSum:"Digit Sum Zone",pairs:"Pair Frequency",oddEven:"Odd/Even Pattern",repeat:"Repeat Detection",crossOp:"Cross-Operator",mirror:"Mirror Pattern",elimination:"Cold Digit Elimination",streak:"Streak Detection",entropy:"Shannon Entropy",genetic:"Genetic Algorithm"};
+  const activeCount=Object.values(moduleToggles).filter(Boolean).length;
+  
+  h+=`<button class="toggle-btn" onclick="document.getElementById('modToggles').style.display=document.getElementById('modToggles').style.display==='none'?'block':'none'" style="margin-bottom:8px;font-size:10px">⚙️ Modules (${activeCount}/16 active) ▸</button>`;
+  h+=`<div id="modToggles" style="display:none"><div class="mod-toggles"><div class="mt-title">⚙️ Module Control Panel</div>`;
+  Object.entries(modNames).forEach(([key,name])=>{
+    const on=moduleToggles[key]!==false;
+    h+=`<div class="mod-row"><span class="mod-name ${on?'on':''}">${name}</span><label class="toggle"><input type="checkbox" ${on?'checked':''} onchange="moduleToggles['${key}']=this.checked;save(KEYS.toggles,moduleToggles);render()"><span class="slider"></span></label></div>`;
+  });
+  h+=`<div style="display:flex;gap:6px;margin-top:8px">
+    <button class="btn btn-sm btn-outline" style="flex:1;font-size:9px" onclick="Object.keys(moduleToggles).forEach(k=>moduleToggles[k]=true);save(KEYS.toggles,moduleToggles);render()">All ON</button>
+    <button class="btn btn-sm btn-outline" style="flex:1;font-size:9px" onclick="Object.keys(moduleToggles).forEach(k=>moduleToggles[k]=false);save(KEYS.toggles,moduleToggles);render()">All OFF</button>
+    <button class="btn btn-sm btn-outline" style="flex:1;font-size:9px" onclick="moduleToggles={...DEFAULT_TOGGLES};save(KEYS.toggles,moduleToggles);render()">Reset</button>
+  </div></div></div>`;
   
   h+=`<button class="add-btn" onclick="addOpIdx=${activeOp};document.getElementById('modalAddTitle').textContent='Add Draw — ${op.name}';openModal('modalAdd')">+ Add New Draw Result</button>`;
   
