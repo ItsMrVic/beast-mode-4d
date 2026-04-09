@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#ff4444">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Beast 4D">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Beast Mode 4D</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--bg:#0a0a1a;--bg2:#12122a;--bg3:#1a1a2e;--border:#2a2a4a;--text:#fff;--dim:#888;--dim2:#555;--dim3:#333;--mag:#D4A017;--toto:#DC2626;--dam:#2563EB;--fire:linear-gradient(135deg,#ff4444,#ff8800)}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Outfit',system-ui,sans-serif;overflow-x:hidden}
+.mono{font-family:'JetBrains Mono','Fira Code',monospace}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#333;border-radius:4px}
+
+/* Header */
+.header{padding:env(safe-area-inset-top,20px) 20px 16px;background:linear-gradient(180deg,rgba(255,68,68,0.1) 0%,transparent 100%);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.header h1{font-size:22px;font-weight:900;letter-spacing:-0.5px;background:var(--fire);-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:inline}
+.header .sub{font-size:10px;color:var(--dim3);letter-spacing:2px;text-transform:uppercase;margin-top:2px}
+
+/* Controls */
+.controls{padding:14px 20px;display:flex;gap:10px;align-items:flex-end;border-bottom:1px solid #1a1a2a}
+.ctrl-group{flex:1}
+.ctrl-group label{font-size:9px;color:var(--dim2);text-transform:uppercase;letter-spacing:1.5px;display:block;margin-bottom:4px;font-weight:600}
+.ctrl-group select{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;font-weight:600;font-family:inherit;appearance:none;-webkit-appearance:none}
+.run-btn{padding:12px 20px;border-radius:12px;border:none;background:var(--fire);color:#fff;font-size:13px;font-weight:800;cursor:pointer;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;box-shadow:0 4px 20px rgba(255,68,68,0.3);transition:all 0.2s;font-family:inherit}
+.run-btn:active{transform:scale(0.96)}
+.run-btn.loading{background:#333;box-shadow:none;color:#888}
+
+/* Tabs */
+.tabs{display:flex;padding:0 20px;gap:4px;margin-top:14px}
+.tab{flex:1;padding:10px 0;border-radius:10px 10px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--dim2);font-size:11px;font-weight:800;cursor:pointer;letter-spacing:1px;font-family:inherit;transition:all 0.2s}
+.tab.active{border-color:var(--tab-color);background:rgba(255,255,255,0.03);color:var(--tab-color);border-bottom:2px solid var(--tab-color)}
+.tab .count{font-size:8px;color:var(--dim3);margin-top:2px;font-weight:400}
+
+/* Content */
+.content{padding:14px 20px 100px}
+.section-title{font-size:11px;color:var(--dim2);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;font-weight:700;display:flex;align-items:center;gap:8px}
+
+/* Add button */
+.add-btn{width:100%;padding:12px;border-radius:10px;border:1px dashed var(--border);background:transparent;color:var(--dim2);font-size:12px;cursor:pointer;margin-bottom:16px;font-family:inherit;transition:all 0.2s}
+.add-btn:active{background:rgba(255,255,255,0.02)}
+
+/* Draw list */
+.draw-item{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg3);border-radius:8px;border:1px solid #1f1f3a;margin-bottom:4px;font-size:12px}
+.draw-item .date{color:var(--dim2);font-size:10px;width:72px;flex-shrink:0}
+.draw-item .day-tag{color:var(--dim3);font-size:9px;width:26px;flex-shrink:0}
+.draw-item .nums{display:flex;gap:10px}
+.draw-item .nums span{font-family:'JetBrains Mono',monospace;font-weight:700;letter-spacing:2px;font-size:13px}
+.draw-item .nums .p1{color:#ffcc00}
+.draw-item .nums .p2{color:#aaa}
+.draw-item .nums .p3{color:#886633}
+.draw-item .extra{font-size:8px;color:var(--dim3);margin-left:auto}
+.draw-item .del-btn{background:none;border:none;color:#441111;font-size:14px;cursor:pointer;padding:2px 6px;border-radius:4px}
+.draw-item .del-btn:active{color:#ff4444;background:rgba(255,0,0,0.1)}
+
+/* Prediction cards */
+.pred-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all 0.15s;position:relative;overflow:hidden}
+.pred-card:active{transform:scale(0.98)}
+.pred-card.top3{border-color:var(--accent)}
+.pred-card.top3::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent)}
+.rank-badge{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.rank-badge.top{background:var(--accent);color:#fff}
+.rank-badge.normal{background:#2a2a3a;color:#888}
+.pred-num{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:800;letter-spacing:5px}
+.pred-score{margin-left:auto;text-align:right}
+.pred-score .label{font-size:9px;color:var(--dim3)}
+.pred-score .val{font-size:14px;font-weight:700}
+.signals{display:flex;gap:3px;flex-wrap:wrap;max-width:100px}
+.signal{font-size:8px;padding:2px 5px;border-radius:3px;font-weight:700;white-space:nowrap;color:#fff}
+.signal.repeat{background:#cc3333}
+.signal.cross{background:#2266aa}
+.signal.sum{background:#226633}
+.signal.mirror{background:#8833aa}
+.signal.hot{background:#cc6600}
+
+/* Permutations */
+.perms{padding:6px 14px 6px 52px;font-size:11px;color:var(--dim2);font-family:'JetBrains Mono',monospace;letter-spacing:1px}
+.perms span{margin-right:10px;color:#aaa}
+
+/* Analysis panel */
+.analysis-toggle{width:100%;padding:10px;margin-top:10px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--dim);font-size:11px;cursor:pointer;font-family:inherit;letter-spacing:0.5px}
+.analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.analysis-box{background:var(--bg3);border-radius:10px;padding:12px;border:1px solid var(--border)}
+.analysis-box .title{font-size:9px;color:var(--dim2);margin-bottom:8px;font-weight:700;text-transform:uppercase;letter-spacing:1px}
+.analysis-box .item{font-size:11px;margin-bottom:2px}
+.analysis-box .hot{color:#ff8800}
+.analysis-box .up{color:#44ff88}
+.analysis-box .info{color:#aaa}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px}
+.modal{background:var(--bg2);border-radius:18px;padding:24px;width:100%;max-width:440px;border:1px solid var(--border);max-height:90vh;overflow-y:auto}
+.modal h3{font-size:17px;margin-bottom:18px;font-weight:800}
+.modal label{font-size:10px;color:var(--dim2);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px;font-weight:600}
+.modal input,.modal select{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--dim3);background:var(--bg3);color:var(--text);font-size:14px;font-family:inherit;margin-bottom:12px}
+.modal input.num-input{font-family:'JetBrains Mono',monospace;text-align:center;letter-spacing:4px;font-size:18px;font-weight:700}
+.modal .row{display:flex;gap:8px}
+.modal .row>div{flex:1}
+.modal .row .sub-label{font-size:9px;color:var(--dim3);margin-bottom:2px}
+.modal .actions{display:flex;gap:10px;margin-top:6px}
+.modal .actions button{flex:1;padding:12px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;border:none}
+.modal .cancel-btn{background:transparent;border:1px solid var(--dim3)!important;color:var(--dim)}
+.modal .save-btn{background:var(--fire);color:#fff}
+
+/* Empty state */
+.empty{text-align:center;padding:50px 20px;color:var(--dim3)}
+.empty .icon{font-size:52px;margin-bottom:14px}
+.empty .text{font-size:13px;color:var(--dim2)}
+.empty .sub{font-size:10px;margin-top:6px}
+
+/* Footer disclaimer */
+.footer{padding:16px 20px 40px;text-align:center}
+.footer p{font-size:8px;color:#222;line-height:1.6}
+
+/* Loading animation */
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.loading-dots span{animation:pulse 1.2s infinite;display:inline-block}
+.loading-dots span:nth-child(2){animation-delay:0.2s}
+.loading-dots span:nth-child(3){animation-delay:0.4s}
+
+/* Confidence bar */
+.conf-bar{height:4px;border-radius:2px;background:#1a1a2e;margin-top:4px;overflow:hidden}
+.conf-bar .fill{height:100%;border-radius:2px;transition:width 0.6s ease}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div style="display:flex;align-items:center;gap:8px">
+    <span style="font-size:26px">🔥</span>
+    <div>
+      <h1>BEAST MODE 4D</h1>
+      <div class="sub">14-Module Fusion Prediction Engine</div>
+    </div>
+  </div>
+</div>
+
+<div class="controls">
+  <div class="ctrl-group">
+    <label>Target Day</label>
+    <select id="targetDay">
+      <option value="Sat">Saturday</option>
+      <option value="Sun">Sunday</option>
+      <option value="Wed">Wednesday</option>
+    </select>
+  </div>
+  <button class="run-btn" id="runBtn" onclick="runAnalysis()">🔥 RUN</button>
+</div>
+
+<div class="tabs" id="tabsContainer"></div>
+
+<div class="content" id="mainContent">
+  <div class="empty">
+    <div class="icon">🎰</div>
+    <div class="text">Select target day & hit RUN</div>
+    <div class="sub">14 modules • 30K Monte Carlo sims • Markov chains</div>
+  </div>
+</div>
+
+<div class="footer">
+  <p>⚠️ Statistical pattern analysis only. Every draw is independent & random.<br>
+  Past patterns do NOT guarantee future results. Gamble responsibly.</p>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" style="display:none" onclick="closeModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3 id="modalTitle">Add Draw</h3>
+    <label>Date</label>
+    <input type="date" id="drawDate">
+    <label>Day</label>
+    <select id="drawDay">
+      <option value="Sat">Saturday</option>
+      <option value="Sun">Sunday</option>
+      <option value="Wed">Wednesday</option>
+      <option value="Tue">Tuesday (Special)</option>
+    </select>
+    <label>Top 3 Prizes</label>
+    <div class="row">
+      <div><div class="sub-label">1st Prize</div><input class="num-input" id="p1" maxlength="4" placeholder="0000" inputmode="numeric"></div>
+      <div><div class="sub-label">2nd Prize</div><input class="num-input" id="p2" maxlength="4" placeholder="0000" inputmode="numeric"></div>
+      <div><div class="sub-label">3rd Prize</div><input class="num-input" id="p3" maxlength="4" placeholder="0000" inputmode="numeric"></div>
+    </div>
+    <label>Special (comma separated, optional)</label>
+    <input id="drawSpecial" placeholder="1234, 5678, 9012..." style="font-family:'JetBrains Mono',monospace;font-size:12px">
+    <label>Consolation (comma separated, optional)</label>
+    <input id="drawConsolation" placeholder="1234, 5678, 9012..." style="font-family:'JetBrains Mono',monospace;font-size:12px">
+    <div class="actions">
+      <button class="cancel-btn" onclick="closeModal()">Cancel</button>
+      <button class="save-btn" onclick="saveDraw()">Add Draw</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATA & STATE
+// ============================================================
+const DIGITS = "0123456789".split("");
+let activeTab = 0;
+let analysisResults = null;
+let showPerms = {};
+let showAnalysisPanel = {};
+let addDrawOpIdx = 0;
+
+const DEFAULT_DATA = [
+  {name:"MAGNUM",color:"#D4A017",draws:[
+    {date:"2026-04-08",day:"Wed",top3:["6204","4904","1739"],special:["1844","7941","6586","0130","2477","7292","2957","7420","3532","3270"],consolation:["7003","1746","5381","5199","8103","4904","0705","6831","4515","9084"]},
+    {date:"2026-04-07",day:"Tue",top3:["4253","1551","2292"],special:["0999","0944","3712","5403","8636","4835","3953","1443","7611","9618"],consolation:["6955","2349","5667","1817","5360","7465","0869","3676","3531","6885"]},
+    {date:"2026-04-05",day:"Sun",top3:["9089","8692","5801"],special:["4849","5904","9504","4006","0462","5546","0525","2198","2751","0430"],consolation:["7098","0973","1750","0473","9715","8511","3347","9713","7470","0150"]},
+    {date:"2026-04-04",day:"Sat",top3:["2575","4182","7158"],special:["7238","4332","0272","6998","2669","0481","1380","2614","2219","2778"],consolation:["9365","9237","1759","0484","0609","1370","1151","4738","2505","5880"]},
+    {date:"2026-04-01",day:"Wed",top3:["4167","6654","4476"],special:["8805","2530","5215","6696","0630","4931","8181","8756","3770","5745"],consolation:["2066","7607","3578","8231","6157","9894","8952","4814","5874","5805"]},
+    {date:"2026-03-29",day:"Sun",top3:["7559","4229","4917"],special:[],consolation:[]},
+    {date:"2026-03-28",day:"Sat",top3:["8670","6581","5322"],special:[],consolation:[]},
+    {date:"2026-03-25",day:"Wed",top3:["0342","6100","3212"],special:[],consolation:[]},
+    {date:"2026-03-22",day:"Sun",top3:["4260","1368","1493"],special:[],consolation:[]},
+    {date:"2026-03-21",day:"Sat",top3:["0198","2030","1197"],special:[],consolation:[]},
+    {date:"2026-03-18",day:"Wed",top3:["9991","2289","3337"],special:[],consolation:[]},
+    {date:"2026-03-15",day:"Sun",top3:["6069","8893","3082"],special:[],consolation:[]},
+    {date:"2026-03-14",day:"Sat",top3:["6921","9955","3226"],special:[],consolation:[]},
+    {date:"2026-03-11",day:"Wed",top3:["6230","2031","0301"],special:[],consolation:[]},
+    {date:"2026-03-08",day:"Sun",top3:["9595","0001","3320"],special:[],consolation:[]},
+    {date:"2026-03-07",day:"Sat",top3:["2580","7199","8046"],special:[],consolation:[]},
+    {date:"2026-03-04",day:"Wed",top3:["9680","0400","9570"],special:[],consolation:[]},
+    {date:"2026-03-01",day:"Sun",top3:["3737","2866","9791"],special:[],consolation:[]},
+    {date:"2026-02-28",day:"Sat",top3:["8609","9592","2529"],special:[],consolation:[]},
+    {date:"2026-02-25",day:"Wed",top3:["0913","1992","6129"],special:[],consolation:[]}
+  ]},
+  {name:"TOTO",color:"#DC2626",draws:[
+    {date:"2026-04-08",day:"Wed",top3:["7498","1568","3021"],special:["9287","0696","4288","1990","3553","9588","9041","2136","8546","7701"],consolation:["0261","6544","1272","8052","2135","5667","9356","1624","4560","2640"]},
+    {date:"2026-04-07",day:"Tue",top3:["0249","4974","7584"],special:["0422","1185","1430","1829","1901","4989","5952","7589","9251","9515"],consolation:["1485","3106","4112","5417","6856","7822","8027","8113","9202","9212"]},
+    {date:"2026-04-05",day:"Sun",top3:["5884","3282","1175"],special:[],consolation:[]},
+    {date:"2026-04-04",day:"Sat",top3:["8077","0522","6556"],special:[],consolation:[]},
+    {date:"2026-04-01",day:"Wed",top3:["7497","6981","7696"],special:["5993","3740","8943","4956","2875","5215","0739","1433","9597","5283"],consolation:["0603","2256","4811","3199","4666","7163","3843","1646","7199","4665"]},
+    {date:"2026-03-29",day:"Sun",top3:["6889","7350","1031"],special:[],consolation:[]},
+    {date:"2026-03-22",day:"Sun",top3:["2956","6464","3967"],special:[],consolation:[]}
+  ]},
+  {name:"DAMACAI",color:"#2563EB",draws:[
+    {date:"2026-04-08",day:"Wed",top3:["7878","7586","9509"],special:["0354","1598","0688","0316","2603","9951","4400","0153","2891","5217"],consolation:["5208","9229","8909","9815","1673","3708","8852","8383","7475","0729"]},
+    {date:"2026-04-07",day:"Tue",top3:["6459","4225","1605"],special:["4813","2914","1681","4190","4456","3751","5619","8137","1027","1925"],consolation:["6999","7130","2683","6223","5651","8987","9303","9017","5856","4030"]},
+    {date:"2026-04-05",day:"Sun",top3:["2325","7330","0920"],special:["3410","4366","4811","5657","6230","7248","7782","7803","7810","7891"],consolation:["1774","2346","2523","2991","6137","7068","7318","7491","8945","9508"]},
+    {date:"2026-04-04",day:"Sat",top3:["9196","0313","6348"],special:["1273","6094","6815","6895","7018","7706","8048","8213","9347","9583"],consolation:["0483","0606","0743","1638","4053","5060","5623","5888","6526","9080"]},
+    {date:"2026-04-01",day:"Wed",top3:["5766","6730","0610"],special:[],consolation:[]},
+    {date:"2026-03-29",day:"Sun",top3:["9984","5322","4836"],special:["1883","1914","2395","2901","3084","3170","5686","7201","8169","8479"],consolation:["0561","0593","0644","1056","4055","5540","7132","8670","8856","9038"]},
+    {date:"2026-03-28",day:"Sat",top3:["4963","3969","8799"],special:["0202","2621","2767","4106","4741","5785","6671","6701","8104","8698"],consolation:["0923","1430","1504","4635","5587","5773","6764","8204","8246","9418"]},
+    {date:"2026-03-25",day:"Wed",top3:["5129","5428","0215"],special:["0755","1136","1409","3103","3486","4338","4551","6903","7866","9363"],consolation:["0522","2363","2670","3264","3659","4082","8091","8663","9275","9645"]},
+    {date:"2026-03-22",day:"Sun",top3:["4955","5172","5964"],special:["2367","2410","2961","4313","6354","6400","6562","7926","8817","9599"],consolation:["0187","0659","1830","3569","3593","6174","7952","8400","8552","9934"]},
+    {date:"2026-03-21",day:"Sat",top3:["8154","4579","1226"],special:["1223","2948","3074","3183","3261","3514","3946","5611","7428","9005"],consolation:["0286","4061","4617","4723","5031","6004","6006","6970","8826","9428"]},
+    {date:"2026-03-18",day:"Wed",top3:["9009","0016","1123"],special:["0201","1268","3063","3942","4338","4527","5584","6465","7403","9258"],consolation:["1544","1879","2571","3399","3588","4831","6091","7050","7691","8058"]},
+    {date:"2026-03-15",day:"Sun",top3:["9872","1674","3855"],special:["0212","0265","0663","0863","1327","3073","3255","5368","8581","9806"],consolation:["0072","1597","2009","2852","3037","3039","4150","4497","4751","5709"]},
+    {date:"2026-03-14",day:"Sat",top3:["1994","4307","9514"],special:["0520","1993","3223","5238","5866","6700","7717","8785","9019","9117"],consolation:["0385","2540","3050","3484","3872","7143","7340","9606","9852","9922"]},
+    {date:"2026-03-11",day:"Wed",top3:["9638","2439","5327"],special:["0630","2922","4401","4736","4993","5909","6459","7053","7095","8289"],consolation:["1228","4459","5974","6232","6419","7049","7858","8082","8551","9276"]},
+    {date:"2026-03-08",day:"Sun",top3:["1790","1484","3659"],special:["0651","1166","3796","4683","5196","6691","6742","6988","7154","7505"],consolation:["0291","0707","0843","1381","2942","2951","3544","4540","8343","9998"]}
+  ]}
+];
+
+let operators = JSON.parse(JSON.stringify(DEFAULT_DATA));
+
+// Load from localStorage
+function loadData(){
+  try{const s=localStorage.getItem('beast4d_data');if(s)operators=JSON.parse(s);}catch(e){}
+}
+function saveData(){
+  try{localStorage.setItem('beast4d_data',JSON.stringify(operators));}catch(e){}
+}
+loadData();
+
+// ============================================================
+// ANALYSIS ENGINE (all 14 modules)
+// ============================================================
+function getDigitFreq(numbers){
+  const f=[{},{},{},{}];DIGITS.forEach(d=>f.forEach(x=>x[d]=0));
+  numbers.forEach(n=>{if(n&&n.length===4)for(let i=0;i<4;i++)f[i][n[i]]++});return f;
+}
+function getWeightedFreq(draws){
+  const f=[{},{},{},{}];DIGITS.forEach(d=>f.forEach(x=>x[d]=0));
+  draws.forEach((dr,idx)=>{
+    const w=idx<5?3:idx<10?2:1;
+    [...dr.top3,...(dr.special||[]),...(dr.consolation||[])].filter(Boolean).forEach(n=>{
+      if(n.length===4)for(let i=0;i<4;i++)f[i][n[i]]+=w;
+    });
+  });return f;
+}
+function getDayFreq(draws,day){
+  const dd=draws.filter(d=>d.day===day);
+  const all=[],t3=[];
+  dd.forEach(d=>{t3.push(...d.top3);all.push(...d.top3,...(d.special||[]),...(d.consolation||[]));});
+  return{allFreq:getDigitFreq(all.filter(Boolean)),top3Freq:getDigitFreq(t3),count:dd.length};
+}
+function buildMarkov(numbers){
+  const t={};DIGITS.forEach(d=>{t[d]={};DIGITS.forEach(d2=>t[d][d2]=0)});
+  numbers.forEach(n=>{if(n&&n.length===4)for(let i=0;i<3;i++)t[n[i]][n[i+1]]++});
+  const p={};DIGITS.forEach(fr=>{const tot=Object.values(t[fr]).reduce((a,b)=>a+b,0);
+    p[fr]={};DIGITS.forEach(to=>p[fr][to]=tot>0?t[fr][to]/tot:0.1)});return p;
+}
+function monteCarlo(numbers,n=30000){
+  const pp=[0,1,2,3].map(pos=>{
+    const f={};DIGITS.forEach(d=>f[d]=0);
+    numbers.forEach(num=>{if(num&&num.length===4)f[num[pos]]++});
+    const tot=Object.values(f).reduce((a,b)=>a+b,0)||1;
+    let cum=0;return DIGITS.map(d=>{cum+=f[d]/tot;return{d,cum}});
+  });
+  const r={};
+  for(let i=0;i<n;i++){
+    let num="";for(let pos=0;pos<4;pos++){
+      const rv=Math.random();const ch=pp[pos].find(({cum})=>rv<=cum)||pp[pos][9];num+=ch.d;
+    }r[num]=(r[num]||0)+1;
+  }return r;
+}
+function chiSquare(numbers){
+  return[0,1,2,3].map(pos=>{
+    const f={};DIGITS.forEach(d=>f[d]=0);
+    numbers.forEach(n=>{if(n&&n.length===4)f[n[pos]]++});
+    const tot=Object.values(f).reduce((a,b)=>a+b,0);const exp=tot/10;let chi=0;
+    const digits={};DIGITS.forEach(d=>{
+      const o=f[d];chi+=((o-exp)**2)/(exp||1);
+      const z=(o-exp)/Math.sqrt(exp||1);
+      digits[d]={obs:o,exp:exp.toFixed(1),z:z.toFixed(2),status:z>1.5?"HOT":z<-1.5?"COLD":"NORMAL"};
+    });return{chiSq:chi.toFixed(2),sig:chi>16.92,digits};
+  });
+}
+function momentum(draws){
+  const recent=[],older=[];
+  draws.forEach((dr,idx)=>{
+    const nums=[...dr.top3,...(dr.special||[]),...(dr.consolation||[])].filter(Boolean);
+    if(idx<5)recent.push(...nums);else if(idx<10)older.push(...nums);
+  });
+  return[0,1,2,3].map(pos=>{
+    const rf={},of={};DIGITS.forEach(d=>{rf[d]=0;of[d]=0});
+    recent.forEach(n=>{if(n.length===4)rf[n[pos]]++});
+    older.forEach(n=>{if(n.length===4)of[n[pos]]++});
+    const rt=Math.max(Object.values(rf).reduce((a,b)=>a+b,0),1);
+    const ot=Math.max(Object.values(of).reduce((a,b)=>a+b,0),1);
+    const m={};DIGITS.forEach(d=>{
+      const ch=rf[d]/rt-of[d]/ot;m[d]={change:ch,trend:ch>0.03?"UP":ch<-0.03?"DOWN":"FLAT"};
+    });return m;
+  });
+}
+function findRepeats(draws){
+  const cnt={},dts={};
+  draws.forEach(dr=>{
+    [...dr.top3,...(dr.special||[]),...(dr.consolation||[])].filter(Boolean).forEach(n=>{
+      cnt[n]=(cnt[n]||0)+1;if(!dts[n])dts[n]=[];if(!dts[n].includes(dr.date))dts[n].push(dr.date);
+    });
+  });
+  return Object.entries(cnt).filter(([,c])=>c>=2).map(([n,c])=>({number:n,count:c,dates:dts[n]}));
+}
+function crossOp(ops){
+  const sets=ops.map(op=>{const s=new Set();
+    op.draws.forEach(dr=>{[...dr.top3,...(dr.special||[]),...(dr.consolation||[])].filter(Boolean).forEach(n=>s.add(n))});
+    return{name:op.name,nums:s};
+  });
+  const shared=[];
+  for(let i=0;i<sets.length;i++)for(let j=i+1;j<sets.length;j++){
+    const common=[...sets[i].nums].filter(n=>sets[j].nums.has(n));
+    if(common.length>0)shared.push({ops:`${sets[i].name}&${sets[j].name}`,numbers:common});
+  }return shared;
+}
+function digitSumZone(draws){
+  const sums=[];draws.forEach(dr=>dr.top3.forEach(n=>{
+    if(n.length===4)sums.push([...n].reduce((a,d)=>a+parseInt(d),0));
+  }));
+  const freq={};sums.forEach(s=>freq[s]=(freq[s]||0)+1);
+  let bz=[0,5],bc=0;
+  for(let s=0;s<=32;s++){let c=0;for(let i=s;i<=s+5;i++)c+=freq[i]||0;if(c>bc){bc=c;bz=[s,s+5];}}
+  return{freq,zone:bz,total:sums.length,coverage:bc};
+}
+function pairFreq(numbers){
+  const p=[{},{},{}];
+  numbers.forEach(n=>{if(n&&n.length===4)for(let i=0;i<3;i++){const pp=n.slice(i,i+2);p[i][pp]=(p[i][pp]||0)+1;}});return p;
+}
+function oddEvenTop(draws){
+  const pat={};draws.forEach(dr=>dr.top3.forEach(n=>{
+    const p=[...n].map(d=>parseInt(d)%2===1?"O":"E").join("");pat[p]=(pat[p]||0)+1;
+  }));
+  return new Set(Object.entries(pat).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([p])=>p));
+}
+function getPerms(num){
+  const perms=new Set();
+  function perm(arr,l=0){if(l===arr.length-1){perms.add(arr.join(""));return;}
+    for(let i=l;i<arr.length;i++){[arr[l],arr[i]]=[arr[i],arr[l]];perm([...arr],l+1);}
+  }perm(num.split(""));perms.delete(num);return[...perms];
+}
+
+// MASTER FUSION
+function masterFusion(opDraws,targetDay,allOps){
+  const allNums=[];
+  opDraws.forEach(d=>allNums.push(...d.top3,...(d.special||[]),...(d.consolation||[]).filter(Boolean)));
+  const nums=allNums.filter(Boolean);
+  const wf=getWeightedFreq(opDraws);
+  const df=getDayFreq(opDraws,targetDay);
+  const mk=buildMarkov(nums);
+  const mc=monteCarlo(nums,30000);
+  const mcMax=Math.max(...Object.values(mc),1);
+  const chi=chiSquare(nums);
+  const mom=momentum(opDraws);
+  const reps=findRepeats(opDraws);
+  const repSet=new Set(reps.map(r=>r.number));
+  const repCnt={};reps.forEach(r=>repCnt[r.number]=r.count);
+  const sz=digitSumZone(opDraws);
+  const pf=pairFreq(nums);
+  const topOE=oddEvenTop(opDraws);
+
+  const crossNums=new Set();
+  if(allOps){crossOp(allOps).forEach(c=>c.numbers.forEach(n=>crossNums.add(n)));}
+
+  const hotPos=[0,1,2,3].map(p=>{const h=new Set();DIGITS.forEach(d=>{if(chi[p].digits[d].status==="HOT")h.add(d)});return h});
+  const upPos=[0,1,2,3].map(p=>{const u=new Set();DIGITS.forEach(d=>{if(mom[p][d].trend==="UP")u.add(d)});return u});
+  const mirrors=new Set((opDraws[0]?.top3||[]).map(n=>n.split("").reverse().join("")).filter(r=>!(opDraws[0]?.top3||[]).includes(r)));
+
+  const wProbs=wf.map(f=>{const t=Object.values(f).reduce((a,b)=>a+b,0)||1;const p={};DIGITS.forEach(d=>p[d]=f[d]/t);return p});
+  const dProbs=df.allFreq.map(f=>{const t=Object.values(f).reduce((a,b)=>a+b,0)||1;const p={};DIGITS.forEach(d=>p[d]=f[d]/t);return p});
+
+  const topD=[0,1,2,3].map(pos=>{
+    const c={};DIGITS.forEach(d=>c[d]=(wf[pos][d]||0)*2+(df.allFreq[pos][d]||0)*5+(df.top3Freq[pos][d]||0)*8);
+    return Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([d])=>d);
+  });
+
+  const scores={};
+  for(const d1 of topD[0])for(const d2 of topD[1])for(const d3 of topD[2])for(const d4 of topD[3]){
+    const num=d1+d2+d3+d4;let s=0;
+    let ps=1,ds=1;
+    for(let i=0;i<4;i++){ps*=wProbs[i][num[i]]||0.05;ds*=dProbs[i][num[i]]||0.05;}
+    s+=ps*15000+ds*20000;
+    for(let i=0;i<4;i++){if(hotPos[i].has(num[i]))s+=3.75;if(upPos[i].has(num[i]))s+=2.5;}
+    const dsum=[...num].reduce((a,d)=>a+parseInt(d),0);
+    if(dsum>=sz.zone[0]&&dsum<=sz.zone[1])s+=10;
+    s+=Math.min(((pf[0][num.slice(0,2)]||0)+(pf[1][num.slice(1,3)]||0)+(pf[2][num.slice(2,4)]||0))*0.5,10);
+    const oe=[...num].map(d=>parseInt(d)%2===1?"O":"E").join("");
+    if(topOE.has(oe))s+=5;
+    scores[num]=s;
+  }
+
+  nums.forEach(num=>{
+    if(num.length===4&&!(num in scores)){
+      let s=0,ps=1,ds=1;
+      for(let i=0;i<4;i++){ps*=wProbs[i][num[i]]||0.05;ds*=dProbs[i][num[i]]||0.05;}
+      s+=ps*15000+ds*20000;
+      const dsum=[...num].reduce((a,d)=>a+parseInt(d),0);
+      if(dsum>=sz.zone[0]&&dsum<=sz.zone[1])s+=10;
+      for(let i=0;i<4;i++){if(hotPos[i].has(num[i]))s+=3.75;if(upPos[i].has(num[i]))s+=2.5;}
+      scores[num]=s;
+    }
+  });
+
+  Object.keys(scores).forEach(num=>{
+    let mp=1;for(let i=0;i<3;i++)mp*=mk[num[i]]?.[num[i+1]]||0.1;
+    scores[num]+=mp*1500;
+    scores[num]+=((mc[num]||0)/mcMax)*10;
+    if(mirrors.has(num))scores[num]+=8;
+    if(repSet.has(num))scores[num]+=(repCnt[num]||1)*25;
+    if(crossNums.has(num))scores[num]+=20;
+  });
+
+  const sorted=Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+
+  // Markov top sequences
+  const mTop=[];
+  DIGITS.forEach(start=>{
+    let beams=[{seq:start,prob:1}];
+    for(let step=0;step<3;step++){
+      const nb=[];beams.forEach(({seq,prob})=>{
+        const cur=seq[seq.length-1];
+        DIGITS.slice().sort((a,b)=>(mk[cur]?.[b]||0)-(mk[cur]?.[a]||0)).slice(0,4).forEach(next=>{
+          nb.push({seq:seq+next,prob:prob*(mk[cur]?.[next]||0.1)});
+        });
+      });nb.sort((a,b)=>b.prob-a.prob);beams=nb.slice(0,6);
+    }
+    mTop.push(...beams.slice(0,2));
+  });
+  mTop.sort((a,b)=>b.prob-a.prob);
+
+  return{
+    predictions:sorted.slice(0,20),
+    analysis:{
+      chiSquare:chi,momentum:mom,digitSumZone:sz,
+      repeats:reps,crossOperator:crossNums.size,
+      markovTop:mTop.slice(0,5),mirrorCandidates:[...mirrors],
+      daySpecificCount:df.count
+    }
+  };
+}
+
+// ============================================================
+// UI RENDERING
+// ============================================================
+function renderTabs(){
+  const c=document.getElementById('tabsContainer');
+  c.innerHTML=operators.map((op,i)=>`
+    <button class="tab${i===activeTab?' active':''}" style="--tab-color:${op.color}" onclick="switchTab(${i})">
+      ${op.name}<div class="count">${op.draws.length} draws</div>
+    </button>
+  `).join('');
+}
+
+function switchTab(idx){activeTab=idx;renderTabs();renderContent();}
+
+function renderContent(){
+  const op=operators[activeTab];
+  const res=analysisResults?.[op.name];
+  const maxScore=res?res.predictions[0]?.[1]||1:1;
+  
+  let html=`
+    <button class="add-btn" onclick="openAddDraw(${activeTab})">+ Add New Draw Result</button>
+    <div class="section-title">📋 Recent Draws</div>
+    <div style="max-height:200px;overflow-y:auto;margin-bottom:20px">
+      ${op.draws.slice(0,10).map((dr,i)=>`
+        <div class="draw-item">
+          <span class="date">${dr.date}</span>
+          <span class="day-tag">${dr.day}</span>
+          <div class="nums">
+            <span class="p1">${dr.top3[0]}</span>
+            <span class="p2">${dr.top3[1]}</span>
+            <span class="p3">${dr.top3[2]}</span>
+          </div>
+          ${(dr.special?.length>0)?`<span class="extra">+${(dr.special?.length||0)+(dr.consolation?.length||0)}</span>`:''}
+          <button class="del-btn" onclick="deleteDraw(${activeTab},${i})" title="Delete">✕</button>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  if(res){
+    const targetDay=document.getElementById('targetDay').value;
+    html+=`
+      <div class="section-title" style="color:${op.color}">
+        🏆 ${op.name} — Top Predictions <span style="font-size:9px;color:#555">(${targetDay})</span>
+      </div>
+    `;
+    
+    res.predictions.slice(0,10).forEach(([num,score],i)=>{
+      const signals=[];
+      const a=res.analysis;
+      if(a.repeats.find(r=>r.number===num))signals.push({text:'🔄 REPEAT',cls:'repeat'});
+      if(a.mirrorCandidates.includes(num))signals.push({text:'🪞 MIRROR',cls:'mirror'});
+      const dsum=[...num].reduce((a,d)=>a+parseInt(d),0);
+      if(dsum>=a.digitSumZone.zone[0]&&dsum<=a.digitSumZone.zone[1])signals.push({text:`✅ SUM=${dsum}`,cls:'sum'});
+      
+      const isTop=i<3;
+      const pct=Math.round((score/maxScore)*100);
+      
+      html+=`
+        <div class="pred-card${isTop?' top3':''}" style="--accent:${op.color}" onclick="togglePerms('${num}')">
+          <div class="rank-badge ${isTop?'top':'normal'}" style="${isTop?`background:${op.color}`:''}">${i+1}</div>
+          <div>
+            <div class="pred-num" style="color:${isTop?'#fff':'#ccc'}">${num}</div>
+            <div class="conf-bar" style="width:120px"><div class="fill" style="width:${pct}%;background:${op.color}"></div></div>
+          </div>
+          <div style="display:flex;gap:3px;flex-wrap:wrap;margin-left:8px">
+            ${signals.map(s=>`<span class="signal ${s.cls}">${s.text}</span>`).join('')}
+          </div>
+          <div class="pred-score">
+            <div class="label">Score</div>
+            <div class="val" style="color:${isTop?op.color:'#aaa'}">${score.toFixed(1)}</div>
+          </div>
+        </div>
+        <div class="perms" id="perms_${num}" style="display:${showPerms[num]?'block':'none'}">
+          <span style="color:#555">Permutations:</span> ${getPerms(num).slice(0,8).map(p=>`<span>${p}</span>`).join('')}
+        </div>
+      `;
+    });
+
+    // Analysis toggle
+    const showA=showAnalysisPanel[op.name];
+    html+=`<button class="analysis-toggle" onclick="toggleAnalysis('${op.name}')">${showA?'▼ Hide':'▶ Show'} Analysis Details</button>`;
+    
+    if(showA){
+      const a=res.analysis;
+      html+=`<div class="analysis-grid">
+        <div class="analysis-box">
+          <div class="title">Chi-Square Hot Digits</div>
+          ${[0,1,2,3].map(p=>{
+            const hot=DIGITS.filter(d=>a.chiSquare[p].digits[d].status==="HOT");
+            return hot.length?`<div class="item hot">Pos ${p+1}: ${hot.join(", ")} 🔥</div>`:'';
+          }).join('')}
+          ${[0,1,2,3].every(p=>!DIGITS.some(d=>a.chiSquare[p].digits[d].status==="HOT"))?'<div class="item info">No significant deviations</div>':''}
+        </div>
+        <div class="analysis-box">
+          <div class="title">Momentum Trending Up</div>
+          ${[0,1,2,3].map(p=>{
+            const up=DIGITS.filter(d=>a.momentum[p][d].trend==="UP");
+            return up.length?`<div class="item up">Pos ${p+1}: ${up.join(", ")} 📈</div>`:'';
+          }).join('')}
+        </div>
+        <div class="analysis-box">
+          <div class="title">Digit Sum Zone</div>
+          <div class="item" style="font-size:15px;font-weight:700;color:#fff">Sum ${a.digitSumZone.zone[0]}-${a.digitSumZone.zone[1]}</div>
+          <div class="item info">${a.digitSumZone.coverage}/${a.digitSumZone.total} winners (${Math.round(a.digitSumZone.coverage/a.digitSumZone.total*100)}%)</div>
+        </div>
+        <div class="analysis-box">
+          <div class="title">Signals Found</div>
+          ${a.repeats.length?`<div class="item info">🔄 ${a.repeats.length} repeat numbers</div>`:''}
+          ${a.crossOperator?`<div class="item info">🌐 ${a.crossOperator} cross-op numbers</div>`:''}
+          ${a.mirrorCandidates.length?`<div class="item info">🪞 ${a.mirrorCandidates.join(", ")}</div>`:''}
+          <div class="item info">📅 ${a.daySpecificCount} day-specific draws</div>
+          <div class="item info">🤖 Markov: ${a.markovTop.slice(0,3).map(m=>m.seq).join(", ")}</div>
+        </div>
+      </div>`;
+    }
+  }else{
+    html+=`
+      <div class="empty">
+        <div class="icon">🎰</div>
+        <div class="text">Select target day & hit 🔥 RUN</div>
+        <div class="sub">14 modules • 30K Monte Carlo sims • Markov chains</div>
+      </div>
+    `;
+  }
+
+  document.getElementById('mainContent').innerHTML=html;
+}
+
+function togglePerms(num){showPerms[num]=!showPerms[num];const el=document.getElementById('perms_'+num);if(el)el.style.display=showPerms[num]?'block':'none';}
+function toggleAnalysis(name){showAnalysisPanel[name]=!showAnalysisPanel[name];renderContent();}
+
+function deleteDraw(opIdx,drawIdx){
+  if(!confirm('Delete this draw?'))return;
+  operators[opIdx].draws.splice(drawIdx,1);saveData();renderTabs();renderContent();
+}
+
+// ============================================================
+// RUN ANALYSIS
+// ============================================================
+function runAnalysis(){
+  const btn=document.getElementById('runBtn');
+  btn.classList.add('loading');btn.innerHTML='<span class="loading-dots"><span>⏳</span> <span>A</span><span>N</span><span>A</span><span>L</span><span>Y</span><span>Z</span><span>I</span><span>N</span><span>G</span></span>';
+  btn.disabled=true;
+  
+  const targetDay=document.getElementById('targetDay').value;
+  
+  setTimeout(()=>{
+    const allOps=operators.map(op=>({name:op.name,draws:op.draws}));
+    analysisResults={};
+    operators.forEach(op=>{
+      analysisResults[op.name]=masterFusion(op.draws,targetDay,allOps);
+    });
+    btn.classList.remove('loading');btn.innerHTML='🔥 RUN';btn.disabled=false;
+    showPerms={};
+    renderContent();
+  },150);
+}
+
+// ============================================================
+// ADD DRAW MODAL
+// ============================================================
+function openAddDraw(opIdx){
+  addDrawOpIdx=opIdx;
+  document.getElementById('modalTitle').textContent='Add Draw — '+operators[opIdx].name;
+  document.getElementById('modalOverlay').style.display='flex';
+  document.getElementById('drawDate').value='';
+  document.getElementById('p1').value='';document.getElementById('p2').value='';document.getElementById('p3').value='';
+  document.getElementById('drawSpecial').value='';document.getElementById('drawConsolation').value='';
+}
+function closeModal(){document.getElementById('modalOverlay').style.display='none';}
+function saveDraw(){
+  const date=document.getElementById('drawDate').value;
+  const day=document.getElementById('drawDay').value;
+  const p1=document.getElementById('p1').value.padStart(4,'0');
+  const p2=document.getElementById('p2').value.padStart(4,'0');
+  const p3=document.getElementById('p3').value.padStart(4,'0');
+  if(!date||p1.length!==4||p2.length!==4||p3.length!==4){alert('Please fill in date and all 3 prizes');return;}
+  const sp=document.getElementById('drawSpecial').value.split(/[,\s]+/).filter(n=>n.length===4);
+  const cn=document.getElementById('drawConsolation').value.split(/[,\s]+/).filter(n=>n.length===4);
+  operators[addDrawOpIdx].draws.unshift({date,day,top3:[p1,p2,p3],special:sp,consolation:cn});
+  operators[addDrawOpIdx].draws.sort((a,b)=>b.date.localeCompare(a.date));
+  saveData();closeModal();renderTabs();renderContent();
+}
+
+// Numeric only on prize inputs
+document.querySelectorAll('.num-input').forEach(el=>{
+  el.addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'');});
+});
+
+// ============================================================
+// SERVICE WORKER REGISTRATION
+// ============================================================
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').then(()=>console.log('SW registered')).catch(()=>{});
+}
+
+// INIT
+renderTabs();
+renderContent();
+</script>
+</body>
+</html>
