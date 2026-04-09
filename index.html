@@ -648,7 +648,7 @@ function renderPredict(){
     const logo=opLogos[o.name]||'';
     h+=`<button class="optab${i===activeOp?' active':''}" style="--tab-color:${o.color}" onclick="activeOp=${i};render()">
       <div class="op-logo">${logo}</div>
-      <div class="op-name">${o.name}</div>
+      <div class="op-name" style="color:${o.color}">${o.name}</div>
       <div class="ct">${o.draws.length} draws</div>
     </button>`;
   });
