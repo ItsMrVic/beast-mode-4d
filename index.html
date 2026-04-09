@@ -991,122 +991,39 @@ async function autoFetchResults(){
             }
             
             const chunk=text.substring(startIdx,endIdx);
-            const chunkLower=chunk.toLowerCase();
+            // Strip all HTML tags
+            const cleanText=chunk.replace(/<[^>]*>/g,' ').replace(/&\w+;/g,' ').replace(/\s+/g,' ');
             
-            function extractNums(str){
-              const raw=[...str.matchAll(/\b(\d{4})\b/g)].map(m=>m[1]);
-              return cleanNums(raw);
-            }
+            // Extract all 4-digit numbers
+            const rawNums=[...cleanText.matchAll(/\b(\d{4})\b/g)].map(m=>m[1]);
+            const nums=cleanNums(rawNums);
             
-            // ROBUST SECTION PARSER v3
-            // Problem: "Special" can appear in draw description ("Special Draw")
-            // Solution: Find ALL occurrences, pick the one that's a real section header
-            
-            // Find all positions of section keywords
-            function findAllPositions(text,keywords){
-              const positions=[];
-              keywords.forEach(kw=>{
-                let idx=0;
-                while((idx=text.indexOf(kw,idx))!==-1){
-                  positions.push(idx);
-                  idx+=kw.length;
-                }
-              });
-              return positions.sort((a,b)=>a-b);
-            }
-            
-            const specialPositions=findAllPositions(chunkLower,['special','starter','khas']);
-            const consolPositions=findAllPositions(chunkLower,['consolation','consolasi','saguhati']);
-            
-            // The REAL consolation header is the last one (section headers come after content)
-            // But actually it's the one that has numbers AFTER it
-            let consolationIdx=-1;
-            for(const pos of consolPositions){
-              const after=chunk.substring(pos,pos+500);
-              const numsAfter=extractNums(after);
-              if(numsAfter.length>=5){consolationIdx=pos;break;}
-            }
-            
-            // The REAL special header is the last "special/starter" that comes BEFORE consolation
-            // and has numbers after it (not "Special Draw" in title)
-            let specialIdx=-1;
-            for(const pos of specialPositions){
-              // Must come before consolation (or end of chunk if no consolation)
-              const boundary=consolationIdx>0?consolationIdx:chunk.length;
-              if(pos<boundary){
-                const after=chunk.substring(pos,Math.min(pos+500,boundary));
-                const numsAfter=extractNums(after);
-                // A real section header has 5+ numbers after it
-                if(numsAfter.length>=5){specialIdx=pos;}
-              }
-            }
-            
-            let top3=[],special=[],consolation=[];
-            
-            if(specialIdx>0 && consolationIdx>specialIdx){
-              // BEST: Both headers found with numbers after them
-              const prizeSection=chunk.substring(0,specialIdx);
-              const specialSection=chunk.substring(specialIdx,consolationIdx);
-              const consolationSection=chunk.substring(consolationIdx);
+            // We need at least 3 numbers for top 3 prizes
+            if(nums.length>=3){
+              // Skip draw/round numbers that appear before actual prizes
+              // Draw IDs like "352/26" or "#6115" often have nearby 4-digit fragments
+              let startFrom=0;
               
-              const prizeNums=extractNums(prizeSection);
-              special=extractNums(specialSection);
-              consolation=extractNums(consolationSection);
-              
-              // Top 3 = last 3 numbers before Special header
-              if(prizeNums.length>=3){
-                top3=prizeNums.slice(prizeNums.length-3);
-              }else if(prizeNums.length>0){
-                top3=prizeNums;
+              // Look at context before first number - if it mentions "draw", "round", "#", skip first num
+              const beforeNums=cleanText.substring(0,cleanText.indexOf(nums[0])||100).toLowerCase();
+              if(/draw|round|cabutan|#|no\.|nombor/.test(beforeNums)&&nums.length>23){
+                startFrom=1;
               }
               
-            }else if(specialIdx>0){
-              // Only Special found
-              const prizeSection=chunk.substring(0,specialIdx);
-              const restSection=chunk.substring(specialIdx);
-              const prizeNums=extractNums(prizeSection);
-              const restNums=extractNums(restSection);
+              // Also filter: if a number appears in the date string, skip it
+              const dateNums=date.replace(/-/g,'').match(/\d{4}/g)||[];
+              const filtered=nums.filter(n=>!dateNums.includes(n));
+              const useNums=filtered.length>=3?filtered:nums;
               
-              if(prizeNums.length>=3)top3=prizeNums.slice(prizeNums.length-3);
-              special=restNums.slice(0,10);
-              consolation=restNums.slice(10,20);
+              const top3=useNums.slice(startFrom,startFrom+3);
+              const special=useNums.slice(startFrom+3,startFrom+13);
+              const consolation=useNums.slice(startFrom+13,startFrom+23);
               
-            }else if(consolationIdx>0){
-              // Only Consolation found
-              const beforeConsol=chunk.substring(0,consolationIdx);
-              const consolSection=chunk.substring(consolationIdx);
-              const beforeNums=extractNums(beforeConsol);
-              consolation=extractNums(consolSection);
-              
-              // Before consolation: top3 + special
-              if(beforeNums.length>=13){
-                top3=beforeNums.slice(beforeNums.length-13,beforeNums.length-10);
-                special=beforeNums.slice(beforeNums.length-10);
-              }else if(beforeNums.length>=3){
-                top3=beforeNums.slice(0,3);
-                special=beforeNums.slice(3);
+              // Sanity check: top 3 shouldn't all be the same
+              if(top3[0]!==top3[1]||top3[1]!==top3[2]){
+                results[op.name]={top3,special,consolation};
+                break;
               }
-              
-            }else{
-              // FALLBACK: No headers found at all
-              const allNums=extractNums(chunk);
-              if(allNums.length>=23){
-                // Take last 23 numbers (skip draw IDs at start)
-                const offset=allNums.length-23;
-                top3=allNums.slice(offset,offset+3);
-                special=allNums.slice(offset+3,offset+13);
-                consolation=allNums.slice(offset+13,offset+23);
-              }else if(allNums.length>=3){
-                top3=allNums.slice(0,3);
-                special=allNums.slice(3,13);
-                consolation=allNums.slice(13);
-              }
-            }
-            
-            // Validate: need at least 3 for top prizes
-            if(top3.length>=3 && (top3[0]!==top3[1]||top3[1]!==top3[2])){
-              results[op.name]={top3:top3.slice(0,3),special:special.slice(0,10),consolation:consolation.slice(0,10)};
-              break;
             }
           }
           if(results[op.name])break;
