@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v2.5</title>
+<title>Beast Mode 4D v3.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -189,8 +189,8 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v2.5</span>
-      <div class="sub">Self-Learning Prediction Engine</div>
+      <h1>BEAST MODE 4D</h1><span class="ver">v3.0</span>
+      <div class="sub">AI-Powered Prediction Engine</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
   </div>
@@ -339,7 +339,7 @@ const DEFAULT_OPS=[
 ]}];
 
 // Default module weights (self-learning adjusts these)
-const DEFAULT_WEIGHTS={position:1,daySpecific:1.3,markov:1,monteCarlo:0.8,chiSquare:1,momentum:1,digitSum:0.9,pairs:0.8,oddEven:0.5,repeat:1.5,crossOp:1.2,mirror:0.6,elimination:1.1,streak:1};
+const DEFAULT_WEIGHTS={position:1,daySpecific:1.3,markov:1,monteCarlo:0.8,chiSquare:1,momentum:1,digitSum:0.9,pairs:0.8,oddEven:0.5,repeat:1.5,crossOp:1.2,mirror:0.6,elimination:1.1,streak:1,entropy:1,genetic:1.2};
 
 function load(key,def){try{const s=localStorage.getItem(key);return s?JSON.parse(s):JSON.parse(JSON.stringify(def));}catch(e){return JSON.parse(JSON.stringify(def));}}
 function save(key,val){try{localStorage.setItem(key,JSON.stringify(val));}catch(e){}}
@@ -385,6 +385,178 @@ function streakDetect(draws){
     });
   });
   return Object.entries(streaks).filter(([,c])=>c>=2).sort((a,b)=>b[1]-a[1]);
+}
+
+// NEW: Shannon Entropy per digit position (lower = more biased = exploitable)
+function entropyScoring(draws){
+  const allNums=draws.flatMap(d=>[...d.top3,...(d.special||[]),...(d.consolation||[])].filter(Boolean));
+  const maxEntropy=Math.log2(10); // 3.322 bits for uniform 0-9
+  return[0,1,2,3].map(pos=>{
+    const freq={};DIGITS.forEach(d=>freq[d]=0);
+    allNums.forEach(n=>{if(n.length===4)freq[n[pos]]++});
+    const total=Object.values(freq).reduce((a,b)=>a+b,0)||1;
+    let entropy=0;
+    DIGITS.forEach(d=>{
+      const p=freq[d]/total;
+      if(p>0)entropy-=p*Math.log2(p);
+    });
+    const bias=1-(entropy/maxEntropy); // 0=perfectly random, 1=completely biased
+    return{entropy:entropy.toFixed(3),maxEntropy:maxEntropy.toFixed(3),bias:(bias*100).toFixed(1),biasLevel:bias>0.05?'EXPLOITABLE':bias>0.02?'SLIGHT':'RANDOM'};
+  });
+}
+
+// NEW: Genetic Algorithm - evolve best candidate numbers
+function geneticAlgorithm(draws,targetDay,popSize=200,generations=100){
+  const allNums=draws.flatMap(d=>[...d.top3,...(d.special||[]),...(d.consolation||[])].filter(Boolean));
+  const dayNums=draws.filter(d=>d.day===targetDay).flatMap(d=>[...d.top3,...(d.special||[]),...(d.consolation||[])].filter(Boolean));
+  
+  // Precompute fitness components
+  const posFreq=[0,1,2,3].map(pos=>{const f={};DIGITS.forEach(d=>f[d]=0);allNums.forEach(n=>{if(n.length===4)f[n[pos]]++});return f;});
+  const dayPosFreq=[0,1,2,3].map(pos=>{const f={};DIGITS.forEach(d=>f[d]=0);dayNums.forEach(n=>{if(n.length===4)f[n[pos]]++});return f;});
+  const pairF=[{},{},{}];allNums.forEach(n=>{if(n&&n.length===4)for(let i=0;i<3;i++){const p=n.slice(i,i+2);pairF[i][p]=(pairF[i][p]||0)+1}});
+  const repSet=new Set();draws.forEach(d=>{const c={};[...d.top3,...(d.special||[]),...(d.consolation||[])].filter(Boolean).forEach(n=>c[n]=(c[n]||0)+1);Object.entries(c).forEach(([n,v])=>{if(v>=2)repSet.add(n)})});
+  
+  const sz=digitSumZone(draws);
+  
+  // Fitness function
+  function fitness(num){
+    let score=0;
+    for(let i=0;i<4;i++)score+=(posFreq[i][num[i]]||0)*2+(dayPosFreq[i][num[i]]||0)*5;
+    for(let i=0;i<3;i++)score+=(pairF[i][num.slice(i,i+2)]||0)*3;
+    const dsum=[...num].reduce((a,d)=>a+parseInt(d),0);
+    if(dsum>=sz.zone[0]&&dsum<=sz.zone[1])score+=20;
+    if(repSet.has(num))score+=50;
+    // Penalize all-same digits
+    if(new Set(num.split('')).size===1)score-=100;
+    return score;
+  }
+  
+  // Create random individual
+  function randomNum(){
+    let n='';for(let i=0;i<4;i++){
+      const weights=DIGITS.map(d=>(posFreq[i][d]||0)+1);
+      const total=weights.reduce((a,b)=>a+b,0);
+      let r=Math.random()*total,cum=0;
+      for(let j=0;j<10;j++){cum+=weights[j];if(r<=cum){n+=DIGITS[j];break;}}
+    }return n;
+  }
+  
+  // Initialize population
+  let pop=Array.from({length:popSize},()=>randomNum());
+  
+  // Evolve
+  for(let gen=0;gen<generations;gen++){
+    const scored=pop.map(n=>({n,f:fitness(n)})).sort((a,b)=>b.f-a.f);
+    const elite=scored.slice(0,Math.floor(popSize*0.2)).map(s=>s.n);
+    const newPop=[...elite];
+    
+    while(newPop.length<popSize){
+      // Tournament selection
+      const a=scored[Math.floor(Math.random()*popSize*0.5)];
+      const b=scored[Math.floor(Math.random()*popSize*0.5)];
+      const parent1=a.f>b.f?a.n:b.n;
+      const c=scored[Math.floor(Math.random()*popSize*0.5)];
+      const d=scored[Math.floor(Math.random()*popSize*0.5)];
+      const parent2=c.f>d.f?c.n:d.n;
+      
+      // Crossover
+      const cx=Math.floor(Math.random()*3)+1;
+      let child=parent1.slice(0,cx)+parent2.slice(cx);
+      
+      // Mutation (10% chance per digit)
+      child=child.split('').map((ch,i)=>{
+        if(Math.random()<0.1){
+          const weights=DIGITS.map(d=>(posFreq[i][d]||0)+1);
+          const total=weights.reduce((a,b)=>a+b,0);
+          let r=Math.random()*total,cum=0;
+          for(let j=0;j<10;j++){cum+=weights[j];if(r<=cum)return DIGITS[j];}
+        }return ch;
+      }).join('');
+      
+      newPop.push(child);
+    }
+    pop=newPop;
+  }
+  
+  const final=pop.map(n=>({n,f:fitness(n)})).sort((a,b)=>b.f-a.f);
+  // Deduplicate
+  const seen=new Set();
+  return final.filter(({n})=>{if(seen.has(n))return false;seen.add(n);return true;}).slice(0,10);
+}
+
+// NEW: Confidence % calculator - multi-module agreement score
+function calculateConfidence(num,allScores,predictions,analysis){
+  const maxScore=predictions[0]?.[1]||1;
+  const score=allScores[num]||0;
+  
+  // Base confidence from relative score position (0-40%)
+  let conf=Math.min((score/maxScore)*40,40);
+  
+  // Bonus: repeat number (+15%)
+  if(analysis.reps.find(r=>r.n===num))conf+=15;
+  
+  // Bonus: in digit sum zone (+10%)
+  const dsum=[...num].reduce((a,d)=>a+parseInt(d),0);
+  if(dsum>=analysis.sz.zone[0]&&dsum<=analysis.sz.zone[1])conf+=10;
+  
+  // Bonus: streak (+10%)
+  if(analysis.streaks.find(([n])=>n===num))conf+=10;
+  
+  // Bonus: cross-operator (+8%)
+  if(analysis.crossOp>0)conf+=3;
+  
+  // Bonus: in GA top 10 (+12%)
+  if(analysis.gaTop&&analysis.gaTop.find(g=>g.n===num))conf+=12;
+  
+  // Bonus: entropy exploitable positions used (+5%)
+  if(analysis.entropy){
+    let entBonus=0;
+    analysis.entropy.forEach((e,i)=>{if(e.biasLevel==='EXPLOITABLE')entBonus+=1.25;});
+    conf+=entBonus;
+  }
+  
+  return Math.min(Math.round(conf),95); // Cap at 95% - never 100% on lottery
+}
+
+// NEW: Expected Value calculator
+function calculateEV(num,betAmount,betType){
+  // Malaysian 4D payout structure per RM1
+  const payouts={
+    big:{first:2500,second:1000,third:500,special:180,consolation:60},
+    small:{first:3500,second:2000,third:1000}
+  };
+  // Probability per number: 1/10000 for each prize position
+  // Big: 23 winning positions = 23/10000
+  // Small: 3 winning positions = 3/10000
+  const p=betType==='big'?payouts.big:payouts.small;
+  let ev=0;
+  if(betType==='big'){
+    ev=(1/10000)*(p.first+p.second+p.third)+(10/10000)*p.special+(10/10000)*p.consolation;
+  }else{
+    ev=(1/10000)*(p.first+p.second+p.third);
+  }
+  ev=ev*betAmount-betAmount; // Net EV
+  return{ev:ev.toFixed(2),roi:((ev/betAmount)*100).toFixed(1),breakeven:Math.ceil(1/((betType==='big'?23:3)/10000))};
+}
+
+// NEW: iBox value calculator
+function iBoxValue(num){
+  const digits=num.split('');
+  const unique=new Set(digits).size;
+  // Number of permutations based on unique digits
+  const permMap={4:24,3:12,2:6,1:1}; // all unique, 1 pair, 2 pairs/triple, all same
+  const factorials={4:24,3:6,2:2,1:1};
+  const digitCount={};digits.forEach(d=>digitCount[d]=(digitCount[d]||0)+1);
+  const divisor=Object.values(digitCount).reduce((a,c)=>a*factorials[c],1);
+  const perms=24/divisor;
+  
+  // iBox payouts (per RM1, Big, 1st prize)
+  const straightPayout=2500;
+  const iboxPayout=straightPayout/perms;
+  
+  return{perms,iboxPayout:iboxPayout.toFixed(0),straightPayout,
+    recommendation:perms<=6?'IBOX BETTER VALUE':'STRAIGHT BETTER',
+    reason:perms<=6?`Only ${perms} perms = RM${iboxPayout.toFixed(0)} per RM1 iBox`:`${perms} perms dilutes payout to RM${iboxPayout.toFixed(0)}`};
 }
 
 function getPerms(num){const perms=new Set();function p(arr,l=0){if(l===arr.length-1){perms.add(arr.join(""));return}for(let i=l;i<arr.length;i++){[arr[l],arr[i]]=[arr[i],arr[l]];p([...arr],l+1)}}p(num.split(""));perms.delete(num);return[...perms];}
@@ -559,7 +731,20 @@ function masterFusion(opDraws,targetDay,allOps,w=moduleWeights){
 
   const sorted=Object.entries(scores).sort((a,b)=>b[1]-a[1]);
   const recycled=recyclingDetector(opDraws);
-  return{predictions:sorted.slice(0,20),allScores:Object.fromEntries(sorted.slice(0,200)),analysis:{chi,mom,sz,reps,crossOp:crossNums.size,mirrors:[...mirrors],dayCount:df.count,eliminated,streaks:streaks.slice(0,5),recycled}};
+  const entropy=entropyScoring(opDraws);
+  const gaTop=geneticAlgorithm(opDraws,targetDay,150,80);
+  
+  // Boost GA winners in fusion scores
+  gaTop.forEach(({n,f},i)=>{if(scores[n])scores[n]+=f*0.3*(1-i*0.05);});
+  
+  const finalSorted=Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+  const analysisData={chi,mom,sz,reps,crossOp:crossNums.size,mirrors:[...mirrors],dayCount:df.count,eliminated,streaks:streaks.slice(0,5),recycled,entropy,gaTop};
+  
+  // Calculate confidence for top predictions
+  const allScoresMap=Object.fromEntries(finalSorted.slice(0,200));
+  const predsWithConf=finalSorted.slice(0,20).map(([n,s])=>({num:n,score:s,confidence:calculateConfidence(n,allScoresMap,finalSorted.slice(0,20),analysisData)}));
+  
+  return{predictions:finalSorted.slice(0,20),predsWithConf,allScores:allScoresMap,analysis:analysisData};
 }
 
 // ============================================================
@@ -630,6 +815,7 @@ function renderPredict(){
   
   // Controls
   let h=`<div class="controls" style="padding:12px 0"><div class="ctrl-group"><label>Target Day</label><select id="tDay" onchange="render()"><option value="Sat">Saturday</option><option value="Sun">Sunday</option><option value="Wed">Wednesday</option><option value="Tue">Tuesday (Special)</option></select></div>
+  <div class="ctrl-group" style="max-width:90px"><label>Budget (RM)</label><input type="number" id="budgetInput" min="5" max="500" value="${localStorage.getItem('b4d_budget')||'50'}" style="text-align:center;font-weight:700" onchange="localStorage.setItem('b4d_budget',this.value)"></div>
   <button class="btn btn-fire" onclick="runBeast()" id="runBtn">🔥 RUN</button></div>`;
   
   // Op tabs
@@ -672,27 +858,42 @@ function renderPredict(){
     
     h+=`<div class="section-title" style="color:${op.color}">🏆 ${op.name} — Predictions <span style="font-size:9px;color:var(--dim2)">(${tDay})</span></div>`;
     
-    res.predictions.slice(0,10).forEach(([num,score],i)=>{
+    const predsConf=res.predsWithConf||res.predictions.slice(0,10).map(([n,s])=>({num:n,score:s,confidence:50}));
+    predsConf.slice(0,10).forEach((pred,i)=>{
+      const num=pred.num,score=pred.score,conf=pred.confidence;
       const isTop=i<3;const pct=Math.round((score/maxS)*100);
       const signals=[];
-      if(res.analysis.reps.find(r=>r.n===num))signals.push(['🔄 REPEAT','repeat']);
-      if(res.analysis.mirrors.includes(num))signals.push(['🪞 MIRROR','mirror']);
+      if(res.analysis.reps.find(r=>r.n===num))signals.push(['🔄 RPT','repeat']);
+      if(res.analysis.mirrors.includes(num))signals.push(['🪞 MIR','mirror']);
       const dsum=[...num].reduce((a,d)=>a+parseInt(d),0);
       const z=res.analysis.sz.zone;
-      if(dsum>=z[0]&&dsum<=z[1])signals.push([`✅ SUM=${dsum}`,'sum']);
-      if(res.analysis.streaks.find(([n])=>n===num))signals.push(['🔥 STREAK','hot']);
+      if(dsum>=z[0]&&dsum<=z[1])signals.push([`✅ S${dsum}`,'sum']);
+      if(res.analysis.streaks.find(([n])=>n===num))signals.push(['🔥 STK','hot']);
+      if(res.analysis.gaTop&&res.analysis.gaTop.find(g=>g.n===num))signals.push(['🧬 GA','ga']);
+      
+      const ibox=iBoxValue(num);
+      const confColor=conf>=60?'var(--green)':conf>=40?'var(--amber)':'var(--dim)';
       
       h+=`<div class="pred${isTop?' top':''}" style="--accent:${op.color}" onclick="togglePerm('${num}')">
         <div class="rk ${isTop?'t':'n'}" style="${isTop?`background:${op.color}`:''}">${i+1}</div>
-        <div><div class="nm" style="color:${isTop?'#fff':'#ccc'}">${num}</div><div class="conf-bar"><div class="fill" style="width:${pct}%;background:${op.color}"></div></div></div>
-        <div style="display:flex;gap:2px;flex-wrap:wrap;max-width:90px">${signals.map(([t,c])=>`<span class="badge" style="background:${c==='repeat'?'#c33':c==='mirror'?'#83a':c==='hot'?'#c60':'#263'}">${t}</span>`).join('')}</div>
+        <div style="flex:1">
+          <div class="nm" style="color:${isTop?'#fff':'#ccc'}">${num}</div>
+          <div style="display:flex;gap:6px;align-items:center;margin-top:2px">
+            <div class="conf-bar" style="width:80px"><div class="fill" style="width:${pct}%;background:${op.color}"></div></div>
+            <span style="font-size:10px;font-weight:800;color:${confColor}">${conf}%</span>
+            <span style="font-size:7px;color:var(--dim3);background:#1a1a2e;padding:1px 4px;border-radius:3px">${ibox.perms}P</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:2px;flex-wrap:wrap;max-width:80px">${signals.map(([t,c])=>`<span class="badge" style="background:${c==='repeat'?'#c33':c==='mirror'?'#83a':c==='hot'?'#c60':c==='ga'?'#6366f1':'#263'}">${t}</span>`).join('')}</div>
         <div class="sc"><div class="l">Score</div><div class="v" style="color:${isTop?op.color:'#aaa'}">${score.toFixed(1)}</div></div>
       </div>
       <div class="perms-row" id="pm_${num}" style="display:${showPermsMap[num]?'block':'none'}">
         ${(()=>{
           const sp=scorePermutations(num,res.allScores||{},5);
-          if(sp.length===0||sp[0].score===0)return`<span style="color:var(--dim3)">Perms:</span> ${getPerms(num).slice(0,6).map(p=>'<span>'+p+'</span>').join('')}`;
-          return`<div style="font-size:9px;color:var(--dim3);margin-bottom:4px">🔀 RANKED PERMUTATIONS:</div>${sp.map((p,pi)=>'<div class="sperm"><span class="pn">'+p.num+'</span><span class="ps">score: '+p.score.toFixed(1)+'</span>'+(pi===0?'<span class="ptag" style="background:var(--green)">BEST</span>':'')+'</div>').join('')}`;
+          const ib=iBoxValue(num);
+          let permHtml=`<div style="font-size:8px;color:var(--dim3);margin-bottom:3px">💰 iBox: ${ib.perms} perms, RM${ib.iboxPayout}/RM1 Big 1st | ${ib.recommendation}</div>`;
+          if(sp.length===0||sp[0].score===0)return permHtml+`<span style="color:var(--dim3)">Perms:</span> ${getPerms(num).slice(0,6).map(p=>'<span>'+p+'</span>').join('')}`;
+          return permHtml+`<div style="font-size:9px;color:var(--dim3);margin-bottom:3px">🔀 RANKED PERMUTATIONS:</div>${sp.map((p,pi)=>'<div class="sperm"><span class="pn">'+p.num+'</span><span class="ps">'+p.score.toFixed(1)+'</span>'+(pi===0?'<span class="ptag" style="background:var(--green)">BEST</span>':'')+'</div>').join('')}`;
         })()}
       </div>`;
     });
@@ -712,6 +913,8 @@ function renderPredict(){
           ${a.streaks.length?`<div class="i info">🔥 ${a.streaks.length} streaking</div>`:''}
           <div class="i info">📅 ${a.dayCount} day draws</div>
         </div>
+        <div class="abox"><div class="t">🔬 Entropy (Bias)</div>${a.entropy?a.entropy.map((e,i)=>`<div class="i" style="color:${e.biasLevel==='EXPLOITABLE'?'#ff8800':e.biasLevel==='SLIGHT'?'var(--amber)':'var(--dim)'}">Pos ${i+1}: ${e.bias}% ${e.biasLevel}</div>`).join(''):'<div class="i info">N/A</div>'}</div>
+        <div class="abox"><div class="t">🧬 Genetic Algo Top</div>${a.gaTop?a.gaTop.slice(0,5).map(g=>`<div class="i info" style="font-family:monospace;letter-spacing:2px">${g.n} <span style="color:var(--dim3)">(${g.f})</span></div>`).join(''):'<div class="i info">N/A</div>'}</div>
       </div>`;
     }
     
@@ -734,9 +937,10 @@ function renderPredict(){
     
     // BUY LIST
     if(lastResults&&Object.keys(lastResults).length===operators.length){
-      const buyList=generateBuyList(lastResults,50);
+      const userBudget=parseInt(document.getElementById('budgetInput')?.value||localStorage.getItem('b4d_budget')||'50');
+      const buyList=generateBuyList(lastResults,userBudget);
       const opColors={MAGNUM:'#D4A017',TOTO:'#DC2626',DAMACAI:'#2563EB'};
-      h+=`<div class="buy-section"><h3>🛒 Ready-to-Buy List <span style="font-size:10px;font-weight:400;color:var(--dim)">RM50 budget</span></h3>`;
+      h+=`<div class="buy-section"><h3>🛒 Ready-to-Buy List <span style="font-size:10px;font-weight:400;color:var(--dim)">RM${userBudget} budget</span></h3>`;
       ["MAGNUM","TOTO","DAMACAI"].forEach(opName=>{
         const opItems=buyList.filter(b=>b.op===opName);
         if(opItems.length===0)return;
@@ -748,11 +952,11 @@ function renderPredict(){
       });
       const total=buyList.reduce((a,b)=>a+b.amount,0);
       h+=`<div class="buy-total"><span>SATURDAY TOTAL</span><span>RM${total}</span></div>`;
-      if(total<50)h+=`<div style="font-size:9px;color:var(--dim2);margin-top:4px;text-align:center">💰 RM${50-total} reserved for next draw</div>`;
+      if(total<userBudget)h+=`<div style="font-size:9px;color:var(--dim2);margin-top:4px;text-align:center">💰 RM${userBudget-total} reserved for next draw</div>`;
       h+=`</div>`;
     }
   }else if(!lastResults){
-    h+=`<div style="text-align:center;padding:40px 0;color:var(--dim3)"><div style="font-size:44px;margin-bottom:10px">🎰</div><div style="font-size:12px;color:var(--dim2)">Hit 🔥 RUN to generate predictions</div><div style="font-size:9px;margin-top:4px">14 modules • Self-learning • 30K simulations</div></div>`;
+    h+=`<div style="text-align:center;padding:40px 0;color:var(--dim3)"><div style="font-size:44px;margin-bottom:10px">🎰</div><div style="font-size:12px;color:var(--dim2)">Hit 🔥 RUN to generate predictions</div><div style="font-size:9px;margin-top:4px">16 modules • Genetic Algorithm • Entropy • Self-learning</div></div>`;
   }
   
   pg.innerHTML=h;
@@ -800,7 +1004,7 @@ function renderDashboard(){
   // Module weights visualization
   h+=`<div class="section-title">🧠 Self-Learning Module Weights</div><div class="card">`;
   const maxW=Math.max(...Object.values(moduleWeights));
-  const wNames={position:"Position Freq",daySpecific:"Day-Specific",markov:"Markov Chain",monteCarlo:"Monte Carlo",chiSquare:"Chi-Square",momentum:"Momentum",digitSum:"Digit Sum",pairs:"Pair Freq",oddEven:"Odd/Even",repeat:"Repeat Detect",crossOp:"Cross-Operator",mirror:"Mirror Pattern",elimination:"Elimination",streak:"Streak Detect"};
+  const wNames={position:"Position Freq",daySpecific:"Day-Specific",markov:"Markov Chain",monteCarlo:"Monte Carlo",chiSquare:"Chi-Square",momentum:"Momentum",digitSum:"Digit Sum",pairs:"Pair Freq",oddEven:"Odd/Even",repeat:"Repeat Detect",crossOp:"Cross-Operator",mirror:"Mirror Pattern",elimination:"Elimination",streak:"Streak Detect",entropy:"Entropy Bias",genetic:"Genetic Algo"};
   Object.entries(moduleWeights).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{
     const pct=Math.round(v/maxW*100);
     const color=v>1.2?'var(--green)':v<0.8?'var(--toto)':'var(--amber)';
@@ -998,19 +1202,12 @@ async function autoFetchResults(){
             const rawNums=[...cleanText.matchAll(/\b(\d{4})\b/g)].map(m=>m[1]);
             const nums=cleanNums(rawNums);
             
-            // We need at least 3 numbers for top 3 prizes
             if(nums.length>=3){
-              // Skip draw/round numbers that appear before actual prizes
-              // Draw IDs like "352/26" or "#6115" often have nearby 4-digit fragments
               let startFrom=0;
-              
-              // Look at context before first number - if it mentions "draw", "round", "#", skip first num
               const beforeNums=cleanText.substring(0,cleanText.indexOf(nums[0])||100).toLowerCase();
               if(/draw|round|cabutan|#|no\.|nombor/.test(beforeNums)&&nums.length>23){
                 startFrom=1;
               }
-              
-              // Also filter: if a number appears in the date string, skip it
               const dateNums=date.replace(/-/g,'').match(/\d{4}/g)||[];
               const filtered=nums.filter(n=>!dateNums.includes(n));
               const useNums=filtered.length>=3?filtered:nums;
@@ -1019,7 +1216,6 @@ async function autoFetchResults(){
               const special=useNums.slice(startFrom+3,startFrom+13);
               const consolation=useNums.slice(startFrom+13,startFrom+23);
               
-              // Sanity check: top 3 shouldn't all be the same
               if(top3[0]!==top3[1]||top3[1]!==top3[2]){
                 results[op.name]={top3,special,consolation};
                 break;
