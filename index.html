@@ -1086,15 +1086,21 @@ function renderData(){
   
   // Operator data stats
   h+=`<div class="section-title">📊 Operator Database Details</div>`;
-  operators.forEach(op=>{
+  operators.forEach((op,idx)=>{
     const oldest=op.draws.length>0?op.draws[op.draws.length-1].date:'N/A';
     const newest=op.draws.length>0?op.draws[0].date:'N/A';
     const totalNums=op.draws.reduce((a,d)=>a+d.top3.length+(d.special?.length||0)+(d.consolation?.length||0),0);
-    const c=op.name==='MAGNUM'?'var(--mag)':op.name==='TOTO'?'var(--toto)':'var(--dam)';
     h+=`<div class="card" style="border-left:3px solid ${op.color};margin-bottom:8px;padding:10px 12px">
-      <div style="font-size:12px;font-weight:700;color:${op.color};margin-bottom:4px">${op.name}</div>
-      <div style="font-size:10px;color:var(--dim)">Draws: <b style="color:var(--text)">${op.draws.length}</b> | Numbers: <b style="color:var(--text)">${totalNums}</b></div>
-      <div style="font-size:9px;color:var(--dim3)">Range: ${oldest} → ${newest}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div style="font-size:12px;font-weight:700;color:${op.color}">${op.name}</div>
+        <div style="font-size:10px;color:var(--dim);background:#1a1a2e;padding:2px 8px;border-radius:4px">${op.draws.length} draws</div>
+      </div>
+      <div style="font-size:10px;color:var(--dim);margin-bottom:4px">Numbers: <b style="color:var(--text)">${totalNums}</b> | Range: ${oldest} → ${newest}</div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <button class="btn btn-sm btn-outline" style="flex:1;font-size:9px;border-color:${op.color}33;color:${op.color}" onclick="document.getElementById('impOp${idx}').click()">📥 Import</button>
+        <input type="file" id="impOp${idx}" accept=".json" onchange="importData(event)" style="display:none">
+        <button class="btn btn-sm btn-outline" style="flex:1;font-size:9px;border-color:#441111;color:#884444" onclick="clearOperatorData(${idx},'${op.name}')">🗑️ Clear Data</button>
+      </div>
     </div>`;
   });
   
@@ -1508,6 +1514,15 @@ function mergeOperatorData(data){
   
   saveAll();render();
   toast(`✅ ${newDraws.length} ${opName} draws imported! Total: ${operators[opIdx].draws.length}`);
+}
+
+function clearOperatorData(opIdx,opName){
+  const count=operators[opIdx].draws.length;
+  if(count===0){toast(`${opName} database is already empty`);return;}
+  if(!confirm(`Clear ALL ${opName} data?\n\n• ${count} draws will be deleted\n• Other operators will NOT be affected\n• Predictions & weights are kept\n\nThis cannot be undone!`))return;
+  operators[opIdx].draws=[];
+  saveAll();render();
+  toast(`🗑️ ${opName} data cleared (${count} draws removed)`);
 }
 
 // Numeric inputs
