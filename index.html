@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v3.0</title>
+<title>Beast Mode 4D v3.1</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -203,7 +203,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v3.0</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v3.1</span>
       <div class="sub">AI-Powered Prediction Engine</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
@@ -1082,7 +1082,21 @@ function renderData(){
   h+=`<div class="section-title">📥 Import & Restore</div>
   <input type="file" id="importFile" accept=".json" onchange="importData(event)" style="display:none">
   <button class="btn btn-outline" onclick="document.getElementById('importFile').click()" style="width:100%;margin-bottom:8px">📤 Import Data (JSON)</button>
-  <div style="font-size:9px;color:var(--dim3);margin-bottom:16px">Restore from a previously exported backup file. This will REPLACE all current data.</div>`;
+  <div style="font-size:9px;color:var(--dim3);margin-bottom:16px">Supports full backups AND operator-specific historical data files. Auto-detects format and merges without duplicates.</div>`;
+  
+  // Operator data stats
+  h+=`<div class="section-title">📊 Operator Database Details</div>`;
+  operators.forEach(op=>{
+    const oldest=op.draws.length>0?op.draws[op.draws.length-1].date:'N/A';
+    const newest=op.draws.length>0?op.draws[0].date:'N/A';
+    const totalNums=op.draws.reduce((a,d)=>a+d.top3.length+(d.special?.length||0)+(d.consolation?.length||0),0);
+    const c=op.name==='MAGNUM'?'var(--mag)':op.name==='TOTO'?'var(--toto)':'var(--dam)';
+    h+=`<div class="card" style="border-left:3px solid ${op.color};margin-bottom:8px;padding:10px 12px">
+      <div style="font-size:12px;font-weight:700;color:${op.color};margin-bottom:4px">${op.name}</div>
+      <div style="font-size:10px;color:var(--dim)">Draws: <b style="color:var(--text)">${op.draws.length}</b> | Numbers: <b style="color:var(--text)">${totalNums}</b></div>
+      <div style="font-size:9px;color:var(--dim3)">Range: ${oldest} → ${newest}</div>
+    </div>`;
+  });
   
   h+=`<div class="section-title" style="color:var(--toto)">⚠️ Danger Zone</div>
   <button class="btn btn-outline" onclick="var r=deduplicateAll();if(!r)toast('✅ No duplicates found')" style="width:100%;margin-bottom:8px;border-color:#333366;color:#8888cc">🧹 Scan & Remove Duplicates</button>
@@ -1453,13 +1467,47 @@ function importData(event){
   reader.onload=function(e){
     try{
       const data=JSON.parse(e.target.result);
-      if(!data.operators){alert('Invalid backup file');return;}
+      
+      // Check if this is an operator-specific merge file
+      if(data.type==='operator_merge'&&data.operator&&data.draws){
+        mergeOperatorData(data);
+        return;
+      }
+      
+      // Regular full backup import
+      if(!data.operators){alert('Invalid file format. Expected backup or operator data file.');return;}
       if(!confirm('Replace ALL current data with this backup?'))return;
       operators=data.operators;history=data.history||[];moduleWeights=data.moduleWeights||DEFAULT_WEIGHTS;stats=data.stats||stats;
       saveAll();render();toast('Data imported successfully!');
     }catch(err){alert('Error reading file: '+err.message);}
   };
   reader.readAsText(file);event.target.value='';
+}
+
+function mergeOperatorData(data){
+  const opName=data.operator;
+  const opIdx=operators.findIndex(o=>o.name===opName);
+  if(opIdx<0){alert(`Operator "${opName}" not found in app.`);return;}
+  
+  const existingDates=new Set(operators[opIdx].draws.map(d=>d.date));
+  const newDraws=data.draws.filter(d=>!existingDates.has(d.date));
+  const duplicates=data.draws.length-newDraws.length;
+  
+  if(!confirm(`Import ${opName} data:\n\n• ${data.total_draws} total draws in file\n• ${newDraws.length} new draws to add\n• ${duplicates} duplicates (will be skipped)\n• Date range: ${data.date_range}\n\nProceed?`))return;
+  
+  operators[opIdx].draws=[...operators[opIdx].draws,...newDraws];
+  operators[opIdx].draws.sort((a,b)=>b.date.localeCompare(a.date));
+  
+  // Deduplicate just in case
+  const seen=new Set();
+  operators[opIdx].draws=operators[opIdx].draws.filter(d=>{
+    const key=d.date+d.top3.join('');
+    if(seen.has(key))return false;
+    seen.add(key);return true;
+  });
+  
+  saveAll();render();
+  toast(`✅ ${newDraws.length} ${opName} draws imported! Total: ${operators[opIdx].draws.length}`);
 }
 
 // Numeric inputs
