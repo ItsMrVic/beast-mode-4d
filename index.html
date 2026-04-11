@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v3.1</title>
+<title>Beast Mode 4D v3.2</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -203,8 +203,8 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v3.1</span>
-      <div class="sub">AI-Powered Prediction Engine</div>
+      <h1>BEAST MODE 4D</h1><span class="ver">v3.2</span>
+      <div class="sub">AI-Powered Sniper Prediction Engine</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
   </div>
@@ -650,38 +650,97 @@ function scorePermutations(num,fusionScores,topN=3){
 }
 
 // NEW: Generate Buy List with budget allocation
+// CROSS-OPERATOR ANALYSIS & PERMUTATION-AWARE SCORING
+function digitSetKey(num){return num.split('').sort().join('');}
+
+function crossOperatorFusion(allResults){
+  if(!allResults||Object.keys(allResults).length<2)return{hotSets:[],playAllOps:[]};
+  const setScores={};
+  Object.entries(allResults).forEach(([opName,res])=>{
+    if(!res||!res.predictions)return;
+    res.predictions.slice(0,20).forEach(([num,score])=>{
+      const key=digitSetKey(num);
+      if(!setScores[key])setScores[key]={totalScore:0,ops:[],nums:[],bestNum:num,bestScore:0};
+      setScores[key].totalScore+=score;
+      if(!setScores[key].ops.includes(opName))setScores[key].ops.push(opName);
+      setScores[key].nums.push({num,score,op:opName});
+      if(score>setScores[key].bestScore){setScores[key].bestScore=score;setScores[key].bestNum=num;}
+    });
+  });
+  const hotSets=Object.entries(setScores).filter(([,v])=>v.ops.length>=2).sort((a,b)=>b[1].totalScore-a[1].totalScore).slice(0,10).map(([key,v])=>({digitSet:key,ops:v.ops,nums:v.nums,bestNum:v.bestNum,totalScore:v.totalScore,opCount:v.ops.length}));
+  
+  // Play-all-ops: numbers whose digit SET also scores in other operators
+  const playAllOps=[];
+  Object.entries(allResults).forEach(([opName,res])=>{
+    if(!res||!res.predictions)return;
+    res.predictions.slice(0,10).forEach(([num,score])=>{
+      const key=digitSetKey(num);
+      const otherOps=Object.entries(allResults).filter(([n])=>n!==opName).filter(([,r])=>{
+        if(!r||!r.allScores)return false;
+        const perms=getPerms(num);
+        return[num,...perms].some(p=>r.allScores[p]&&r.allScores[p]>0);
+      }).map(([n])=>n);
+      if(otherOps.length>0)playAllOps.push({num,score,originOp:opName,alsoHotIn:otherOps,ibox:iBoxValue(num)});
+    });
+  });
+  playAllOps.sort((a,b)=>b.alsoHotIn.length-a.alsoHotIn.length||b.score-a.score);
+  return{hotSets,playAllOps:playAllOps.slice(0,15)};
+}
+
+function nearMissTracker(predictions,actualNums){
+  const nearMisses=[];
+  if(!predictions||!actualNums||actualNums.length===0)return nearMisses;
+  predictions.forEach(([predNum])=>{
+    actualNums.forEach(actualNum=>{
+      if(predNum===actualNum)return;
+      let diffCount=0;
+      for(let i=0;i<4;i++){if(predNum[i]!==actualNum[i])diffCount++;}
+      if(diffCount===1)nearMisses.push({predicted:predNum,actual:actualNum,type:'1-digit'});
+      if(digitSetKey(predNum)===digitSetKey(actualNum)&&predNum!==actualNum)nearMisses.push({predicted:predNum,actual:actualNum,type:'perm'});
+    });
+  });
+  const seen=new Set();
+  return nearMisses.filter(m=>{const k=m.predicted+m.actual+m.type;if(seen.has(k))return false;seen.add(k);return true;}).slice(0,10);
+}
+
 function generateBuyList(allResults,budget=50){
   const list=[];
   const opOrder=["MAGNUM","TOTO","DAMACAI"];
+  const crossOp=crossOperatorFusion(allResults);
   
   opOrder.forEach(opName=>{
     if(!allResults[opName])return;
     const preds=allResults[opName].predictions;
     
-    // Top 3 straight picks
     preds.slice(0,3).forEach(([num,score],i)=>{
-      list.push({op:opName,num,score,type:'STRAIGHT',rank:i+1,isTop:true});
-      
-      // Best permutation for each top pick
-      const bestPerm=scorePermutations(num,Object.fromEntries(preds),1);
-      if(bestPerm.length>0&&bestPerm[0].score>0){
-        list.push({op:opName,num:bestPerm[0].num,score:bestPerm[0].score,type:'PERM',rank:i+1,parentNum:num,isTop:false});
-      }
+      const ib=iBoxValue(num);
+      const isPlayAll=crossOp.playAllOps.find(p=>p.num===num||digitSetKey(p.num)===digitSetKey(num));
+      // iBox-first strategy: use iBox for numbers with 2+ unique digits (anything except 1111-style)
+      const betType=ib.perms>1?'IBOX':'STRAIGHT';
+      list.push({op:opName,num,score,type:betType,rank:i+1,isTop:true,perms:ib.perms,playAllOps:!!isPlayAll,alsoHotIn:isPlayAll?isPlayAll.alsoHotIn:[]});
     });
   });
   
-  // Sort by score descending
+  // Add cross-operator hot numbers (play on ALL operators)
+  crossOp.playAllOps.slice(0,3).forEach(p=>{
+    const ib=iBoxValue(p.num);
+    const already=list.find(l=>l.num===p.num||digitSetKey(l.num)===digitSetKey(p.num));
+    if(!already){
+      p.alsoHotIn.forEach(otherOp=>{
+        list.push({op:otherOp,num:p.num,score:p.score*0.8,type:'IBOX',rank:0,isTop:false,perms:ib.perms,playAllOps:true,alsoHotIn:[p.originOp],crossOp:true});
+      });
+    }
+  });
+  
   list.sort((a,b)=>b.score-a.score);
   
-  // Allocate budget — higher scores get more
-  const totalScore=list.reduce((a,b)=>a+b.score,0);
+  const totalScore=list.reduce((a,b)=>a+b.score,0)||1;
   list.forEach(item=>{
     const rawAmt=Math.round((item.score/totalScore)*budget);
     item.amount=Math.max(1,Math.min(rawAmt,item.isTop?5:3));
-    item.betType=item.amount>=3?'Big+Small':'Big';
+    item.betType=item.type==='IBOX'?'iBox':'Big+Small';
   });
   
-  // Adjust to fit budget
   let total=list.reduce((a,b)=>a+b.amount,0);
   while(total>budget&&list.length>0){
     const last=list[list.length-1];
@@ -758,6 +817,25 @@ function masterFusion(opDraws,targetDay,allOps,w=moduleWeights,t=moduleToggles){
   
   // Boost GA winners in fusion scores (only if GA enabled)
   if(t.genetic!==false)gaTop.forEach(({n,f},i)=>{if(scores[n])scores[n]+=f*0.3*(1-i*0.05);});
+  
+  // PERMUTATION-AWARE SCORING: Boost all permutations of high-scoring digit sets
+  const digitSetScores={};
+  Object.entries(scores).forEach(([num,score])=>{
+    const key=digitSetKey(num);
+    if(!digitSetScores[key])digitSetScores[key]={total:0,count:0,best:0};
+    digitSetScores[key].total+=score;
+    digitSetScores[key].count++;
+    if(score>digitSetScores[key].best)digitSetScores[key].best=score;
+  });
+  // If a digit set has multiple high-scoring permutations, boost all of them
+  Object.entries(scores).forEach(([num,score])=>{
+    const key=digitSetKey(num);
+    const ds=digitSetScores[key];
+    if(ds.count>=2&&ds.best>0){
+      // Boost proportional to how many permutations scored well
+      scores[num]+=ds.total*0.05*Math.min(ds.count,6);
+    }
+  });
   
   const finalSorted=Object.entries(scores).sort((a,b)=>b[1]-a[1]);
   const analysisData={chi,mom,sz,reps,crossOp:crossNums.size,mirrors:[...mirrors],dayCount:df.count,eliminated,streaks:streaks.slice(0,5),recycled,entropy,gaTop};
@@ -894,6 +972,35 @@ function renderPredict(){
     const maxS=res.predictions[0]?.[1]||1;
     const tDay=document.getElementById('tDay')?.value||'Sat';
     
+    // SNIPER MODE: Cross-operator hot numbers (show only once on first operator)
+    if(activeOp===0&&Object.keys(lastResults).length>=2){
+      const crossOp=crossOperatorFusion(lastResults);
+      if(crossOp.playAllOps.length>0){
+        const opC={MAGNUM:'#D4A017',TOTO:'#DC2626',DAMACAI:'#2563EB'};
+        h+=`<div style="background:linear-gradient(135deg,rgba(255,60,60,0.08),rgba(255,165,0,0.05));border:1px solid rgba(255,100,50,0.3);border-radius:12px;padding:12px;margin-bottom:16px">
+          <div style="font-size:12px;font-weight:800;color:#ff6633;margin-bottom:4px">🎯 SNIPER MODE — Play These on ALL 3 Operators</div>
+          <div style="font-size:8px;color:var(--dim2);margin-bottom:10px">These digit sets scored high across multiple operators. Play as iBox on ALL operators for maximum win coverage.</div>`;
+        crossOp.playAllOps.slice(0,6).forEach((p,idx)=>{
+          const ib=iBoxValue(p.num);
+          h+=`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;${idx<5?'border-bottom:1px solid rgba(255,100,50,0.1)':''}">
+            <span style="font-size:10px;color:#ff6633;font-weight:800;width:18px">${idx+1}</span>
+            <span style="font-family:monospace;font-size:18px;font-weight:900;color:#fff;letter-spacing:3px;min-width:65px">${p.num}</span>
+            <span style="font-size:7px;background:${opC[p.originOp]};color:#fff;padding:1px 4px;border-radius:3px">${p.originOp}</span>
+            <span style="font-size:8px;color:var(--dim3)">→</span>
+            ${p.alsoHotIn.map(op=>`<span style="font-size:7px;background:${opC[op]};color:#fff;padding:1px 4px;border-radius:3px">${op}</span>`).join('')}
+            <span style="font-size:8px;color:var(--dim3);margin-left:auto">iBox ${ib.perms}P</span>
+          </div>`;
+        });
+        // Strategy recommendation
+        const topSniper=crossOp.playAllOps.slice(0,3);
+        const iboxCostPerNum=topSniper.length;
+        h+=`<div style="background:rgba(255,100,50,0.1);border-radius:8px;padding:8px;margin-top:8px">
+          <div style="font-size:9px;color:#ff9966;font-weight:700;margin-bottom:3px">💡 Recommended Strategy:</div>
+          <div style="font-size:8px;color:var(--dim)">Play top ${Math.min(3,topSniper.length)} numbers as <b style="color:#fff">iBox</b> on <b style="color:#fff">all 3 operators</b> = ${Math.min(3,topSniper.length) * 3} bets × RM1 = <b style="color:#ff6633">RM${Math.min(3,topSniper.length) * 3}</b></div>
+        </div></div>`;
+      }
+    }
+    
     h+=`<div class="section-title" style="color:${op.color}">🏆 ${op.name} — Predictions <span style="font-size:9px;color:var(--dim2)">(${tDay})</span></div>`;
     
     const predsConf=res.predsWithConf||res.predictions.slice(0,10).map(([n,s])=>({num:n,score:s,confidence:50}));
@@ -909,27 +1016,39 @@ function renderPredict(){
       if(res.analysis.streaks.find(([n])=>n===num))signals.push(['🔥 STK','hot']);
       if(res.analysis.gaTop&&res.analysis.gaTop.find(g=>g.n===num))signals.push(['🧬 GA','ga']);
       
+      // Check if this number is hot across operators
+      if(lastResults){
+        const key=digitSetKey(num);
+        const otherOps=Object.entries(lastResults).filter(([n])=>n!==op.name).filter(([,r])=>{
+          if(!r||!r.predictions)return false;
+          return r.predictions.slice(0,20).some(([n2])=>digitSetKey(n2)===key);
+        });
+        if(otherOps.length>0)signals.push(['🌐 ALL','allops']);
+      }
+      
       const ibox=iBoxValue(num);
       const confColor=conf>=60?'var(--green)':conf>=40?'var(--amber)':'var(--dim)';
+      const isAllOps=signals.some(([,c])=>c==='allops');
       
-      h+=`<div class="pred${isTop?' top':''}" style="--accent:${op.color}" onclick="togglePerm('${num}')">
+      h+=`<div class="pred${isTop?' top':''}${isAllOps?' allops':''}" style="--accent:${op.color}${isAllOps?';border-color:rgba(255,102,51,0.4)':''}" onclick="togglePerm('${num}')">
         <div class="rk ${isTop?'t':'n'}" style="${isTop?`background:${op.color}`:''}">${i+1}</div>
         <div style="flex:1">
           <div class="nm" style="color:${isTop?'#fff':'#ccc'}">${num}</div>
           <div style="display:flex;gap:6px;align-items:center;margin-top:2px">
-            <div class="conf-bar" style="width:80px"><div class="fill" style="width:${pct}%;background:${op.color}"></div></div>
+            <div class="conf-bar" style="width:70px"><div class="fill" style="width:${pct}%;background:${op.color}"></div></div>
             <span style="font-size:10px;font-weight:800;color:${confColor}">${conf}%</span>
-            <span style="font-size:7px;color:var(--dim3);background:#1a1a2e;padding:1px 4px;border-radius:3px">${ibox.perms}P</span>
+            <span style="font-size:7px;color:var(--dim3);background:#1a1a2e;padding:1px 4px;border-radius:3px">${ibox.perms<=6?'iBox':''}${ibox.perms}P</span>
           </div>
         </div>
-        <div style="display:flex;gap:2px;flex-wrap:wrap;max-width:80px">${signals.map(([t,c])=>`<span class="badge" style="background:${c==='repeat'?'#c33':c==='mirror'?'#83a':c==='hot'?'#c60':c==='ga'?'#6366f1':'#263'}">${t}</span>`).join('')}</div>
+        <div style="display:flex;gap:2px;flex-wrap:wrap;max-width:90px">${signals.map(([t,c])=>`<span class="badge" style="background:${c==='repeat'?'#c33':c==='mirror'?'#83a':c==='hot'?'#c60':c==='ga'?'#6366f1':c==='allops'?'#ff6633':'#263'}">${t}</span>`).join('')}</div>
         <div class="sc"><div class="l">Score</div><div class="v" style="color:${isTop?op.color:'#aaa'}">${score.toFixed(1)}</div></div>
       </div>
       <div class="perms-row" id="pm_${num}" style="display:${showPermsMap[num]?'block':'none'}">
         ${(()=>{
           const sp=scorePermutations(num,res.allScores||{},5);
           const ib=iBoxValue(num);
-          let permHtml=`<div style="font-size:8px;color:var(--dim3);margin-bottom:3px">💰 iBox: ${ib.perms} perms, RM${ib.iboxPayout}/RM1 Big 1st | ${ib.recommendation}</div>`;
+          let permHtml=`<div style="font-size:8px;color:var(--dim3);margin-bottom:3px">💰 iBox: ${ib.perms} perms × RM1 = <b style="color:#fff">RM${ib.perms}</b> covers all orderings | 1st Prize payout: RM${ib.iboxPayout}</div>`;
+          if(isAllOps)permHtml+=`<div style="font-size:8px;color:#ff6633;margin-bottom:3px">🎯 This digit set is hot across operators — play iBox on ALL 3 for RM${ib.perms*3}</div>`;
           if(sp.length===0||sp[0].score===0)return permHtml+`<span style="color:var(--dim3)">Perms:</span> ${getPerms(num).slice(0,6).map(p=>'<span>'+p+'</span>').join('')}`;
           return permHtml+`<div style="font-size:9px;color:var(--dim3);margin-bottom:3px">🔀 RANKED PERMUTATIONS:</div>${sp.map((p,pi)=>'<div class="sperm"><span class="pn">'+p.num+'</span><span class="ps">'+p.score.toFixed(1)+'</span>'+(pi===0?'<span class="ptag" style="background:var(--green)">BEST</span>':'')+'</div>').join('')}`;
         })()}
@@ -978,23 +1097,63 @@ function renderPredict(){
       const userBudget=parseInt(document.getElementById('budgetInput')?.value||localStorage.getItem('b4d_budget')||'50');
       const buyList=generateBuyList(lastResults,userBudget);
       const opColors={MAGNUM:'#D4A017',TOTO:'#DC2626',DAMACAI:'#2563EB'};
-      h+=`<div class="buy-section"><h3>🛒 Ready-to-Buy List <span style="font-size:10px;font-weight:400;color:var(--dim)">RM${userBudget} budget</span></h3>`;
+      const dayName={Sat:'SATURDAY',Sun:'SUNDAY',Wed:'WEDNESDAY',Tue:'TUESDAY'}[document.getElementById('tDay')?.value||'Sat']||'DRAW';
+      h+=`<div class="buy-section"><h3>🛒 Ready-to-Buy List <span style="font-size:10px;font-weight:400;color:var(--dim)">RM${userBudget} budget</span></h3>
+      <div style="font-size:8px;color:#ff9966;margin-bottom:10px">💡 iBox recommended for 4-unique-digit numbers • Play hot numbers across ALL operators</div>`;
       ["MAGNUM","TOTO","DAMACAI"].forEach(opName=>{
         const opItems=buyList.filter(b=>b.op===opName);
         if(opItems.length===0)return;
         h+=`<div class="buy-op"><div class="op-header"><span class="dot" style="background:${opColors[opName]}"></span>${opName}</div>`;
         opItems.forEach(item=>{
-          h+=`<div class="buy-row"><span class="bnum" style="color:${item.isTop?'#fff':'#aaa'}">${item.num}</span><span class="btag" style="background:${item.type==='STRAIGHT'?opColors[opName]:'#555'}">${item.type==='STRAIGHT'?'STRAIGHT':'PERM'}</span><span class="btype">${item.betType}</span><span class="bamt" style="color:${opColors[opName]}">RM${item.amount}</span></div>`;
+          const typeColor=item.type==='IBOX'?'#6366f1':item.type==='STRAIGHT'?opColors[opName]:'#555';
+          const allOpsTag=item.playAllOps?'<span style="font-size:7px;background:#c33;color:#fff;padding:1px 3px;border-radius:3px;margin-left:3px">ALL OPS</span>':'';
+          const crossTag=item.crossOp?'<span style="font-size:7px;background:#6366f1;color:#fff;padding:1px 3px;border-radius:3px;margin-left:3px">CROSS</span>':'';
+          h+=`<div class="buy-row"><span class="bnum" style="color:${item.isTop?'#fff':'#aaa'}">${item.num}</span><span class="btag" style="background:${typeColor}">${item.type}</span>${allOpsTag}${crossTag}<span class="btype">${item.betType}</span><span class="bamt" style="color:${opColors[opName]}">RM${item.amount}</span></div>`;
         });
         h+=`</div>`;
       });
       const total=buyList.reduce((a,b)=>a+b.amount,0);
-      h+=`<div class="buy-total"><span>SATURDAY TOTAL</span><span>RM${total}</span></div>`;
+      h+=`<div class="buy-total"><span>${dayName} TOTAL</span><span>RM${total}</span></div>`;
       if(total<userBudget)h+=`<div style="font-size:9px;color:var(--dim2);margin-top:4px;text-align:center">💰 RM${userBudget-total} reserved for next draw</div>`;
       h+=`</div>`;
+      
+      // CROSS-OPERATOR HOT NUMBERS
+      const crossOp=crossOperatorFusion(lastResults);
+      if(crossOp.playAllOps.length>0){
+        h+=`<div class="alert-box" style="margin-top:12px;border-color:#6366f1;background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(139,92,246,0.04))">
+          <div class="at" style="color:#a78bfa">🌐 Cross-Operator Hot Numbers</div>
+          <div style="font-size:9px;color:var(--dim2);margin-bottom:8px">These digit sets scored high across multiple operators — play iBox on ALL operators for maximum coverage!</div>`;
+        crossOp.playAllOps.slice(0,8).forEach(p=>{
+          const opC={MAGNUM:'#D4A017',TOTO:'#DC2626',DAMACAI:'#2563EB'};
+          h+=`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #1a1a3a">
+            <span style="font-family:monospace;font-size:16px;font-weight:800;color:#fff;letter-spacing:2px;min-width:55px">${p.num}</span>
+            <span style="font-size:7px;background:${opC[p.originOp]};color:#fff;padding:1px 4px;border-radius:3px">${p.originOp}</span>
+            <span style="font-size:9px;color:var(--dim3)">→ also hot in</span>
+            ${p.alsoHotIn.map(op=>`<span style="font-size:7px;background:${opC[op]};color:#fff;padding:1px 4px;border-radius:3px">${op}</span>`).join('')}
+            <span style="font-size:8px;color:var(--dim3);margin-left:auto">${p.ibox.perms}P iBox</span>
+          </div>`;
+        });
+        h+=`<div style="font-size:8px;color:#a78bfa;margin-top:8px;text-align:center">💡 Tip: Play these as iBox on ALL 3 operators for best coverage</div></div>`;
+      }
+      
+      // HOT DIGIT SETS (permutation groups)
+      if(crossOp.hotSets.length>0){
+        h+=`<div class="alert-box" style="margin-top:8px;border-color:#059669;background:linear-gradient(135deg,rgba(5,150,105,0.08),rgba(16,185,129,0.04))">
+          <div class="at" style="color:var(--green)">🔀 Hot Digit Sets (Permutation Groups)</div>
+          <div style="font-size:9px;color:var(--dim2);margin-bottom:6px">Same digits scored high in ${'>'}1 operator — any permutation could win!</div>`;
+        crossOp.hotSets.slice(0,6).forEach(s=>{
+          const opC={MAGNUM:'#D4A017',TOTO:'#DC2626',DAMACAI:'#2563EB'};
+          h+=`<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid #0a2a1a">
+            <span style="font-family:monospace;font-size:13px;font-weight:700;color:var(--green);letter-spacing:3px;min-width:50px">{${s.digitSet}}</span>
+            ${s.ops.map(op=>`<span style="font-size:7px;background:${opC[op]};color:#fff;padding:1px 3px;border-radius:3px">${op}</span>`).join('')}
+            <span style="font-size:8px;color:var(--dim3);margin-left:auto">best: ${s.bestNum}</span>
+          </div>`;
+        });
+        h+=`</div>`;
+      }
     }
   }else if(!lastResults){
-    h+=`<div style="text-align:center;padding:40px 0;color:var(--dim3)"><div style="font-size:44px;margin-bottom:10px">🎰</div><div style="font-size:12px;color:var(--dim2)">Hit 🔥 RUN to generate predictions</div><div style="font-size:9px;margin-top:4px">16 modules • Genetic Algorithm • Entropy • Self-learning</div></div>`;
+    h+=`<div style="text-align:center;padding:40px 0;color:var(--dim3)"><div style="font-size:44px;margin-bottom:10px">🎰</div><div style="font-size:12px;color:var(--dim2)">Hit 🔥 RUN to generate predictions</div><div style="font-size:9px;margin-top:4px">16 modules • Sniper Mode • Cross-Operator • iBox Strategy</div></div>`;
   }
   
   pg.innerHTML=h;
