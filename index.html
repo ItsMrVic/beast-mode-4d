@@ -900,6 +900,7 @@ function closeModal(id){document.getElementById(id).classList.remove('show');}
 // RENDER FUNCTIONS
 // ============================================================
 let lastResults=null;
+let selectedDay=localStorage.getItem('b4d_targetDay')||'Sat';
 
 function render(){
   if(activeNav==='Predict')renderPredict();
@@ -917,7 +918,7 @@ function renderPredict(){
   const pg=document.getElementById('pgPredict');
   
   // Controls
-  let h=`<div class="controls" style="padding:12px 0"><div class="ctrl-group"><label>Target Day</label><select id="tDay" onchange="render()"><option value="Sat">Saturday</option><option value="Sun">Sunday</option><option value="Wed">Wednesday</option><option value="Tue">Tuesday (Special)</option></select></div>
+  let h=`<div class="controls" style="padding:12px 0"><div class="ctrl-group"><label>Target Day</label><select id="tDay" onchange="selectedDay=this.value;localStorage.setItem('b4d_targetDay',this.value);render()"><option value="Sat"${selectedDay==='Sat'?' selected':''}>Saturday</option><option value="Sun"${selectedDay==='Sun'?' selected':''}>Sunday</option><option value="Wed"${selectedDay==='Wed'?' selected':''}>Wednesday</option><option value="Tue"${selectedDay==='Tue'?' selected':''}>Tuesday (Special)</option></select></div>
   <div class="ctrl-group" style="max-width:90px"><label>Budget (RM)</label><input type="number" id="budgetInput" min="5" max="500" value="${localStorage.getItem('b4d_budget')||'50'}" style="text-align:center;font-weight:700" onchange="localStorage.setItem('b4d_budget',this.value)"></div>
   <button class="btn btn-fire" onclick="runBeast()" id="runBtn">🔥 RUN</button></div>`;
   
@@ -1248,7 +1249,7 @@ function renderLive(){
           h+=`<div>
             <div style="font-size:8px;color:var(--dim3);text-transform:uppercase;margin-bottom:4px;font-weight:700">Consolation</div>
             <div style="display:flex;flex-wrap:wrap;gap:4px">
-              ${r.consolation.map(n=>`<span style="font-family:monospace;font-size:12px;color:var(--dim3);background:#111;padding:3px 6px;border-radius:4px;letter-spacing:1px">${n}</span>`).join('')}
+              ${r.consolation.map(n=>`<span style="font-family:monospace;font-size:12px;color:#bbb;background:#1a1a2e;padding:3px 6px;border-radius:4px;letter-spacing:1px">${n}</span>`).join('')}
             </div>
           </div>`;
         }
