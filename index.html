@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v3.2</title>
+<title>Beast Mode 4D v3.3</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -105,6 +105,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
 .hist-nums{display:flex;flex-wrap:wrap;gap:4px}
 .hist-num{font-family:'JetBrains Mono',monospace;font-size:12px;padding:3px 8px;border-radius:6px;background:#1a1a2e;border:1px solid #2a2a3a;font-weight:700;letter-spacing:2px}
 .hist-num.hit{background:#22c55e20;border-color:#22c55e;color:#22c55e}
+.hist-num.perm-hit{background:#f5920020;border-color:#f59200;color:#f59200}
 .hist-num.miss{opacity:0.5}
 
 /* Module weights */
@@ -203,8 +204,8 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v3.2</span>
-      <div class="sub">AI-Powered Sniper Prediction Engine</div>
+      <h1>BEAST MODE 4D</h1><span class="ver">v3.3</span>
+      <div class="sub">AI-Powered Sniper Prediction Engine + DeepSeek AI</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
   </div>
@@ -290,6 +291,28 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- Beast AI Advisor Modal -->
+<div class="modal-bg" id="modalAI">
+  <div class="modal" onclick="event.stopPropagation()" style="max-height:85vh;display:flex;flex-direction:column">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h3 style="margin:0;color:#a78bfa">🤖 Beast AI Advisor</h3>
+      <button onclick="closeModal('modalAI')" style="background:none;border:none;color:var(--dim);font-size:20px;cursor:pointer">✕</button>
+    </div>
+    <div id="aiChat" style="flex:1;overflow-y:auto;margin-bottom:12px;padding:8px;background:#0a0a15;border-radius:8px;min-height:200px;max-height:50vh;font-size:12px;line-height:1.6">
+      <div style="color:#a78bfa;font-style:italic">Beast AI is ready. Ask me anything about your predictions, strategy, or which numbers to buy.</div>
+    </div>
+    <div style="display:flex;gap:6px">
+      <input type="text" id="aiInput" placeholder="Ask Beast AI..." style="flex:1;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:12px;font-family:inherit" onkeydown="if(event.key==='Enter')askBeastAI()">
+      <button class="btn btn-red" onclick="askBeastAI()" style="padding:10px 16px;font-size:11px">Send</button>
+    </div>
+    <div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap">
+      <button class="btn btn-sm btn-outline" style="font-size:8px" onclick="document.getElementById('aiInput').value='Which numbers should I buy for Saturday?';askBeastAI()">Best numbers?</button>
+      <button class="btn btn-sm btn-outline" style="font-size:8px" onclick="document.getElementById('aiInput').value='Analyze my prediction accuracy and tell me how to improve';askBeastAI()">Improve accuracy</button>
+      <button class="btn btn-sm btn-outline" style="font-size:8px" onclick="document.getElementById('aiInput').value='Give me your top 5 sniper picks with iBox strategy for RM20 budget';askBeastAI()">Sniper picks</button>
+    </div>
+  </div>
+</div>
 
 <script>
 // ============================================================
@@ -1093,6 +1116,11 @@ function renderPredict(){
       </div>`;
     }
     
+    // BEAST AI ADVISOR BUTTON
+    if(localStorage.getItem('b4d_dskey')){
+      h+=`<button class="btn" style="width:100%;margin-top:12px;margin-bottom:4px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;font-size:13px;font-weight:800;padding:14px;border-radius:10px;letter-spacing:0.5px" onclick="openModal('modalAI')">🤖 Ask Beast AI Advisor</button>`;
+    }
+    
     // BUY LIST
     if(lastResults&&Object.keys(lastResults).length===operators.length){
       const userBudget=parseInt(document.getElementById('budgetInput')?.value||localStorage.getItem('b4d_budget')||'50');
@@ -1169,13 +1197,31 @@ function renderHistory(){
     h+=`<div style="text-align:center;padding:40px 0;color:var(--dim3)"><div style="font-size:40px;margin-bottom:10px">📜</div><div style="font-size:12px;color:var(--dim2)">No predictions yet</div><div style="font-size:9px;margin-top:4px">Run Beast Mode to start building history</div></div>`;
   }else{
     history.slice().reverse().forEach((entry,i)=>{
+      const opColor=operators.find(o=>o.name===entry.operator)?.color||'#888';
+      const permDetails=entry.permWinDetails||[];
+      const permWinNums=new Set(permDetails.map(p=>p.predicted));
+      
       h+=`<div class="hist-item">
         <div class="hist-header">
-          <div><span class="hist-date">${entry.date}</span> <span style="font-size:10px;color:${operators.find(o=>o.name===entry.operator)?.color||'#888'}">${entry.operator}</span></div>
+          <div><span class="hist-date">${entry.date}</span> <span style="font-size:10px;color:${opColor}">${entry.operator}</span></div>
           <span class="hist-target">${entry.targetDay} target</span>
         </div>
-        <div class="hist-nums">${entry.predictions.map(n=>`<span class="hist-num ${entry.checked?(entry.hits?.includes(n)?'hit':'miss'):''}">${n}</span>`).join('')}</div>
-        ${entry.checked?`<div style="margin-top:8px;font-size:10px">${entry.hits?.length>0?`<span style="color:var(--green)">✅ ${entry.hits.length} hit(s)!</span>`:'<span style="color:var(--dim2)">No direct hits</span>'} ${entry.permHits>0?`<span style="color:var(--amber)"> | ${entry.permHits} perm hit(s)</span>`:''}</div>`:'<div style="margin-top:6px;font-size:9px;color:var(--dim3)">⏳ Not checked yet</div>'}
+        <div class="hist-nums">${entry.predictions.map(n=>{
+          const isHit=entry.checked&&entry.hits?.includes(n);
+          const isPermWin=entry.checked&&permWinNums.has(n);
+          const cls=entry.checked?(isHit?'hit':isPermWin?'perm-hit':'miss'):'';
+          return`<span class="hist-num ${cls}">${n}</span>`;
+        }).join('')}</div>
+        ${entry.checked?`<div style="margin-top:8px;font-size:10px">
+          ${entry.hits?.length>0?`<span style="color:var(--green)">✅ ${entry.hits.length} STRAIGHT hit(s)!</span>`:'<span style="color:var(--dim2)">No straight hits</span>'}
+          ${entry.permHits>0?`<span style="color:var(--amber)"> | 🔀 ${entry.permHits} PERM win(s)</span>`:''}
+        </div>
+        ${permDetails.length>0?`<div style="margin-top:6px">${permDetails.map(p=>`<div style="font-size:9px;padding:3px 0;display:flex;align-items:center;gap:6px">
+          <span style="font-family:monospace;color:var(--amber);font-weight:700">${p.predicted}</span>
+          <span style="color:var(--dim3)">→ won as</span>
+          <span style="font-family:monospace;color:var(--green);font-weight:700">${p.won}</span>
+          <span style="font-size:7px;background:${p.prize==='TOP3'?'#c90':p.prize==='SPECIAL'?'#36a':'#555'};color:#fff;padding:1px 4px;border-radius:3px">${p.prize}</span>
+        </div>`).join('')}</div>`:''}`:'<div style="margin-top:6px;font-size:9px;color:var(--dim3)">⏳ Not checked yet</div>'}
       </div>`;
     });
   }
@@ -1388,13 +1434,19 @@ function renderDashboard(){
   const totalNums=operators.reduce((a,o)=>a+o.draws.length,0);
   
   let h=`<div class="section-title">📊 Performance Dashboard</div>`;
+  const permWins=stats.permWins||0;
+  const totalWins=stats.anyHits+permWins;
+  const winRate=stats.totalChecks>0?Math.round(totalWins/stats.totalChecks*100):0;
+  
   h+=`<div class="stat-grid">
-    <div class="stat-card"><div class="num" style="color:var(--green)">${hitRate}%</div><div class="lbl">Hit Rate</div></div>
+    <div class="stat-card"><div class="num" style="color:var(--green)">${winRate}%</div><div class="lbl">Win Rate</div></div>
     <div class="stat-card"><div class="num">${stats.totalChecks}</div><div class="lbl">Draws Checked</div></div>
     <div class="stat-card"><div class="num" style="color:#ffcc00">${stats.top3Hits}</div><div class="lbl">Top 3 Hits</div></div>
     <div class="stat-card"><div class="num" style="color:var(--amber)">${stats.specialHits}</div><div class="lbl">Special Hits</div></div>
     <div class="stat-card"><div class="num">${stats.consolationHits}</div><div class="lbl">Consolation Hits</div></div>
-    <div class="stat-card"><div class="num">${stats.anyHits}</div><div class="lbl">Total Any Hits</div></div>
+    <div class="stat-card"><div class="num" style="color:var(--green)">${stats.anyHits}</div><div class="lbl">Straight Wins</div></div>
+    <div class="stat-card"><div class="num" style="color:#f59200">${permWins}</div><div class="lbl">Perm Wins</div></div>
+    <div class="stat-card"><div class="num" style="color:#a78bfa">${totalWins}</div><div class="lbl">Total All Wins</div></div>
     <div class="stat-card"><div class="num">${history.length}</div><div class="lbl">Predictions Made</div></div>
     <div class="stat-card"><div class="num">${totalNums}</div><div class="lbl">Draws in Database</div></div>
   </div>`;
@@ -1463,6 +1515,14 @@ function renderData(){
       </div>
     </div>`;
   });
+  
+  // DeepSeek AI Settings
+  h+=`<div class="section-title">🤖 Beast AI (DeepSeek)</div>
+  <div class="card" style="border-left:3px solid #6366f1;padding:10px 12px;margin-bottom:12px">
+    <div style="font-size:11px;font-weight:700;color:#a78bfa;margin-bottom:6px">DeepSeek Reasoner API Key</div>
+    <input type="password" id="dsApiKey" value="${localStorage.getItem('b4d_dskey')||''}" placeholder="Enter your DeepSeek API key" style="width:100%;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px;font-size:11px;font-family:monospace;box-sizing:border-box" onchange="localStorage.setItem('b4d_dskey',this.value)">
+    <div style="font-size:8px;color:var(--dim3);margin-top:4px">Using <b style="color:#a78bfa">DeepSeek-Reasoner (V3.2)</b> — their most intelligent model with deep thinking. Get key at <b style="color:var(--dim)">platform.deepseek.com</b></div>
+  </div>`;
   
   h+=`<div class="section-title" style="color:var(--toto)">⚠️ Danger Zone</div>
   <button class="btn btn-outline" onclick="var r=deduplicateAll();if(!r)toast('✅ No duplicates found')" style="width:100%;margin-bottom:8px;border-color:#333366;color:#8888cc">🧹 Scan & Remove Duplicates</button>
@@ -1767,15 +1827,22 @@ function checkResults(){
     if(entry.operator===opName&&!entry.checked){
       const hits=entry.predictions.filter(n=>allActual.includes(n));
       let permHits=0;
+      let permWinDetails=[];
       entry.predictions.forEach(n=>{
         if(!allActual.includes(n)){
           const perms=getPerms(n);
-          if(perms.some(p=>allActual.includes(p)))permHits++;
+          const winningPerm=perms.find(p=>allActual.includes(p));
+          if(winningPerm){
+            permHits++;
+            const prizeType=t3.includes(winningPerm)?'TOP3':sp.includes(winningPerm)?'SPECIAL':'CONSOLATION';
+            permWinDetails.push({predicted:n,won:winningPerm,prize:prizeType});
+          }
         }
       });
       entry.checked=true;
       entry.hits=hits;
       entry.permHits=permHits;
+      entry.permWinDetails=permWinDetails;
       
       totalHits+=hits.length;
       permHitsTotal+=permHits;
@@ -1797,6 +1864,7 @@ function checkResults(){
   stats.specialHits+=spHits;
   stats.consolationHits+=cnHits;
   stats.anyHits+=(totalHits>0?1:0);
+  stats.permWins=(stats.permWins||0)+permHitsTotal;
   stats.checksLog.push({date,operator:opName,hits:totalHits,permHits:permHitsTotal});
   
   // Also add as draw data
@@ -1889,6 +1957,261 @@ function clearOperatorData(opIdx,opName){
 document.querySelectorAll('.num-in').forEach(el=>{el.addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'')})});
 
 // Service Worker
+// ============================================================
+// BEAST AI ADVISOR (DeepSeek Integration)
+// ============================================================
+async function askBeastAI(){
+  const input=document.getElementById('aiInput');
+  const chat=document.getElementById('aiChat');
+  const question=input.value.trim();
+  if(!question)return;
+  
+  const apiKey=localStorage.getItem('b4d_dskey');
+  if(!apiKey){chat.innerHTML+=`<div style="color:#ff6633;margin:8px 0">⚠️ Set your DeepSeek API key in Data tab first.</div>`;return;}
+  
+  // Show user message
+  chat.innerHTML+=`<div style="margin:10px 0;text-align:right"><span style="background:#1a1a3e;padding:6px 10px;border-radius:8px;color:#fff;display:inline-block;max-width:80%;text-align:left">${question}</span></div>`;
+  input.value='';
+  
+  // Build context from app data
+  const budget=localStorage.getItem('b4d_budget')||'50';
+  const tDay=selectedDay;
+  const dayFull={Sat:'Saturday',Sun:'Sunday',Wed:'Wednesday',Tue:'Tuesday'}[tDay]||tDay;
+  
+  // Get current predictions
+  let predContext='';
+  if(lastResults){
+    Object.entries(lastResults).forEach(([op,res])=>{
+      if(res&&res.predsWithConf){
+        const top5=res.predsWithConf.slice(0,5);
+        predContext+=`\n${op} top 5: ${top5.map(p=>`${p.num}(${p.confidence}%)`).join(', ')}`;
+      }
+    });
+  }
+  
+  // Performance stats
+  const permWins=stats.permWins||0;
+  const totalWins=stats.anyHits+permWins;
+  
+  // Recent draws
+  let recentDraws='';
+  operators.forEach(op=>{
+    if(op.draws.length>0){
+      const last3=op.draws.slice(0,3);
+      recentDraws+=`\n${op.name} last 3: ${last3.map(d=>`${d.date}: ${d.top3.join(',')}`).join(' | ')}`;
+    }
+  });
+
+  const systemPrompt=`You are BEAST AI, an elite Malaysian 4D lottery analysis advisor built into the Beast Mode 4D app. You speak like a confident, intelligent advisor - sharp, precise, and strategic. You are NOT generic AI - you are a specialized 4D prediction strategist.
+
+CURRENT APP DATA:
+- Target day: ${dayFull}
+- Budget: RM${budget}
+- Database: ${operators.map(o=>`${o.name}: ${o.draws.length} draws`).join(', ')}
+- Performance: ${stats.totalChecks} checks, ${stats.anyHits} straight wins, ${permWins} perm wins, ${totalWins} total wins
+- Win rate: ${stats.totalChecks>0?Math.round(totalWins/stats.totalChecks*100):0}%
+${predContext?`\nCURRENT PREDICTIONS:${predContext}`:''}
+${recentDraws?`\nRECENT DRAWS:${recentDraws}`:''}
+
+RULES:
+1. Always give specific 4-digit numbers when asked for recommendations
+2. Explain WHY you recommend each number (which pattern/signal supports it)
+3. Always include iBox vs straight recommendation
+4. Consider cross-operator patterns
+5. Factor in the user's budget
+6. Be confident but honest - never promise wins
+7. Keep responses concise and actionable
+8. Use the actual prediction data above when available
+9. If asked about strategy, reference the sniper mode cross-operator approach
+10. Malaysian 4D context: Magnum, Sports Toto, Damacai, Big/Small bets, iBox/mBox`;
+
+  // Show loading
+  const loadingId='ai_loading_'+Date.now();
+  chat.innerHTML+=`<div id="${loadingId}" style="margin:10px 0"><span style="color:#a78bfa">🤖 Analyzing...</span></div>`;
+  chat.scrollTop=chat.scrollHeight;
+  
+  try{
+    const resp=await fetch('https://api.deepseek.com/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${apiKey}`},
+      body:JSON.stringify({
+        model:'deepseek-reasoner',
+        messages:[
+          {role:'system',content:systemPrompt},
+          {role:'user',content:question}
+        ],
+        max_tokens:2000,
+      })
+    });
+    
+    const data=await resp.json();
+    const loading=document.getElementById(loadingId);
+    
+    if(data.error){
+      loading.innerHTML=`<div style="color:#ff4444;padding:6px">❌ ${data.error.message||'API error. Check your key.'}</div>`;
+    }else if(data.choices&&data.choices[0]){
+      const msg=data.choices[0].message;
+      const thinking=msg.reasoning_content||'';
+      const reply=msg.content||'';
+      
+      let html='';
+      // Show thinking process (collapsible)
+      if(thinking){
+        const thinkFormatted=thinking
+          .replace(/\*\*(.*?)\*\*/g,'<b>$1</b>')
+          .replace(/\n/g,'<br>')
+          .replace(/(\d{4})/g,'<span style="color:#8b5cf6;font-weight:600">$1</span>');
+        html+=`<div style="margin-bottom:8px">
+          <button onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.textContent=this.textContent.includes('Show')?'🧠 Hide reasoning':'🧠 Show reasoning'" style="background:none;border:1px solid #333366;color:#8b5cf6;font-size:9px;padding:4px 8px;border-radius:4px;cursor:pointer;font-family:inherit">🧠 Show reasoning</button>
+          <div style="display:none;margin-top:6px;padding:8px;background:#0a0a20;border-radius:6px;font-size:10px;color:#888;line-height:1.5;max-height:200px;overflow-y:auto;border:1px solid #1a1a3a">${thinkFormatted}</div>
+        </div>`;
+      }
+      
+      // Show final answer
+      const formatted=reply
+        .replace(/\*\*(.*?)\*\*/g,'<b style="color:#fff">$1</b>')
+        .replace(/\n/g,'<br>')
+        .replace(/(\d{4})/g,'<span style="font-family:monospace;color:#f59200;font-weight:700">$1</span>');
+      html+=`<div style="color:#ccc">${formatted}</div>`;
+      
+      loading.innerHTML=`<div style="background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(139,92,246,0.05));border:1px solid #6366f133;border-radius:8px;padding:10px"><span style="color:#a78bfa;font-weight:700">🤖 Beast AI (Reasoner):</span><br>${html}</div>`;
+    }else{
+      loading.innerHTML=`<div style="color:#ff4444">❌ Unexpected response format</div>`;
+    }
+  }catch(e){
+    const loading=document.getElementById(loadingId);
+    if(loading)loading.innerHTML=`<div style="color:#ff4444">❌ Network error: ${e.message}</div>`;
+  }
+  
+  chat.scrollTop=chat.scrollHeight;
+}
+
+// ============================================================
+// BEAST AI ADVISOR (DeepSeek Integration)
+// ============================================================
+async function askBeastAI(){
+  const input=document.getElementById('aiInput');
+  const chat=document.getElementById('aiChat');
+  const question=input.value.trim();
+  if(!question)return;
+  
+  const apiKey=localStorage.getItem('b4d_dskey');
+  if(!apiKey){chat.innerHTML+=`<div style="color:#ff4444;margin-top:8px">⚠️ No API key set. Go to Data tab → Beast AI section to add your DeepSeek key.</div>`;return;}
+  
+  // Show user message
+  chat.innerHTML+=`<div style="margin-top:10px;padding:8px;background:#1a1a3a;border-radius:8px;color:#fff"><b>You:</b> ${question}</div>`;
+  chat.innerHTML+=`<div style="margin-top:6px;color:#a78bfa" id="aiLoading">🤖 Beast AI is thinking...</div>`;
+  chat.scrollTop=chat.scrollHeight;
+  input.value='';
+  
+  // Build context from app data
+  const budget=localStorage.getItem('b4d_budget')||'50';
+  const tDay=selectedDay||'Sat';
+  const dayNames={Sat:'Saturday',Sun:'Sunday',Wed:'Wednesday',Tue:'Tuesday'};
+  
+  let context=`You are Beast AI, an intelligent 4D lottery advisor inside the Beast Mode 4D prediction app. You speak like Jarvis - professional, confident, and helpful. You analyze Malaysian 4D lottery data (Magnum, Sports Toto, Damacai).
+
+CURRENT APP STATE:
+- Target day: ${dayNames[tDay]||tDay}
+- User budget: RM${budget}
+- Database: ${operators.map(o=>`${o.name}: ${o.draws.length} draws`).join(', ')}
+- Total predictions made: ${history.length}
+- Performance: ${stats.totalChecks} checks, ${stats.anyHits} straight wins, ${stats.permWins||0} perm wins
+- Win rate: ${stats.totalChecks>0?Math.round((stats.anyHits+(stats.permWins||0))/stats.totalChecks*100):0}%\n`;
+  
+  // Add latest predictions if available
+  if(lastResults){
+    context+='\nLATEST PREDICTIONS:\n';
+    Object.entries(lastResults).forEach(([opName,res])=>{
+      if(res&&res.predsWithConf){
+        const top5=res.predsWithConf.slice(0,5);
+        context+=`${opName}: ${top5.map(p=>`${p.num}(${p.confidence}%)`).join(', ')}\n`;
+      }
+    });
+  }
+  
+  // Add recent draw results
+  context+='\nRECENT DRAWS (last 3 per operator):\n';
+  operators.forEach(op=>{
+    op.draws.slice(0,3).forEach(d=>{
+      context+=`${op.name} ${d.date}(${d.day}): 1st:${d.top3[0]} 2nd:${d.top3[1]} 3rd:${d.top3[2]}\n`;
+    });
+  });
+  
+  // Add cross-operator hot numbers if available
+  if(lastResults&&Object.keys(lastResults).length>=2){
+    const crossOp=crossOperatorFusion(lastResults);
+    if(crossOp.playAllOps.length>0){
+      context+='\nSNIPER MODE (cross-operator hot numbers):\n';
+      crossOp.playAllOps.slice(0,5).forEach(p=>{
+        context+=`${p.num} (from ${p.originOp}, also hot in: ${p.alsoHotIn.join(',')})\n`;
+      });
+    }
+  }
+  
+  context+=`\nRULES:
+- Always recommend iBox for 4-unique-digit numbers
+- Recommend playing hot numbers across ALL 3 operators
+- Be specific with number recommendations
+- Calculate exact costs based on user's budget
+- Malaysian 4D: Big bet covers all 23 prizes, Small covers top 3 only
+- iBox covers all permutations at proportionally reduced payout
+- Be confident and decisive like Jarvis, not wishy-washy
+- Give specific numbers and exact RM amounts
+- If asked for picks, analyze the data and give your best recommendations with reasoning`;
+
+  try{
+    const resp=await fetch('https://api.deepseek.com/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${apiKey}`},
+      body:JSON.stringify({
+        model:'deepseek-reasoner',
+        messages:[
+          {role:'system',content:context},
+          {role:'user',content:question}
+        ],
+        max_tokens:2000,
+      })
+    });
+    
+    const data=await resp.json();
+    const loading=document.getElementById('aiLoading');
+    if(loading)loading.remove();
+    
+    if(data.error){
+      chat.innerHTML+=`<div style="margin-top:6px;color:#ff4444">❌ Error: ${data.error.message||'API error'}</div>`;
+    }else{
+      const msg=data.choices?.[0]?.message||{};
+      const thinking=msg.reasoning_content||'';
+      const reply=msg.content||'No response';
+      
+      let html='';
+      if(thinking){
+        const thinkFmt=thinking.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>').replace(/(\d{4})/g,'<span style="color:#8b5cf6;font-weight:600">$1</span>');
+        html+=`<div style="margin-bottom:6px">
+          <button onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.textContent=this.textContent.includes('Show')?'🧠 Hide reasoning':'🧠 Show reasoning'" style="background:none;border:1px solid #333366;color:#8b5cf6;font-size:9px;padding:3px 6px;border-radius:4px;cursor:pointer;font-family:inherit">🧠 Show reasoning</button>
+          <div style="display:none;margin-top:4px;padding:6px;background:#0a0a20;border-radius:6px;font-size:9px;color:#888;line-height:1.4;max-height:150px;overflow-y:auto;border:1px solid #1a1a3a">${thinkFmt}</div>
+        </div>`;
+      }
+      
+      const formatted=reply
+        .replace(/\*\*(.*?)\*\*/g,'<b style="color:#fff">$1</b>')
+        .replace(/\n/g,'<br>')
+        .replace(/`(.*?)`/g,'<code style="background:#1a1a3a;padding:1px 4px;border-radius:3px;color:#a78bfa">$1</code>')
+        .replace(/(\d{4})/g,'<span style="font-family:monospace;color:#f59200;font-weight:700">$1</span>');
+      html+=formatted;
+      
+      chat.innerHTML+=`<div style="margin-top:6px;padding:10px;background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(139,92,246,0.05));border:1px solid #333366;border-radius:8px;color:#ddd"><div style="font-size:9px;color:#a78bfa;font-weight:700;margin-bottom:4px">🤖 BEAST AI (Reasoner):</div>${html}</div>`;
+    }
+  }catch(err){
+    const loading=document.getElementById('aiLoading');
+    if(loading)loading.remove();
+    chat.innerHTML+=`<div style="margin-top:6px;color:#ff4444">❌ Connection error: ${err.message}. Check your API key and internet.</div>`;
+  }
+  
+  chat.scrollTop=chat.scrollHeight;
+}
+
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').then(()=>{}).catch(()=>{});}
 
 // Init
