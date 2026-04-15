@@ -269,11 +269,12 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
 <div class="modal-bg" id="modalCheck">
   <div class="modal" onclick="event.stopPropagation()">
     <h3>📋 Check Results Against Predictions</h3>
-    <p style="font-size:11px;color:var(--dim);margin-bottom:14px">Enter actual winning numbers to check how your predictions performed. This updates the accuracy tracker and adjusts module weights.</p>
+    <p style="font-size:11px;color:var(--dim);margin-bottom:14px">Enter actual winning numbers or fetch from database. This updates the accuracy tracker and adjusts module weights.</p>
     <div class="field"><label>Draw Date</label><input type="date" id="chkDate"></div>
     <div class="field"><label>Operator</label>
       <select id="chkOp"><option value="MAGNUM">Magnum</option><option value="TOTO">Sports Toto</option><option value="DAMACAI">Damacai</option></select>
     </div>
+    <button class="btn btn-sm" onclick="autoFillCheck()" style="width:100%;margin-bottom:10px;background:#1a1a3a;border:1px solid #333366;color:#a78bfa;font-size:11px;padding:8px">📡 Auto-fill from Database</button>
     <div class="field"><label>Top 3 Prizes</label>
       <div class="row">
         <input class="num-in" id="chk1" maxlength="4" placeholder="1st" inputmode="numeric">
@@ -1182,7 +1183,13 @@ function renderPredict(){
       }
     }
   }else if(!lastResults){
-    h+=`<div style="text-align:center;padding:40px 0;color:var(--dim3)"><div style="font-size:44px;margin-bottom:10px">🎰</div><div style="font-size:12px;color:var(--dim2)">Hit 🔥 RUN to generate predictions</div><div style="font-size:9px;margin-top:4px">16 modules • Sniper Mode • Cross-Operator • iBox Strategy</div></div>`;
+    h+=`<div style="text-align:center;padding:40px 0;color:var(--dim3)"><div style="font-size:44px;margin-bottom:10px">🎰</div><div style="font-size:12px;color:var(--dim2)">Hit 🔥 RUN to generate predictions</div><div style="font-size:9px;margin-top:4px">16 modules • Sniper Mode • Cross-Operator • iBox Strategy</div>
+    <div style="margin-top:30px;padding-top:16px;border-top:1px solid #1a1a2e">
+      <div style="font-size:8px;color:#444;letter-spacing:1px;margin-bottom:6px">POWERED BY</div>
+      <div style="font-size:11px;color:#6366f1;font-weight:700;letter-spacing:0.5px">🤖 DeepSeek AI — Reasoner V3.2</div>
+      <div style="font-size:7px;color:#333;margin-top:8px;letter-spacing:0.3px">© 2026 Beast Mode 4D. All rights reserved.</div>
+      <div style="font-size:7px;color:#2a2a3a;margin-top:2px">Malaysian 4D Prediction Engine — For entertainment purposes only</div>
+    </div></div>`;
   }
   
   pg.innerHTML=h;
@@ -1222,6 +1229,7 @@ function renderHistory(){
           <span style="font-family:monospace;color:var(--green);font-weight:700">${p.won}</span>
           <span style="font-size:7px;background:${p.prize==='TOP3'?'#c90':p.prize==='SPECIAL'?'#36a':'#555'};color:#fff;padding:1px 4px;border-radius:3px">${p.prize}</span>
         </div>`).join('')}</div>`:''}`:'<div style="margin-top:6px;font-size:9px;color:var(--dim3)">⏳ Not checked yet</div>'}
+        ${entry.modules?`<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:2px">${entry.modules.map(m=>`<span style="font-size:6px;background:#1a1a3a;color:#666;padding:1px 3px;border-radius:2px">${m}</span>`).join('')}</div>`:''}
       </div>`;
     });
   }
@@ -1552,7 +1560,8 @@ function runBeast(){
     const now=new Date().toISOString().slice(0,10);
     operators.forEach(op=>{
       const preds=lastResults[op.name].predictions.slice(0,10).map(([n])=>n);
-      history.push({date:now,operator:op.name,targetDay:tDay,predictions:preds,checked:false,hits:[],permHits:0});
+      const activeModules=Object.entries(moduleToggles).filter(([,v])=>v!==false).map(([k])=>k);
+      history.push({date:now,operator:op.name,targetDay:tDay,predictions:preds,checked:false,hits:[],permHits:0,modules:activeModules});
     });
     saveAll();
     
@@ -1807,6 +1816,22 @@ function saveDraw(){
   operators[addOpIdx].draws.sort((a,b)=>b.date.localeCompare(a.date));
   saveAll();closeModal('modalAdd');render();
   toast(existing?'♻️ Draw replaced for '+operators[addOpIdx].name:'✅ Draw added to '+operators[addOpIdx].name);
+}
+
+function autoFillCheck(){
+  const date=document.getElementById('chkDate').value;
+  const opName=document.getElementById('chkOp').value;
+  if(!date){toast('Select a date first');return;}
+  const op=operators.find(o=>o.name===opName);
+  if(!op){toast('Operator not found');return;}
+  const draw=op.draws.find(d=>d.date===date);
+  if(!draw){toast(`No ${opName} data for ${date}. Add it via Live tab first.`);return;}
+  document.getElementById('chk1').value=draw.top3[0]||'';
+  document.getElementById('chk2').value=draw.top3[1]||'';
+  document.getElementById('chk3').value=draw.top3[2]||'';
+  document.getElementById('chkSp').value=(draw.special||[]).join(', ');
+  document.getElementById('chkCn').value=(draw.consolation||[]).join(', ');
+  toast(`✅ ${opName} ${date} results loaded!`);
 }
 
 function checkResults(){
