@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v3.3</title>
+<title>Beast Mode 4D v3.4</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -204,7 +204,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v3.3</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v3.4</span>
       <div class="sub">AI-Powered Sniper Prediction Engine + DeepSeek AI</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
@@ -778,6 +778,139 @@ function generateBuyList(allResults,budget=50){
 }
 
 // MASTER FUSION with self-learning weights
+// ============================================================
+// BACKTEST ENGINE - Test modules against historical data
+// ============================================================
+function runBacktest(opName,numDraws=30,onProgress=null){
+  const op=operators.find(o=>o.name===opName);
+  if(!op||op.draws.length<numDraws+20)return null;
+  
+  // Take the last N draws to test (newest first, but reverse to walk forward)
+  const testDraws=op.draws.slice(0,numDraws);
+  
+  // Helper: score a prediction set against actual winning numbers
+  function scoreHits(preds,actualAll,actualT3){
+    let straight=0,perm=0,t3Hit=0;
+    preds.forEach(([num])=>{
+      if(actualAll.includes(num)){
+        straight++;
+        if(actualT3.includes(num))t3Hit++;
+      }else{
+        const perms=getPerms(num);
+        if(perms.some(p=>actualAll.includes(p)))perm++;
+      }
+    });
+    return{straight,perm,t3Hit,any:straight+perm};
+  }
+  
+  // Baseline: run predictions with ALL modules ON
+  const moduleKeys=Object.keys(moduleToggles);
+  const allOnResults={name:'ALL MODULES',hits:{straight:0,perm:0,t3Hit:0,any:0},draws:0};
+  const perModuleResults={};
+  moduleKeys.forEach(k=>{
+    perModuleResults[k]={name:k,hits:{straight:0,perm:0,t3Hit:0,any:0},draws:0,wouldWin:0};
+  });
+  
+  // Also compute: what if we ran WITHOUT each specific module?
+  const withoutModuleResults={};
+  moduleKeys.forEach(k=>{
+    withoutModuleResults[k]={name:k,hits:{straight:0,perm:0,t3Hit:0,any:0},draws:0};
+  });
+  
+  // Walk forward: use data BEFORE each test draw to predict, then check
+  for(let i=0;i<testDraws.length;i++){
+    const testDraw=testDraws[i];
+    const historicalDraws=op.draws.slice(i+1); // Data before this draw
+    
+    if(historicalDraws.length<30)continue;
+    
+    const actualAll=[...testDraw.top3,...(testDraw.special||[]),...(testDraw.consolation||[])];
+    const actualT3=testDraw.top3;
+    const targetDay=testDraw.day;
+    
+    // 1. Run with ALL modules ON
+    const allOn={};moduleKeys.forEach(k=>allOn[k]=true);
+    try{
+      const result=masterFusion(historicalDraws,targetDay,null,moduleWeights,allOn);
+      if(result&&result.predictions){
+        const top10=result.predictions.slice(0,10);
+        const hits=scoreHits(top10,actualAll,actualT3);
+        allOnResults.hits.straight+=hits.straight;
+        allOnResults.hits.perm+=hits.perm;
+        allOnResults.hits.t3Hit+=hits.t3Hit;
+        allOnResults.hits.any+=hits.any;
+        allOnResults.draws++;
+      }
+    }catch(e){console.warn('backtest all-on err',e);}
+    
+    // 2. For each module, test with ONLY that module on
+    for(const modKey of moduleKeys){
+      const onlyThis={};moduleKeys.forEach(k=>onlyThis[k]=(k===modKey));
+      try{
+        const result=masterFusion(historicalDraws,targetDay,null,moduleWeights,onlyThis);
+        if(result&&result.predictions){
+          const top10=result.predictions.slice(0,10);
+          const hits=scoreHits(top10,actualAll,actualT3);
+          perModuleResults[modKey].hits.straight+=hits.straight;
+          perModuleResults[modKey].hits.perm+=hits.perm;
+          perModuleResults[modKey].hits.t3Hit+=hits.t3Hit;
+          perModuleResults[modKey].hits.any+=hits.any;
+          perModuleResults[modKey].draws++;
+          if(hits.any>0)perModuleResults[modKey].wouldWin++;
+        }
+      }catch(e){}
+    }
+    
+    // 3. For each module, test with all EXCEPT that module
+    for(const modKey of moduleKeys){
+      const allExcept={};moduleKeys.forEach(k=>allExcept[k]=(k!==modKey));
+      try{
+        const result=masterFusion(historicalDraws,targetDay,null,moduleWeights,allExcept);
+        if(result&&result.predictions){
+          const top10=result.predictions.slice(0,10);
+          const hits=scoreHits(top10,actualAll,actualT3);
+          withoutModuleResults[modKey].hits.straight+=hits.straight;
+          withoutModuleResults[modKey].hits.perm+=hits.perm;
+          withoutModuleResults[modKey].hits.t3Hit+=hits.t3Hit;
+          withoutModuleResults[modKey].hits.any+=hits.any;
+          withoutModuleResults[modKey].draws++;
+        }
+      }catch(e){}
+    }
+    
+    if(onProgress)onProgress((i+1)/testDraws.length);
+  }
+  
+  // Calculate module impact: withoutX - allOn = negative means X helps
+  // If allOn hits > withoutX hits, that module was helping
+  // If withoutX hits > allOn hits, that module was hurting
+  const moduleImpact=moduleKeys.map(k=>{
+    const baseline=allOnResults.hits.any;
+    const without=withoutModuleResults[k].hits.any;
+    const solo=perModuleResults[k].hits.any;
+    const delta=baseline-without; // positive = module helps
+    return{
+      key:k,
+      solo:solo,
+      withoutThis:without,
+      delta:delta,
+      verdict:delta>0?'HELPS':delta<0?'HURTS':'NEUTRAL'
+    };
+  }).sort((a,b)=>b.delta-a.delta);
+  
+  return{
+    opName,
+    testedDraws:allOnResults.draws,
+    baseline:allOnResults.hits,
+    moduleImpact,
+    perModule:perModuleResults,
+    without:withoutModuleResults
+  };
+}
+
+// ============================================================
+// MASTER FUSION with self-learning weights
+// ============================================================
 function masterFusion(opDraws,targetDay,allOps,w=moduleWeights,t=moduleToggles){
   const allNums=opDraws.flatMap(d=>[...d.top3,...(d.special||[]),...(d.consolation||[])].filter(Boolean));
   const wf=getWeighted(opDraws),df=getDayFreq(opDraws,targetDay);
@@ -1459,6 +1592,35 @@ function renderDashboard(){
     <div class="stat-card"><div class="num">${totalNums}</div><div class="lbl">Draws in Database</div></div>
   </div>`;
   
+  // BACKTEST ENGINE
+  h+=`<div class="section-title">🔬 Backtest Engine</div>
+  <div class="card" style="border-left:3px solid #a78bfa;padding:12px">
+    <div style="font-size:11px;color:var(--dim);margin-bottom:10px">Test your modules against historical draws to see which ones actually help win. Walks forward through the last N draws, predicting with data BEFORE each draw, then checks hits.</div>
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <select id="btOp" style="flex:1;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px;font-size:12px">
+        <option value="MAGNUM">Magnum</option>
+        <option value="TOTO" selected>Sports Toto</option>
+        <option value="DAMACAI">Damacai</option>
+      </select>
+      <select id="btDraws" style="flex:1;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px;font-size:12px">
+        <option value="20">Last 20 draws</option>
+        <option value="30" selected>Last 30 draws</option>
+        <option value="50">Last 50 draws</option>
+        <option value="100">Last 100 draws</option>
+      </select>
+    </div>
+    <button class="btn" id="btBtn" onclick="startBacktest()" style="width:100%;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;font-weight:700;padding:12px">🔬 Run Backtest</button>
+    <div id="btProgress" style="display:none;margin-top:10px">
+      <div style="background:#1a1a2e;border-radius:4px;height:6px;overflow:hidden">
+        <div id="btBar" style="height:100%;background:linear-gradient(90deg,#6366f1,#8b5cf6);width:0%;transition:width 0.3s"></div>
+      </div>
+      <div id="btStatus" style="font-size:9px;color:var(--dim2);margin-top:4px;text-align:center">Running...</div>
+    </div>
+    <div id="btResults" style="margin-top:12px"></div>
+  </div>
+  
+  <div style="margin-top:16px"></div>`;
+  
   // Module weights visualization
   h+=`<div class="section-title">🧠 Self-Learning Module Weights</div><div class="card">`;
   const maxW=Math.max(...Object.values(moduleWeights));
@@ -1816,6 +1978,135 @@ function saveDraw(){
   operators[addOpIdx].draws.sort((a,b)=>b.date.localeCompare(a.date));
   saveAll();closeModal('modalAdd');render();
   toast(existing?'♻️ Draw replaced for '+operators[addOpIdx].name:'✅ Draw added to '+operators[addOpIdx].name);
+}
+
+// ============================================================
+// BACKTEST RUNNER
+// ============================================================
+function startBacktest(){
+  const opName=document.getElementById('btOp').value;
+  const numDraws=parseInt(document.getElementById('btDraws').value);
+  const btn=document.getElementById('btBtn');
+  const progress=document.getElementById('btProgress');
+  const bar=document.getElementById('btBar');
+  const status=document.getElementById('btStatus');
+  const results=document.getElementById('btResults');
+  
+  const op=operators.find(o=>o.name===opName);
+  if(!op||op.draws.length<numDraws+30){
+    results.innerHTML=`<div style="color:var(--toto);font-size:11px;padding:10px">⚠️ Not enough data. Need at least ${numDraws+30} draws, ${opName} has ${op?op.draws.length:0}.</div>`;
+    return;
+  }
+  
+  btn.disabled=true;btn.textContent='🔬 Running...';
+  progress.style.display='block';
+  results.innerHTML='';
+  bar.style.width='0%';
+  status.textContent=`Testing ${numDraws} draws with 16 modules each (${numDraws*33} total simulations)...`;
+  
+  // Run async in chunks so UI doesn't freeze
+  setTimeout(()=>{
+    const result=runBacktest(opName,numDraws,pct=>{
+      bar.style.width=(pct*100)+'%';
+      status.textContent=`Testing draw ${Math.round(pct*numDraws)}/${numDraws}...`;
+    });
+    
+    btn.disabled=false;btn.textContent='🔬 Run Backtest';
+    progress.style.display='none';
+    
+    if(!result){
+      results.innerHTML=`<div style="color:var(--toto);font-size:11px;padding:10px">⚠️ Backtest failed - insufficient data</div>`;
+      return;
+    }
+    
+    displayBacktestResults(result);
+  },100);
+}
+
+function displayBacktestResults(r){
+  const results=document.getElementById('btResults');
+  const wNames={position:"Position Freq",daySpecific:"Day-Specific",markov:"Markov Chain",monteCarlo:"Monte Carlo",chiSquare:"Chi-Square",momentum:"Momentum",digitSum:"Digit Sum",pairs:"Pair Freq",oddEven:"Odd/Even",repeat:"Repeat Detect",crossOp:"Cross-Operator",mirror:"Mirror Pattern",elimination:"Elimination",streak:"Streak Detect",entropy:"Entropy Bias",genetic:"Genetic Algo"};
+  
+  let html=`<div style="background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(139,92,246,0.05));border:1px solid #333366;border-radius:10px;padding:12px;margin-bottom:10px">
+    <div style="font-size:13px;font-weight:800;color:#a78bfa;margin-bottom:8px">🏆 ${r.opName} Backtest Results</div>
+    <div style="font-size:10px;color:var(--dim);margin-bottom:10px">Tested ${r.testedDraws} historical draws with walk-forward validation</div>
+    
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+      <div style="background:rgba(34,197,94,0.1);border:1px solid #22c55e33;border-radius:6px;padding:8px;text-align:center">
+        <div style="font-size:18px;font-weight:900;color:var(--green)">${r.baseline.any}</div>
+        <div style="font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:0.5px">Total Wins (All Modules)</div>
+      </div>
+      <div style="background:rgba(245,146,0,0.1);border:1px solid #f5920033;border-radius:6px;padding:8px;text-align:center">
+        <div style="font-size:18px;font-weight:900;color:var(--amber)">${r.baseline.straight}</div>
+        <div style="font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:0.5px">Straight Hits</div>
+      </div>
+    </div>
+    
+    <div style="font-size:10px;color:var(--dim);margin-bottom:6px">Hit rate: <b style="color:#fff">${((r.baseline.any/r.testedDraws)*100).toFixed(1)}% of draws had at least one hit</b></div>
+  </div>`;
+  
+  // Module impact table
+  html+=`<div style="background:#0a0a20;border-radius:10px;padding:10px;border:1px solid #1a1a3a">
+    <div style="font-size:12px;font-weight:700;color:#a78bfa;margin-bottom:8px">📊 Module Impact Analysis</div>
+    <div style="font-size:8px;color:var(--dim3);margin-bottom:10px">Delta = difference in total wins when module is ON vs OFF. Positive = helps, Negative = hurts.</div>`;
+  
+  r.moduleImpact.forEach(m=>{
+    const color=m.delta>0?'#22c55e':m.delta<0?'#ef4444':'#888';
+    const bg=m.delta>0?'rgba(34,197,94,0.05)':m.delta<0?'rgba(239,68,68,0.05)':'rgba(136,136,136,0.03)';
+    const icon=m.verdict==='HELPS'?'✅':m.verdict==='HURTS'?'❌':'➖';
+    const deltaStr=m.delta>0?`+${m.delta}`:`${m.delta}`;
+    
+    html+=`<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:${bg};border-radius:6px;margin-bottom:3px;border-left:3px solid ${color}">
+      <span style="font-size:10px">${icon}</span>
+      <span style="font-size:10px;color:#ccc;flex:1">${wNames[m.key]||m.key}</span>
+      <span style="font-size:9px;color:var(--dim3);background:#1a1a2e;padding:1px 5px;border-radius:3px">solo:${m.solo}</span>
+      <span style="font-size:10px;font-weight:800;color:${color};min-width:35px;text-align:right">${deltaStr}</span>
+    </div>`;
+  });
+  
+  html+=`</div>`;
+  
+  // Recommendations
+  const helpers=r.moduleImpact.filter(m=>m.delta>0);
+  const hurters=r.moduleImpact.filter(m=>m.delta<0);
+  
+  if(helpers.length>0||hurters.length>0){
+    html+=`<div style="background:rgba(255,102,51,0.05);border:1px solid rgba(255,102,51,0.3);border-radius:10px;padding:10px;margin-top:10px">
+      <div style="font-size:11px;font-weight:700;color:#ff6633;margin-bottom:8px">💡 Recommendations</div>`;
+    
+    if(hurters.length>0){
+      html+=`<div style="font-size:10px;color:var(--dim2);margin-bottom:6px">Consider <b style="color:#ef4444">turning OFF</b> these hurting modules:</div>`;
+      hurters.slice(0,3).forEach(m=>{
+        html+=`<div style="font-size:9px;color:#ef4444;margin-left:8px;margin-bottom:3px">• ${wNames[m.key]||m.key} (${m.delta} fewer wins when enabled)</div>`;
+      });
+    }
+    
+    if(helpers.length>0){
+      html+=`<div style="font-size:10px;color:var(--dim2);margin-top:6px;margin-bottom:6px">Keep <b style="color:var(--green)">ON</b> — these are working:</div>`;
+      helpers.slice(0,3).forEach(m=>{
+        html+=`<div style="font-size:9px;color:var(--green);margin-left:8px;margin-bottom:3px">• ${wNames[m.key]||m.key} (+${m.delta} more wins)</div>`;
+      });
+    }
+    
+    html+=`<button class="btn btn-sm btn-outline" style="width:100%;margin-top:10px;font-size:9px;border-color:#ff6633;color:#ff6633" onclick="applyBacktestRecommendations(${JSON.stringify(r.moduleImpact.map(m=>({key:m.key,delta:m.delta}))).replace(/"/g,'&quot;')})">⚡ Apply Recommendations</button>
+    </div>`;
+  }
+  
+  results.innerHTML=html;
+}
+
+function applyBacktestRecommendations(impact){
+  if(!confirm('This will turn OFF all modules that hurt performance. Continue?'))return;
+  let changed=0;
+  impact.forEach(m=>{
+    if(m.delta<0){
+      moduleToggles[m.key]=false;
+      changed++;
+    }
+  });
+  save(KEYS.toggles,moduleToggles);
+  toast(`✅ ${changed} hurting module(s) turned off. Run predictions again!`);
+  render();
 }
 
 function autoFillCheck(){
