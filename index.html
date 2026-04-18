@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v3.4</title>
+<title>Beast Mode 4D v3.4.1</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -204,7 +204,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v3.4</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v3.4.1</span>
       <div class="sub">AI-Powered Sniper Prediction Engine + DeepSeek AI</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
@@ -326,7 +326,7 @@ let addOpIdx=0;
 // ============================================================
 // DATA STORE (localStorage)
 // ============================================================
-const KEYS={ops:'b4d_ops',hist:'b4d_hist',weights:'b4d_weights',stats:'b4d_stats',toggles:'b4d_toggles'};
+const KEYS={ops:'b4d_ops',hist:'b4d_hist',weights:'b4d_weights',stats:'b4d_stats',toggles:'b4d_toggles',togglesPerOp:'b4d_togglesPerOp'};
 
 const DEFAULT_OPS=[
 {name:"MAGNUM",color:"#D4A017",draws:[
@@ -391,9 +391,36 @@ let operators=load(KEYS.ops,DEFAULT_OPS);
 let history=load(KEYS.hist,[]);
 let moduleWeights=load(KEYS.weights,DEFAULT_WEIGHTS);
 let moduleToggles=load(KEYS.toggles,DEFAULT_TOGGLES);
+let moduleTogglesPerOp=load(KEYS.togglesPerOp,{});
 let stats=load(KEYS.stats,{totalPredictions:0,totalChecks:0,top3Hits:0,specialHits:0,consolationHits:0,anyHits:0,checksLog:[]});
 
-function saveAll(){save(KEYS.ops,operators);save(KEYS.hist,history);save(KEYS.weights,moduleWeights);save(KEYS.stats,stats);save(KEYS.toggles,moduleToggles);}
+// Per-operator toggles helpers
+function getToggles(opName){
+  if(moduleTogglesPerOp[opName])return moduleTogglesPerOp[opName];
+  return {...moduleToggles};
+}
+function setToggles(opName,toggles){
+  moduleTogglesPerOp[opName]={...toggles};
+  save(KEYS.togglesPerOp,moduleTogglesPerOp);
+}
+
+// Seeded RNG (Mulberry32) for deterministic backtests
+function mulberry32(seed){
+  return function(){
+    let t=(seed+=0x6D2B79F5)|0;
+    t=Math.imul(t^t>>>15,t|1);
+    t^=t+Math.imul(t^t>>>7,t|61);
+    return ((t^t>>>14)>>>0)/4294967296;
+  };
+}
+function hashStr(s){let h=0;for(let i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0;}return Math.abs(h)||1;}
+function withSeed(seed,fn){
+  const orig=Math.random;
+  Math.random=mulberry32(seed);
+  try{return fn();}finally{Math.random=orig;}
+}
+
+function saveAll(){save(KEYS.ops,operators);save(KEYS.hist,history);save(KEYS.weights,moduleWeights);save(KEYS.stats,stats);save(KEYS.toggles,moduleToggles);save(KEYS.togglesPerOp,moduleTogglesPerOp);}
 
 // ============================================================
 // ANALYSIS ENGINE (14 modules + elimination + streak)
@@ -818,6 +845,7 @@ function runBacktest(opName,numDraws=30,onProgress=null){
   });
   
   // Walk forward: use data BEFORE each test draw to predict, then check
+  // Use seeded RNG so results are deterministic across runs
   for(let i=0;i<testDraws.length;i++){
     const testDraw=testDraws[i];
     const historicalDraws=op.draws.slice(i+1); // Data before this draw
@@ -827,11 +855,12 @@ function runBacktest(opName,numDraws=30,onProgress=null){
     const actualAll=[...testDraw.top3,...(testDraw.special||[]),...(testDraw.consolation||[])];
     const actualT3=testDraw.top3;
     const targetDay=testDraw.day;
+    const baseSeed=hashStr(opName+testDraw.date);
     
-    // 1. Run with ALL modules ON
+    // 1. Run with ALL modules ON (seeded for determinism)
     const allOn={};moduleKeys.forEach(k=>allOn[k]=true);
     try{
-      const result=masterFusion(historicalDraws,targetDay,null,moduleWeights,allOn);
+      const result=withSeed(baseSeed,()=>masterFusion(historicalDraws,targetDay,null,moduleWeights,allOn));
       if(result&&result.predictions){
         const top10=result.predictions.slice(0,10);
         const hits=scoreHits(top10,actualAll,actualT3);
@@ -843,11 +872,11 @@ function runBacktest(opName,numDraws=30,onProgress=null){
       }
     }catch(e){console.warn('backtest all-on err',e);}
     
-    // 2. For each module, test with ONLY that module on
+    // 2. For each module, test with ONLY that module on (seeded)
     for(const modKey of moduleKeys){
       const onlyThis={};moduleKeys.forEach(k=>onlyThis[k]=(k===modKey));
       try{
-        const result=masterFusion(historicalDraws,targetDay,null,moduleWeights,onlyThis);
+        const result=withSeed(baseSeed+hashStr(modKey),()=>masterFusion(historicalDraws,targetDay,null,moduleWeights,onlyThis));
         if(result&&result.predictions){
           const top10=result.predictions.slice(0,10);
           const hits=scoreHits(top10,actualAll,actualT3);
@@ -861,11 +890,11 @@ function runBacktest(opName,numDraws=30,onProgress=null){
       }catch(e){}
     }
     
-    // 3. For each module, test with all EXCEPT that module
+    // 3. For each module, test with all EXCEPT that module (seeded with same baseSeed as allOn for fair comparison)
     for(const modKey of moduleKeys){
       const allExcept={};moduleKeys.forEach(k=>allExcept[k]=(k!==modKey));
       try{
-        const result=masterFusion(historicalDraws,targetDay,null,moduleWeights,allExcept);
+        const result=withSeed(baseSeed,()=>masterFusion(historicalDraws,targetDay,null,moduleWeights,allExcept));
         if(result&&result.predictions){
           const top10=result.predictions.slice(0,10);
           const hits=scoreHits(top10,actualAll,actualT3);
@@ -1098,20 +1127,23 @@ function renderPredict(){
   });
   h+=`</div>`;
   
-  // Module toggles (collapsible)
+  // Module toggles (collapsible) - PER OPERATOR
   const modNames={position:"Position Frequency",daySpecific:"Day-Specific Filter",markov:"Markov Chain",monteCarlo:"Monte Carlo (30K sims)",chiSquare:"Chi-Square Test",momentum:"Momentum Tracker",digitSum:"Digit Sum Zone",pairs:"Pair Frequency",oddEven:"Odd/Even Pattern",repeat:"Repeat Detection",crossOp:"Cross-Operator",mirror:"Mirror Pattern",elimination:"Cold Digit Elimination",streak:"Streak Detection",entropy:"Shannon Entropy",genetic:"Genetic Algorithm"};
-  const activeCount=Object.values(moduleToggles).filter(Boolean).length;
+  const opToggles=getToggles(op.name);
+  const activeCount=Object.values(opToggles).filter(v=>v!==false).length;
+  const hasCustom=!!moduleTogglesPerOp[op.name];
   
-  h+=`<button class="toggle-btn" onclick="document.getElementById('modToggles').style.display=document.getElementById('modToggles').style.display==='none'?'block':'none'" style="margin-bottom:8px;font-size:10px">⚙️ Modules (${activeCount}/16 active) ▸</button>`;
-  h+=`<div id="modToggles" style="display:none"><div class="mod-toggles"><div class="mt-title">⚙️ Module Control Panel</div>`;
+  h+=`<button class="toggle-btn" onclick="document.getElementById('modToggles').style.display=document.getElementById('modToggles').style.display==='none'?'block':'none'" style="margin-bottom:8px;font-size:10px">⚙️ ${op.name} Modules (${activeCount}/16 active)${hasCustom?' <span style="color:#a78bfa;font-size:8px">• CUSTOM</span>':''} ▸</button>`;
+  h+=`<div id="modToggles" style="display:none"><div class="mod-toggles"><div class="mt-title" style="color:${op.color}">⚙️ ${op.name} Module Settings</div>`;
+  h+=`<div style="font-size:8px;color:var(--dim3);margin-bottom:8px">Each operator has its own module settings — changes here only affect ${op.name}.</div>`;
   Object.entries(modNames).forEach(([key,name])=>{
-    const on=moduleToggles[key]!==false;
-    h+=`<div class="mod-row"><span class="mod-name ${on?'on':''}">${name}</span><label class="toggle"><input type="checkbox" ${on?'checked':''} onchange="moduleToggles['${key}']=this.checked;save(KEYS.toggles,moduleToggles);render()"><span class="slider"></span></label></div>`;
+    const on=opToggles[key]!==false;
+    h+=`<div class="mod-row"><span class="mod-name ${on?'on':''}">${name}</span><label class="toggle"><input type="checkbox" ${on?'checked':''} onchange="toggleOpModule('${op.name}','${key}',this.checked)"><span class="slider"></span></label></div>`;
   });
   h+=`<div style="display:flex;gap:6px;margin-top:8px">
-    <button class="btn btn-sm btn-outline" style="flex:1;font-size:9px" onclick="Object.keys(moduleToggles).forEach(k=>moduleToggles[k]=true);save(KEYS.toggles,moduleToggles);render()">All ON</button>
-    <button class="btn btn-sm btn-outline" style="flex:1;font-size:9px" onclick="Object.keys(moduleToggles).forEach(k=>moduleToggles[k]=false);save(KEYS.toggles,moduleToggles);render()">All OFF</button>
-    <button class="btn btn-sm btn-outline" style="flex:1;font-size:9px" onclick="moduleToggles={...DEFAULT_TOGGLES};save(KEYS.toggles,moduleToggles);render()">Reset</button>
+    <button class="btn btn-sm btn-outline" style="flex:1;font-size:9px" onclick="setAllOpModules('${op.name}',true)">All ON</button>
+    <button class="btn btn-sm btn-outline" style="flex:1;font-size:9px" onclick="setAllOpModules('${op.name}',false)">All OFF</button>
+    <button class="btn btn-sm btn-outline" style="flex:1;font-size:9px" onclick="resetOpModules('${op.name}')">Reset</button>
   </div></div></div>`;
   
   h+=`<button class="add-btn" onclick="addOpIdx=${activeOp};document.getElementById('modalAddTitle').textContent='Add Draw — ${op.name}';openModal('modalAdd')">+ Add New Draw Result</button>`;
@@ -1596,6 +1628,7 @@ function renderDashboard(){
   h+=`<div class="section-title">🔬 Backtest Engine</div>
   <div class="card" style="border-left:3px solid #a78bfa;padding:12px">
     <div style="font-size:11px;color:var(--dim);margin-bottom:10px">Test your modules against historical draws to see which ones actually help win. Walks forward through the last N draws, predicting with data BEFORE each draw, then checks hits.</div>
+    <div style="font-size:8px;color:#a78bfa;margin-bottom:10px;padding:6px 8px;background:rgba(167,139,250,0.05);border-radius:6px;border-left:2px solid #a78bfa">✨ Results are now deterministic — same input produces same output every run. Recommendations apply per-operator only.</div>
     <div style="display:flex;gap:6px;margin-bottom:10px">
       <select id="btOp" style="flex:1;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px;font-size:12px">
         <option value="MAGNUM">Magnum</option>
@@ -1716,13 +1749,18 @@ function runBeast(){
     const tDay=document.getElementById('tDay')?.value||'Sat';
     const allOps=operators.map(op=>({name:op.name,draws:op.draws}));
     lastResults={};
-    operators.forEach(op=>{lastResults[op.name]=masterFusion(op.draws,tDay,allOps)});
+    // Each operator uses its OWN module settings
+    operators.forEach(op=>{
+      const opToggles=getToggles(op.name);
+      lastResults[op.name]=masterFusion(op.draws,tDay,allOps,moduleWeights,opToggles);
+    });
     
-    // Save predictions to history
+    // Save predictions to history with each op's active modules
     const now=new Date().toISOString().slice(0,10);
     operators.forEach(op=>{
+      const opToggles=getToggles(op.name);
       const preds=lastResults[op.name].predictions.slice(0,10).map(([n])=>n);
-      const activeModules=Object.entries(moduleToggles).filter(([,v])=>v!==false).map(([k])=>k);
+      const activeModules=Object.entries(opToggles).filter(([,v])=>v!==false).map(([k])=>k);
       history.push({date:now,operator:op.name,targetDay:tDay,predictions:preds,checked:false,hits:[],permHits:0,modules:activeModules});
     });
     saveAll();
@@ -2088,24 +2126,61 @@ function displayBacktestResults(r){
       });
     }
     
-    html+=`<button class="btn btn-sm btn-outline" style="width:100%;margin-top:10px;font-size:9px;border-color:#ff6633;color:#ff6633" onclick="applyBacktestRecommendations(${JSON.stringify(r.moduleImpact.map(m=>({key:m.key,delta:m.delta}))).replace(/"/g,'&quot;')})">⚡ Apply Recommendations</button>
+    html+=`<button class="btn btn-sm btn-outline" style="width:100%;margin-top:10px;font-size:9px;border-color:#ff6633;color:#ff6633" onclick="applyBacktestRecommendations('${r.opName}',${JSON.stringify(r.moduleImpact.map(m=>({key:m.key,delta:m.delta}))).replace(/"/g,'&quot;')})">⚡ Apply to ${r.opName} Only</button>
     </div>`;
   }
   
   results.innerHTML=html;
 }
 
-function applyBacktestRecommendations(impact){
-  if(!confirm('This will turn OFF all modules that hurt performance. Continue?'))return;
-  let changed=0;
+// Per-operator module toggle helpers
+function toggleOpModule(opName,key,enabled){
+  const toggles=getToggles(opName);
+  toggles[key]=enabled;
+  setToggles(opName,toggles);
+  render();
+}
+function setAllOpModules(opName,enabled){
+  const toggles={};
+  Object.keys(DEFAULT_TOGGLES).forEach(k=>toggles[k]=enabled);
+  setToggles(opName,toggles);
+  render();
+}
+function resetOpModules(opName){
+  delete moduleTogglesPerOp[opName];
+  save(KEYS.togglesPerOp,moduleTogglesPerOp);
+  toast(`${opName} modules reset to default`);
+  render();
+}
+
+function applyBacktestRecommendations(opName,impact){  if(!confirm(`Apply optimized module settings to ${opName} only?\n\n• Helpers (positive delta) will be turned ON\n• Hurters (negative delta) will be turned OFF\n• Neutral modules stay as-is\n• Other operators are NOT affected`))return;
+  
+  const opToggles=getToggles(opName);
+  let turnedOn=0,turnedOff=0,unchanged=0;
+  
   impact.forEach(m=>{
-    if(m.delta<0){
-      moduleToggles[m.key]=false;
-      changed++;
+    const currentlyOn=opToggles[m.key]!==false;
+    if(m.delta>0){
+      // Helper - turn ON
+      if(!currentlyOn){
+        opToggles[m.key]=true;
+        turnedOn++;
+      }else{
+        unchanged++;
+      }
+    }else if(m.delta<0){
+      // Hurter - turn OFF
+      if(currentlyOn){
+        opToggles[m.key]=false;
+        turnedOff++;
+      }else{
+        unchanged++;
+      }
     }
   });
-  save(KEYS.toggles,moduleToggles);
-  toast(`✅ ${changed} hurting module(s) turned off. Run predictions again!`);
+  
+  setToggles(opName,opToggles);
+  toast(`✅ ${opName}: ${turnedOn} turned ON, ${turnedOff} turned OFF`);
   render();
 }
 
