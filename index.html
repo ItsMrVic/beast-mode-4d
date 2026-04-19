@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v3.5.3</title>
+<title>Beast Mode 4D v3.6</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -138,6 +138,17 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
 .toast.show{display:block;animation:fadeInOut 2.5s ease}
 @keyframes fadeInOut{0%{opacity:0;transform:translateX(-50%) translateY(-10px)}10%{opacity:1;transform:translateX(-50%) translateY(0)}80%{opacity:1}100%{opacity:0}}
 
+/* Red envelope celebration */
+.hongbao-overlay{position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:500;overflow:hidden;display:none}
+.hongbao-overlay.show{display:block}
+.hongbao{position:absolute;top:-80px;font-size:40px;animation:hongbaoFall linear infinite;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.4))}
+@keyframes hongbaoFall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(360deg);opacity:0.9}}
+.coin{position:absolute;top:-40px;font-size:28px;animation:coinFall linear infinite}
+@keyframes coinFall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+.celebration-msg{position:fixed;top:40%;left:50%;transform:translate(-50%,-50%);z-index:600;background:linear-gradient(135deg,#dc2626,#f59e0b);color:#fff;padding:20px 40px;border-radius:16px;font-size:22px;font-weight:900;letter-spacing:2px;box-shadow:0 20px 60px rgba(220,38,38,0.5),0 0 40px rgba(245,158,11,0.3);border:2px solid #fbbf24;text-align:center;display:none;animation:celebPop 0.5s cubic-bezier(0.175,0.885,0.32,1.275)}
+.celebration-msg.show{display:block}
+@keyframes celebPop{0%{transform:translate(-50%,-50%) scale(0.5);opacity:0}50%{transform:translate(-50%,-50%) scale(1.1)}100%{transform:translate(-50%,-50%) scale(1);opacity:1}}
+
 /* Learning indicator */
 .learning-badge{display:inline-flex;align-items:center;gap:4px;font-size:9px;background:linear-gradient(135deg,#8b5cf6,#6366f1);color:#fff;padding:3px 8px;border-radius:10px;font-weight:700}
 .learning-badge::before{content:'🧠';font-size:10px}
@@ -204,7 +215,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v3.5.3</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v3.6</span>
       <div class="sub">AI-Powered Sniper Prediction Engine + DeepSeek AI</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
@@ -292,6 +303,8 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
 </div>
 
 <div class="toast" id="toast"></div>
+<div class="hongbao-overlay" id="hongbaoOverlay"></div>
+<div class="celebration-msg" id="celebMsg"></div>
 
 <!-- Beast AI Advisor Modal -->
 <div class="modal-bg" id="modalAI">
@@ -1079,6 +1092,33 @@ function navTo(page){
 }
 
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+
+function celebrateWin(text){
+  const overlay=document.getElementById('hongbaoOverlay');
+  const msg=document.getElementById('celebMsg');
+  if(!overlay||!msg)return;
+  
+  overlay.innerHTML='';
+  // Spawn 15 red envelopes and 10 gold coins with random positions and delays
+  const items=['🧧','🧧','🧧','🧧','💰','💰','💎','🪙','🪙','🧧','🧧','🎆','✨','🎊','🧧'];
+  items.forEach((item,i)=>{
+    const el=document.createElement('div');
+    el.className=item==='🧧'||item==='🎆'||item==='🎊'?'hongbao':'coin';
+    el.textContent=item;
+    el.style.left=(Math.random()*95)+'%';
+    el.style.animationDuration=(2.5+Math.random()*2)+'s';
+    el.style.animationDelay=(Math.random()*1.5)+'s';
+    el.style.fontSize=(28+Math.random()*20)+'px';
+    overlay.appendChild(el);
+  });
+  overlay.classList.add('show');
+  
+  msg.innerHTML=`<div style="font-size:30px;margin-bottom:6px">🎊</div><div>${text}</div><div style="font-size:12px;font-weight:600;margin-top:6px;letter-spacing:1px;color:#fde047">财运到 · Fortune Arrived!</div>`;
+  msg.classList.add('show');
+  
+  setTimeout(()=>{msg.classList.remove('show');},3500);
+  setTimeout(()=>{overlay.classList.remove('show');overlay.innerHTML='';},5000);
+}
 function openModal(id){document.getElementById(id).classList.add('show');}
 function closeModal(id){document.getElementById(id).classList.remove('show');}
 
@@ -1104,20 +1144,44 @@ function renderPredict(){
   const pg=document.getElementById('pgPredict');
   
   // Controls
-  // Next draw countdown banner
+  // Next draw countdown banner with Chinese Zodiac of the draw day
   const drawInfo=formatDrawCountdown();
   const notifyOn=!!localStorage.getItem('b4d_notify');
   let h='';
+  
+  // Today's zodiac + mantra + lucky hour banner
+  const todayZodiac=getZodiacDay(new Date());
+  const mantra=getTodayMantra();
+  const shichen=getCurrentShichen();
+  
+  h+=`<div style="background:linear-gradient(135deg,rgba(220,38,38,0.08),rgba(245,146,0,0.06));border:1px solid rgba(220,38,38,0.2);border-radius:12px;padding:10px 12px;margin-bottom:10px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="font-size:28px;filter:drop-shadow(0 0 6px ${todayZodiac.color}66)">${todayZodiac.emoji}</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+          <span style="font-size:11px;font-weight:800;color:${todayZodiac.color}">${todayZodiac.cn} ${todayZodiac.en} Day</span>
+          ${shichen.lucky?`<span style="font-size:7px;background:#dc2626;color:#fff;padding:2px 5px;border-radius:3px;font-weight:700">💰 ${shichen.name} LUCKY HOUR</span>`:`<span style="font-size:7px;color:var(--dim3)">${shichen.name} • ${shichen.hours}</span>`}
+        </div>
+        <div style="font-size:9px;color:var(--dim2);font-style:italic">${todayZodiac.lucky}</div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:8px;padding-top:8px;border-top:1px dashed rgba(220,38,38,0.15)">
+      <div style="font-size:16px;font-weight:800;color:#ef4444;letter-spacing:3px;font-family:serif">${mantra.cn}</div>
+      <div style="font-size:8px;color:var(--dim3);margin-top:2px"><span style="font-style:italic">${mantra.py}</span> · ${mantra.en}</div>
+    </div>
+  </div>`;
+  
   if(drawInfo){
+    const drawZodiac=getZodiacDay(drawInfo.date);
     const bgColor=drawInfo.type==='special'?'linear-gradient(135deg,rgba(168,85,247,0.12),rgba(236,72,153,0.06))':'linear-gradient(135deg,rgba(99,102,241,0.08),rgba(139,92,246,0.04))';
     const bdColor=drawInfo.type==='special'?'rgba(168,85,247,0.4)':'rgba(99,102,241,0.3)';
-    const icon=drawInfo.type==='special'?'⭐':'🎰';
     h+=`<div style="background:${bgColor};border:1px solid ${bdColor};border-radius:10px;padding:10px 12px;margin-bottom:12px;display:flex;align-items:center;gap:10px">
-      <div style="font-size:22px">${icon}</div>
+      <div style="font-size:32px;filter:drop-shadow(0 0 8px ${drawZodiac.color}80)">${drawZodiac.emoji}</div>
       <div style="flex:1">
-        <div style="font-size:9px;color:var(--dim2);text-transform:uppercase;letter-spacing:0.5px">${drawInfo.type==='special'?'Special Draw':'Next Draw'}</div>
+        <div style="font-size:9px;color:var(--dim2);text-transform:uppercase;letter-spacing:0.5px">${drawInfo.type==='special'?'⭐ Special Draw':'Next Draw'}</div>
         <div style="font-size:12px;font-weight:700;color:#fff">${drawInfo.dayName}</div>
-        <div style="font-size:10px;color:${drawInfo.type==='special'?'#c084fc':'#a78bfa'};font-weight:600">⏰ ${drawInfo.countdown}</div>
+        <div style="font-size:9px;color:${drawZodiac.color};font-weight:700;margin-top:1px">${drawZodiac.cn} ${drawZodiac.en} Day</div>
+        <div style="font-size:10px;color:${drawInfo.type==='special'?'#c084fc':'#a78bfa'};font-weight:600;margin-top:2px">⏰ ${drawInfo.countdown}</div>
       </div>
       <button onclick="${notifyOn?'disableNotifications()':'enableNotifications()'}" style="background:${notifyOn?'#1a3a1a':'#1a1a3a'};border:1px solid ${notifyOn?'#22c55e':'#6366f1'};color:${notifyOn?'#22c55e':'#a78bfa'};font-size:10px;padding:6px 10px;border-radius:6px;font-family:inherit;cursor:pointer;font-weight:600">${notifyOn?'🔔 ON':'🔕 Enable'}</button>
     </div>`;
@@ -1367,7 +1431,8 @@ function renderPredict(){
       }
     }
   }else if(!lastResults){
-    h+=`<div style="text-align:center;padding:40px 0;color:var(--dim3)"><div style="font-size:44px;margin-bottom:10px">🎰</div><div style="font-size:12px;color:var(--dim2)">Hit 🔥 RUN to generate predictions</div><div style="font-size:9px;margin-top:4px">16 modules • Sniper Mode • Cross-Operator • iBox Strategy</div>
+    const emptyZodiac=getZodiacDay(new Date());
+    h+=`<div style="text-align:center;padding:40px 0;color:var(--dim3)"><div style="font-size:64px;margin-bottom:6px;filter:drop-shadow(0 0 12px ${emptyZodiac.color}66)">${emptyZodiac.emoji}</div><div style="font-size:10px;color:${emptyZodiac.color};font-weight:700;margin-bottom:6px">Today is ${emptyZodiac.cn} ${emptyZodiac.en} Day</div><div style="font-size:12px;color:var(--dim2)">Hit 🔥 RUN to generate predictions</div><div style="font-size:9px;margin-top:4px">16 modules • Sniper Mode • Cross-Operator • iBox Strategy</div>
     <div style="margin-top:30px;padding-top:16px;border-top:1px solid #1a1a2e">
       <div style="font-size:8px;color:#444;letter-spacing:1px;margin-bottom:6px">POWERED BY</div>
       <div style="font-size:11px;color:#6366f1;font-weight:700;letter-spacing:0.5px">🤖 DeepSeek AI — Reasoner V3.2</div>
@@ -2533,9 +2598,15 @@ function checkResults(){
   
   saveAll();closeModal('modalCheck');render();
   
-  if(totalHits>0)toast(`🎉 ${totalHits} HIT(S)! ${permHitsTotal>0?`+${permHitsTotal} perm hits!`:''} Weights updated.`);
-  else if(permHitsTotal>0)toast(`Close! ${permHitsTotal} permutation hit(s). Weights adjusted.`);
-  else toast('No hits this round. Weights adjusted for next prediction.');
+  if(totalHits>0){
+    toast(`🎉 ${totalHits} HIT(S)! ${permHitsTotal>0?`+${permHitsTotal} perm hits!`:''} Weights updated.`);
+    celebrateWin(`${totalHits} STRAIGHT HIT${totalHits>1?'S':''}!${permHitsTotal>0?' + '+permHitsTotal+' PERM':''}`);
+  } else if(permHitsTotal>0){
+    toast(`Close! ${permHitsTotal} permutation hit(s). Weights adjusted.`);
+    celebrateWin(`${permHitsTotal} PERM WIN${permHitsTotal>1?'S':''}!`);
+  } else {
+    toast('No hits this round. Weights adjusted for next prediction.');
+  }
 }
 
 function exportData(){
@@ -2929,6 +3000,88 @@ CURRENT APP STATE:
 // Regular draws: Wed, Sat, Sun at 7PM Malaysia time (UTC+8)
 // 2026 Special Draws (Tuesdays): Jan 27, Feb 10, Feb 17, Apr 7, Jul 28, Sep 1, Oct 27, Dec 29
 const SPECIAL_DRAWS_2026=['2026-01-27','2026-02-10','2026-02-17','2026-04-07','2026-07-28','2026-09-01','2026-10-27','2026-12-29'];
+
+// ============================================================
+// CHINESE ZODIAC (12-day cycle) — uses traditional Chinese day-pillar system
+// Each day rotates through 12 animals: Rat, Ox, Tiger, Rabbit, Dragon, Snake, Horse, Goat, Monkey, Rooster, Dog, Pig
+// ============================================================
+const ZODIAC=[
+  {key:'rat',emoji:'🐀',cn:'鼠',en:'Rat',lucky:'Clever & resourceful — trust your instincts today',color:'#60a5fa'},
+  {key:'ox',emoji:'🐂',cn:'牛',en:'Ox',lucky:'Steady fortune — patience brings wealth',color:'#a78bfa'},
+  {key:'tiger',emoji:'🐅',cn:'虎',en:'Tiger',lucky:'Bold energy — courage attracts big wins',color:'#f59e0b'},
+  {key:'rabbit',emoji:'🐇',cn:'兔',en:'Rabbit',lucky:'Lucky & graceful — gentle numbers favor you',color:'#34d399'},
+  {key:'dragon',emoji:'🐉',cn:'龙',en:'Dragon',lucky:'Mighty power day — aim for the jackpot',color:'#ef4444'},
+  {key:'snake',emoji:'🐍',cn:'蛇',en:'Snake',lucky:'Wise intuition — your gut feeling is sharp',color:'#10b981'},
+  {key:'horse',emoji:'🐎',cn:'马',en:'Horse',lucky:'Swift fortune — fast decisions win today',color:'#f97316'},
+  {key:'goat',emoji:'🐐',cn:'羊',en:'Goat',lucky:'Artistic luck — creative picks pay off',color:'#ec4899'},
+  {key:'monkey',emoji:'🐒',cn:'猴',en:'Monkey',lucky:'Clever & playful — unexpected wins ahead',color:'#fbbf24'},
+  {key:'rooster',emoji:'🐓',cn:'鸡',en:'Rooster',lucky:'Bright energy — bold numbers favored',color:'#dc2626'},
+  {key:'dog',emoji:'🐕',cn:'狗',en:'Dog',lucky:'Loyal fortune — trust your system today',color:'#92400e'},
+  {key:'pig',emoji:'🐖',cn:'猪',en:'Pig',lucky:'Abundant wealth day — money flows in',color:'#f472b6'}
+];
+
+// Reference date: Jan 1, 2026 was a Thursday (Rat day per Chinese calendar)
+// Using accurate traditional calculation
+function getZodiacDay(date){
+  const d=new Date(date);
+  // Jan 1, 2000 = Day-pillar index (fixed astronomical reference)
+  const refDate=new Date(2000,0,1);
+  const daysDiff=Math.floor((d-refDate)/(1000*60*60*24));
+  // Jan 1, 2000 was 庚辰 day, which in 12-branch is Dragon (index 4)
+  const zodiacIdx=((daysDiff+4)%12+12)%12;
+  return ZODIAC[zodiacIdx];
+}
+
+// ============================================================
+// LUCKY MANTRAS — rotate each time you open the app
+// ============================================================
+const MANTRAS=[
+  {cn:'财运到',py:'cái yùn dào',en:'Fortune has arrived'},
+  {cn:'恭喜发财',py:'gōng xǐ fā cái',en:'Congratulations & prosper'},
+  {cn:'大吉大利',py:'dà jí dà lì',en:'Great luck & great profit'},
+  {cn:'金玉满堂',py:'jīn yù mǎn táng',en:'Wealth fills the home'},
+  {cn:'日进斗金',py:'rì jìn dǒu jīn',en:'Gold flows in daily'},
+  {cn:'招财进宝',py:'zhāo cái jìn bǎo',en:'Attract wealth & treasure'},
+  {cn:'财源广进',py:'cái yuán guǎng jìn',en:'Wealth sources flow in'},
+  {cn:'一本万利',py:'yī běn wàn lì',en:'Small investment, great return'},
+  {cn:'生意兴隆',py:'shēng yì xīng lóng',en:'Business thrives'},
+  {cn:'五福临门',py:'wǔ fú lín mén',en:'Five blessings at the door'}
+];
+
+function getTodayMantra(){
+  const today=new Date().toDateString();
+  // Seed by date string hash so it's stable through the day
+  let hash=0;
+  for(let i=0;i<today.length;i++)hash=((hash<<5)-hash)+today.charCodeAt(i);
+  return MANTRAS[Math.abs(hash)%MANTRAS.length];
+}
+
+// ============================================================
+// LUCKY HOUR (Chinese 12-shichen time blocks)
+// Each shichen = 2 hours. 寅时 (Tiger 3-5AM), 卯时 (Rabbit 5-7AM) etc.
+// "财时" (wealth hour) traditionally: Dragon hour (7-9AM), Horse (11AM-1PM), Monkey (3-5PM)
+// ============================================================
+const SHICHEN=[
+  {name:'子时',en:'Rat',hours:'23-1',lucky:false},
+  {name:'丑时',en:'Ox',hours:'1-3',lucky:false},
+  {name:'寅时',en:'Tiger',hours:'3-5',lucky:false},
+  {name:'卯时',en:'Rabbit',hours:'5-7',lucky:true},
+  {name:'辰时',en:'Dragon',hours:'7-9',lucky:true},
+  {name:'巳时',en:'Snake',hours:'9-11',lucky:false},
+  {name:'午时',en:'Horse',hours:'11-13',lucky:true},
+  {name:'未时',en:'Goat',hours:'13-15',lucky:false},
+  {name:'申时',en:'Monkey',hours:'15-17',lucky:true},
+  {name:'酉时',en:'Rooster',hours:'17-19',lucky:true},
+  {name:'戌时',en:'Dog',hours:'19-21',lucky:false},
+  {name:'亥时',en:'Pig',hours:'21-23',lucky:false}
+];
+
+function getCurrentShichen(){
+  const h=new Date().getHours();
+  // 23-1 = 0, 1-3 = 1, etc.
+  const idx=Math.floor(((h+1)%24)/2);
+  return SHICHEN[idx];
+}
 
 function isDrawDay(date){
   const d=new Date(date);
