@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v3.5.2</title>
+<title>Beast Mode 4D v3.5.3</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -204,7 +204,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v3.5.2</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v3.5.3</span>
       <div class="sub">AI-Powered Sniper Prediction Engine + DeepSeek AI</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
@@ -1390,55 +1390,181 @@ function renderPredict(){
 
 function renderHistory(){
   const pg=document.getElementById('pgHistory');
+  const histFilter=localStorage.getItem('b4d_histFilter')||'all';
+  const histStatus=localStorage.getItem('b4d_histStatus')||'all';
+  const expandedDates=JSON.parse(localStorage.getItem('b4d_histExpanded')||'[]');
+  
   let h=`<div class="section-title">📜 Prediction History</div>`;
-  h+=`<button class="btn btn-green btn-sm" onclick="openModal('modalCheck')" style="width:100%;margin-bottom:14px">📋 Check Results & Train AI</button>`;
+  h+=`<button class="btn btn-green btn-sm" onclick="openModal('modalCheck')" style="width:100%;margin-bottom:10px">📋 Check Results & Train AI</button>`;
   
   if(history.length===0){
     h+=`<div style="text-align:center;padding:40px 0;color:var(--dim3)"><div style="font-size:40px;margin-bottom:10px">📜</div><div style="font-size:12px;color:var(--dim2)">No predictions yet</div><div style="font-size:9px;margin-top:4px">Run Beast Mode to start building history</div></div>`;
-  }else{
-    history.slice().reverse().forEach((entry,i)=>{
-      const isSniper=entry.operator==='SNIPER';
-      const opColor=isSniper?'#ff6633':(operators.find(o=>o.name===entry.operator)?.color||'#888');
-      const permDetails=entry.permWinDetails||[];
-      const permWinNums=new Set(permDetails.map(p=>p.predicted));
-      const opC={MAGNUM:'#D4A017',TOTO:'#DC2626',DAMACAI:'#2563EB'};
-      
-      h+=`<div class="hist-item" style="${isSniper?'border-left:3px solid #ff6633;background:linear-gradient(135deg,rgba(255,102,51,0.04),rgba(255,165,0,0.02))':''}">
-        <div class="hist-header">
-          <div>
-            <span class="hist-date">${entry.date}</span>
-            ${isSniper?`<span style="font-size:10px;color:#ff6633;font-weight:800">🎯 SNIPER MODE</span>`:`<span style="font-size:10px;color:${opColor}">${entry.operator}</span>`}
-          </div>
-          <span class="hist-target">${entry.targetDay} target</span>
-        </div>
-        ${isSniper&&entry.sniperMeta?`<div style="font-size:8px;color:var(--dim2);margin-bottom:8px">Cross-operator digit sets — play iBox on ALL operators</div>`:''}
-        <div class="hist-nums">${entry.predictions.map(n=>{
-          const isHit=entry.checked&&entry.hits?.includes(n);
-          const isPermWin=entry.checked&&permWinNums.has(n);
-          const cls=entry.checked?(isHit?'hit':isPermWin?'perm-hit':'miss'):'';
-          return`<span class="hist-num ${cls}">${n}</span>`;
-        }).join('')}</div>
-        ${isSniper&&entry.sniperMeta?`<div style="margin-top:6px;display:flex;flex-direction:column;gap:3px">${entry.sniperMeta.map(m=>`<div style="font-size:8px;display:flex;align-items:center;gap:4px">
-          <span style="font-family:monospace;color:#fff;font-weight:700;min-width:40px">${m.num}</span>
-          <span style="font-size:7px;background:${opC[m.origin]};color:#fff;padding:1px 3px;border-radius:2px">${m.origin}</span>
-          <span style="color:var(--dim3)">→</span>
-          ${m.alsoHotIn.map(o=>`<span style="font-size:7px;background:${opC[o]};color:#fff;padding:1px 3px;border-radius:2px">${o}</span>`).join('')}
-        </div>`).join('')}</div>`:''}
-        ${entry.checked?`<div style="margin-top:8px;font-size:10px">
-          ${entry.hits?.length>0?`<span style="color:var(--green)">✅ ${entry.hits.length} STRAIGHT hit(s)!</span>`:'<span style="color:var(--dim2)">No straight hits</span>'}
-          ${entry.permHits>0?`<span style="color:var(--amber)"> | 🔀 ${entry.permHits} PERM win(s)</span>`:''}
-        </div>
-        ${permDetails.length>0?`<div style="margin-top:6px">${permDetails.map(p=>`<div style="font-size:9px;padding:3px 0;display:flex;align-items:center;gap:6px">
-          <span style="font-family:monospace;color:var(--amber);font-weight:700">${p.predicted}</span>
-          <span style="color:var(--dim3)">→ won as</span>
-          <span style="font-family:monospace;color:var(--green);font-weight:700">${p.won}</span>
-          <span style="font-size:7px;background:${p.prize==='TOP3'?'#c90':p.prize==='SPECIAL'?'#36a':'#555'};color:#fff;padding:1px 4px;border-radius:3px">${p.prize}</span>
-        </div>`).join('')}</div>`:''}`:'<div style="margin-top:6px;font-size:9px;color:var(--dim3)">⏳ Not checked yet</div>'}
-        ${entry.modules&&!isSniper?`<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:2px">${entry.modules.map(m=>`<span style="font-size:6px;background:#1a1a3a;color:#666;padding:1px 3px;border-radius:2px">${m}</span>`).join('')}</div>`:''}
-      </div>`;
-    });
+    pg.innerHTML=h;return;
   }
+  
+  // Filter controls
+  const totalCount=history.length;
+  const checkedCount=history.filter(e=>e.checked).length;
+  const unCheckedCount=totalCount-checkedCount;
+  const winCount=history.filter(e=>e.checked&&(e.hits?.length>0||e.permHits>0)).length;
+  
+  h+=`<div style="background:#0a0a20;border-radius:10px;padding:10px;margin-bottom:12px;border:1px solid #1a1a3a">
+    <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--dim2);margin-bottom:8px">
+      <span>📊 Total: <b style="color:#fff">${totalCount}</b></span>
+      <span>✅ Checked: <b style="color:var(--green)">${checkedCount}</b></span>
+      <span>🏆 Wins: <b style="color:var(--amber)">${winCount}</b></span>
+      <span>⏳ Pending: <b style="color:#a78bfa">${unCheckedCount}</b></span>
+    </div>
+    <div style="display:flex;gap:4px;margin-bottom:6px">
+      <select onchange="localStorage.setItem('b4d_histFilter',this.value);render()" style="flex:1;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:5px 7px;font-size:10px;font-family:inherit">
+        <option value="all"${histFilter==='all'?' selected':''}>🎯 All Operators</option>
+        <option value="SNIPER"${histFilter==='SNIPER'?' selected':''}>🎯 Sniper Mode Only</option>
+        <option value="MAGNUM"${histFilter==='MAGNUM'?' selected':''}>Magnum Only</option>
+        <option value="TOTO"${histFilter==='TOTO'?' selected':''}>Toto Only</option>
+        <option value="DAMACAI"${histFilter==='DAMACAI'?' selected':''}>Damacai Only</option>
+      </select>
+      <select onchange="localStorage.setItem('b4d_histStatus',this.value);render()" style="flex:1;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:5px 7px;font-size:10px;font-family:inherit">
+        <option value="all"${histStatus==='all'?' selected':''}>📋 All Status</option>
+        <option value="wins"${histStatus==='wins'?' selected':''}>🏆 Wins Only</option>
+        <option value="checked"${histStatus==='checked'?' selected':''}>✅ Checked</option>
+        <option value="pending"${histStatus==='pending'?' selected':''}>⏳ Pending</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:4px">
+      <button class="btn btn-sm btn-outline" style="flex:1;font-size:9px;padding:5px" onclick="expandAllHistory()">▼ Expand All</button>
+      <button class="btn btn-sm btn-outline" style="flex:1;font-size:9px;padding:5px" onclick="collapseAllHistory()">▲ Collapse</button>
+      <button class="btn btn-sm btn-outline" style="flex:1;font-size:9px;padding:5px;border-color:#441111;color:#884444" onclick="clearCheckedHistory()">🗑️ Clear Checked</button>
+    </div>
+  </div>`;
+  
+  // Filter entries
+  let filtered=history.slice();
+  if(histFilter!=='all')filtered=filtered.filter(e=>e.operator===histFilter);
+  if(histStatus==='wins')filtered=filtered.filter(e=>e.checked&&(e.hits?.length>0||e.permHits>0));
+  else if(histStatus==='checked')filtered=filtered.filter(e=>e.checked);
+  else if(histStatus==='pending')filtered=filtered.filter(e=>!e.checked);
+  
+  if(filtered.length===0){
+    h+=`<div style="text-align:center;padding:30px 0;color:var(--dim3);font-size:11px">No entries match your filters</div>`;
+    pg.innerHTML=h;return;
+  }
+  
+  // Group by date
+  const byDate={};
+  filtered.forEach(e=>{if(!byDate[e.date])byDate[e.date]=[];byDate[e.date].push(e);});
+  const sortedDates=Object.keys(byDate).sort().reverse();
+  
+  const opC={MAGNUM:'#D4A017',TOTO:'#DC2626',DAMACAI:'#2563EB',SNIPER:'#ff6633'};
+  
+  sortedDates.forEach(date=>{
+    const entries=byDate[date];
+    const isExpanded=expandedDates.includes(date);
+    const dateWins=entries.filter(e=>e.checked&&(e.hits?.length>0||e.permHits>0)).length;
+    const datePending=entries.filter(e=>!e.checked).length;
+    const dateChecked=entries.filter(e=>e.checked).length;
+    
+    // Day name
+    const dt=new Date(date);
+    const dayName=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][dt.getDay()];
+    
+    // Date header (clickable)
+    h+=`<div style="background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(139,92,246,0.04));border:1px solid #1a1a3a;border-radius:10px;margin-bottom:8px;overflow:hidden">
+      <div onclick="toggleHistoryDate('${date}')" style="padding:10px 12px;cursor:pointer;display:flex;align-items:center;gap:8px">
+        <span style="font-size:10px;color:var(--dim3);width:10px">${isExpanded?'▼':'▶'}</span>
+        <div style="flex:1">
+          <div style="font-size:12px;font-weight:700;color:#fff">${date} <span style="font-size:10px;color:var(--dim2);font-weight:400">(${dayName})</span></div>
+          <div style="display:flex;gap:8px;font-size:9px;color:var(--dim2);margin-top:3px">
+            <span>📋 ${entries.length} entries</span>
+            ${dateWins>0?`<span style="color:var(--green)">🏆 ${dateWins} win(s)</span>`:''}
+            ${datePending>0?`<span style="color:#a78bfa">⏳ ${datePending} pending</span>`:''}
+          </div>
+        </div>
+        <div style="display:flex;gap:2px">
+          ${[...new Set(entries.map(e=>e.operator))].map(op=>`<span style="font-size:7px;background:${opC[op]||'#555'};color:#fff;padding:2px 5px;border-radius:3px;font-weight:700">${op==='SNIPER'?'🎯':op.charAt(0)}</span>`).join('')}
+        </div>
+      </div>`;
+    
+    if(isExpanded){
+      h+=`<div style="padding:0 10px 10px 10px">`;
+      entries.forEach(entry=>{
+        const isSniper=entry.operator==='SNIPER';
+        const opColor=opC[entry.operator]||'#888';
+        const permDetails=entry.permWinDetails||[];
+        const permWinNums=new Set(permDetails.map(p=>p.predicted));
+        const hasWin=entry.checked&&(entry.hits?.length>0||entry.permHits>0);
+        
+        h+=`<div class="hist-item" style="margin:6px 0;padding:10px;border-radius:8px;background:#0a0a15;border:1px solid #1a1a3a;${isSniper?'border-left:3px solid #ff6633':''}${hasWin?';box-shadow:0 0 0 1px rgba(34,197,94,0.2)':''}">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div style="display:flex;align-items:center;gap:6px">
+              ${isSniper?`<span style="font-size:10px;color:#ff6633;font-weight:800">🎯 SNIPER</span>`:`<span style="font-size:10px;font-weight:700;color:${opColor}">${entry.operator}</span>`}
+              <span style="font-size:8px;background:#1a1a2e;color:var(--dim2);padding:2px 6px;border-radius:3px">${entry.targetDay}</span>
+            </div>
+            ${hasWin?`<span style="font-size:9px;color:var(--green);font-weight:700">🏆 WIN</span>`:entry.checked?`<span style="font-size:9px;color:var(--dim3)">✅ No hit</span>`:`<span style="font-size:9px;color:#a78bfa">⏳ Pending</span>`}
+          </div>
+          
+          <div class="hist-nums" style="margin:6px 0">${entry.predictions.map(n=>{
+            const isHit=entry.checked&&entry.hits?.includes(n);
+            const isPermWin=entry.checked&&permWinNums.has(n);
+            const cls=entry.checked?(isHit?'hit':isPermWin?'perm-hit':'miss'):'';
+            return`<span class="hist-num ${cls}">${n}</span>`;
+          }).join('')}</div>
+          
+          ${isSniper&&entry.sniperMeta?`<div style="margin-top:6px;display:flex;flex-direction:column;gap:2px">${entry.sniperMeta.map(m=>`<div style="font-size:8px;display:flex;align-items:center;gap:4px">
+            <span style="font-family:monospace;color:#fff;font-weight:700;min-width:40px">${m.num}</span>
+            <span style="font-size:7px;background:${opC[m.origin]};color:#fff;padding:1px 3px;border-radius:2px">${m.origin}</span>
+            <span style="color:var(--dim3)">→</span>
+            ${m.alsoHotIn.map(o=>`<span style="font-size:7px;background:${opC[o]};color:#fff;padding:1px 3px;border-radius:2px">${o}</span>`).join('')}
+          </div>`).join('')}</div>`:''}
+          
+          ${entry.checked?`
+          ${entry.hits?.length>0?`<div style="margin-top:6px;font-size:9px;color:var(--green)">✅ ${entry.hits.length} STRAIGHT hit(s)</div>`:''}
+          ${entry.permHits>0?`<div style="margin-top:4px;font-size:9px;color:var(--amber)">🔀 ${entry.permHits} PERM win(s)</div>`:''}
+          ${permDetails.length>0?`<div style="margin-top:6px;background:rgba(245,146,0,0.05);border-radius:6px;padding:6px">${permDetails.map(p=>`<div style="font-size:9px;padding:2px 0;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <span style="font-family:monospace;color:var(--amber);font-weight:700">${p.predicted}</span>
+            <span style="color:var(--dim3)">→</span>
+            <span style="font-family:monospace;color:var(--green);font-weight:700">${p.won}</span>
+            <span style="font-size:7px;background:${p.prize.includes('TOP3')?'#c90':p.prize.includes('SPECIAL')?'#36a':'#555'};color:#fff;padding:1px 4px;border-radius:3px">${p.prize}</span>
+          </div>`).join('')}</div>`:''}
+          `:''}
+          
+          ${entry.modules&&!isSniper?`<details style="margin-top:6px"><summary style="font-size:8px;color:var(--dim3);cursor:pointer">🔧 Modules used (${entry.modules.length})</summary><div style="display:flex;flex-wrap:wrap;gap:2px;margin-top:4px">${entry.modules.map(m=>`<span style="font-size:6px;background:#1a1a3a;color:#888;padding:1px 3px;border-radius:2px">${m}</span>`).join('')}</div></details>`:''}
+        </div>`;
+      });
+      h+=`</div>`;
+    }
+    h+=`</div>`;
+  });
+  
   pg.innerHTML=h;
+}
+
+function toggleHistoryDate(date){
+  const expanded=JSON.parse(localStorage.getItem('b4d_histExpanded')||'[]');
+  const idx=expanded.indexOf(date);
+  if(idx>=0)expanded.splice(idx,1);
+  else expanded.push(date);
+  localStorage.setItem('b4d_histExpanded',JSON.stringify(expanded));
+  render();
+}
+
+function expandAllHistory(){
+  const allDates=[...new Set(history.map(e=>e.date))];
+  localStorage.setItem('b4d_histExpanded',JSON.stringify(allDates));
+  render();
+}
+
+function collapseAllHistory(){
+  localStorage.setItem('b4d_histExpanded','[]');
+  render();
+}
+
+function clearCheckedHistory(){
+  const checkedCount=history.filter(e=>e.checked).length;
+  if(checkedCount===0){toast('No checked entries to clear');return;}
+  if(!confirm(`Delete ${checkedCount} checked history entries?\n\n• Pending entries will be kept\n• Stats & win counts are preserved\n• Cannot be undone`))return;
+  history=history.filter(e=>!e.checked);
+  saveAll();render();
+  toast(`🗑️ ${checkedCount} checked entries removed`);
 }
 
 // ============================================================
