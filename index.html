@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v3.4.1</title>
+<title>Beast Mode 4D v3.5</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -204,7 +204,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v3.4.1</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v3.5</span>
       <div class="sub">AI-Powered Sniper Prediction Engine + DeepSeek AI</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
@@ -1104,7 +1104,26 @@ function renderPredict(){
   const pg=document.getElementById('pgPredict');
   
   // Controls
-  let h=`<div class="controls" style="padding:12px 0"><div class="ctrl-group"><label>Target Day</label><select id="tDay" onchange="selectedDay=this.value;localStorage.setItem('b4d_targetDay',this.value);render()"><option value="Sat"${selectedDay==='Sat'?' selected':''}>Saturday</option><option value="Sun"${selectedDay==='Sun'?' selected':''}>Sunday</option><option value="Wed"${selectedDay==='Wed'?' selected':''}>Wednesday</option><option value="Tue"${selectedDay==='Tue'?' selected':''}>Tuesday (Special)</option></select></div>
+  // Next draw countdown banner
+  const drawInfo=formatDrawCountdown();
+  const notifyOn=!!localStorage.getItem('b4d_notify');
+  let h='';
+  if(drawInfo){
+    const bgColor=drawInfo.type==='special'?'linear-gradient(135deg,rgba(168,85,247,0.12),rgba(236,72,153,0.06))':'linear-gradient(135deg,rgba(99,102,241,0.08),rgba(139,92,246,0.04))';
+    const bdColor=drawInfo.type==='special'?'rgba(168,85,247,0.4)':'rgba(99,102,241,0.3)';
+    const icon=drawInfo.type==='special'?'⭐':'🎰';
+    h+=`<div style="background:${bgColor};border:1px solid ${bdColor};border-radius:10px;padding:10px 12px;margin-bottom:12px;display:flex;align-items:center;gap:10px">
+      <div style="font-size:22px">${icon}</div>
+      <div style="flex:1">
+        <div style="font-size:9px;color:var(--dim2);text-transform:uppercase;letter-spacing:0.5px">${drawInfo.type==='special'?'Special Draw':'Next Draw'}</div>
+        <div style="font-size:12px;font-weight:700;color:#fff">${drawInfo.dayName}</div>
+        <div style="font-size:10px;color:${drawInfo.type==='special'?'#c084fc':'#a78bfa'};font-weight:600">⏰ ${drawInfo.countdown}</div>
+      </div>
+      <button onclick="${notifyOn?'disableNotifications()':'enableNotifications()'}" style="background:${notifyOn?'#1a3a1a':'#1a1a3a'};border:1px solid ${notifyOn?'#22c55e':'#6366f1'};color:${notifyOn?'#22c55e':'#a78bfa'};font-size:10px;padding:6px 10px;border-radius:6px;font-family:inherit;cursor:pointer;font-weight:600">${notifyOn?'🔔 ON':'🔕 Enable'}</button>
+    </div>`;
+  }
+  
+  h+=`<div class="controls" style="padding:12px 0"><div class="ctrl-group"><label>Target Day</label><select id="tDay" onchange="selectedDay=this.value;localStorage.setItem('b4d_targetDay',this.value);render()"><option value="Sat"${selectedDay==='Sat'?' selected':''}>Saturday</option><option value="Sun"${selectedDay==='Sun'?' selected':''}>Sunday</option><option value="Wed"${selectedDay==='Wed'?' selected':''}>Wednesday</option><option value="Tue"${selectedDay==='Tue'?' selected':''}>Tuesday (Special)</option></select></div>
   <div class="ctrl-group" style="max-width:90px"><label>Budget (RM)</label><input type="number" id="budgetInput" min="5" max="500" value="${localStorage.getItem('b4d_budget')||'50'}" style="text-align:center;font-weight:700" onchange="localStorage.setItem('b4d_budget',this.value)"></div>
   <button class="btn btn-fire" onclick="runBeast()" id="runBtn">🔥 RUN</button></div>`;
   
@@ -1369,21 +1388,33 @@ function renderHistory(){
     h+=`<div style="text-align:center;padding:40px 0;color:var(--dim3)"><div style="font-size:40px;margin-bottom:10px">📜</div><div style="font-size:12px;color:var(--dim2)">No predictions yet</div><div style="font-size:9px;margin-top:4px">Run Beast Mode to start building history</div></div>`;
   }else{
     history.slice().reverse().forEach((entry,i)=>{
-      const opColor=operators.find(o=>o.name===entry.operator)?.color||'#888';
+      const isSniper=entry.operator==='SNIPER';
+      const opColor=isSniper?'#ff6633':(operators.find(o=>o.name===entry.operator)?.color||'#888');
       const permDetails=entry.permWinDetails||[];
       const permWinNums=new Set(permDetails.map(p=>p.predicted));
+      const opC={MAGNUM:'#D4A017',TOTO:'#DC2626',DAMACAI:'#2563EB'};
       
-      h+=`<div class="hist-item">
+      h+=`<div class="hist-item" style="${isSniper?'border-left:3px solid #ff6633;background:linear-gradient(135deg,rgba(255,102,51,0.04),rgba(255,165,0,0.02))':''}">
         <div class="hist-header">
-          <div><span class="hist-date">${entry.date}</span> <span style="font-size:10px;color:${opColor}">${entry.operator}</span></div>
+          <div>
+            <span class="hist-date">${entry.date}</span>
+            ${isSniper?`<span style="font-size:10px;color:#ff6633;font-weight:800">🎯 SNIPER MODE</span>`:`<span style="font-size:10px;color:${opColor}">${entry.operator}</span>`}
+          </div>
           <span class="hist-target">${entry.targetDay} target</span>
         </div>
+        ${isSniper&&entry.sniperMeta?`<div style="font-size:8px;color:var(--dim2);margin-bottom:8px">Cross-operator digit sets — play iBox on ALL operators</div>`:''}
         <div class="hist-nums">${entry.predictions.map(n=>{
           const isHit=entry.checked&&entry.hits?.includes(n);
           const isPermWin=entry.checked&&permWinNums.has(n);
           const cls=entry.checked?(isHit?'hit':isPermWin?'perm-hit':'miss'):'';
           return`<span class="hist-num ${cls}">${n}</span>`;
         }).join('')}</div>
+        ${isSniper&&entry.sniperMeta?`<div style="margin-top:6px;display:flex;flex-direction:column;gap:3px">${entry.sniperMeta.map(m=>`<div style="font-size:8px;display:flex;align-items:center;gap:4px">
+          <span style="font-family:monospace;color:#fff;font-weight:700;min-width:40px">${m.num}</span>
+          <span style="font-size:7px;background:${opC[m.origin]};color:#fff;padding:1px 3px;border-radius:2px">${m.origin}</span>
+          <span style="color:var(--dim3)">→</span>
+          ${m.alsoHotIn.map(o=>`<span style="font-size:7px;background:${opC[o]};color:#fff;padding:1px 3px;border-radius:2px">${o}</span>`).join('')}
+        </div>`).join('')}</div>`:''}
         ${entry.checked?`<div style="margin-top:8px;font-size:10px">
           ${entry.hits?.length>0?`<span style="color:var(--green)">✅ ${entry.hits.length} STRAIGHT hit(s)!</span>`:'<span style="color:var(--dim2)">No straight hits</span>'}
           ${entry.permHits>0?`<span style="color:var(--amber)"> | 🔀 ${entry.permHits} PERM win(s)</span>`:''}
@@ -1394,7 +1425,7 @@ function renderHistory(){
           <span style="font-family:monospace;color:var(--green);font-weight:700">${p.won}</span>
           <span style="font-size:7px;background:${p.prize==='TOP3'?'#c90':p.prize==='SPECIAL'?'#36a':'#555'};color:#fff;padding:1px 4px;border-radius:3px">${p.prize}</span>
         </div>`).join('')}</div>`:''}`:'<div style="margin-top:6px;font-size:9px;color:var(--dim3)">⏳ Not checked yet</div>'}
-        ${entry.modules?`<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:2px">${entry.modules.map(m=>`<span style="font-size:6px;background:#1a1a3a;color:#666;padding:1px 3px;border-radius:2px">${m}</span>`).join('')}</div>`:''}
+        ${entry.modules&&!isSniper?`<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:2px">${entry.modules.map(m=>`<span style="font-size:6px;background:#1a1a3a;color:#666;padding:1px 3px;border-radius:2px">${m}</span>`).join('')}</div>`:''}
       </div>`;
     });
   }
@@ -1763,6 +1794,27 @@ function runBeast(){
       const activeModules=Object.entries(opToggles).filter(([,v])=>v!==false).map(([k])=>k);
       history.push({date:now,operator:op.name,targetDay:tDay,predictions:preds,checked:false,hits:[],permHits:0,modules:activeModules});
     });
+    
+    // Save SNIPER MODE predictions as a special entry
+    if(Object.keys(lastResults).length>=2){
+      const crossOp=crossOperatorFusion(lastResults);
+      if(crossOp.playAllOps.length>0){
+        const sniperNums=crossOp.playAllOps.slice(0,6).map(p=>p.num);
+        const sniperMeta=crossOp.playAllOps.slice(0,6).map(p=>({num:p.num,origin:p.originOp,alsoHotIn:p.alsoHotIn}));
+        history.push({
+          date:now,
+          operator:'SNIPER',
+          targetDay:tDay,
+          predictions:sniperNums,
+          sniperMeta:sniperMeta,
+          checked:false,
+          hits:[],
+          permHits:0,
+          modules:['cross-operator-fusion']
+        });
+      }
+    }
+    
     saveAll();
     
     stats.totalPredictions+=operators.length;save(KEYS.stats,stats);
@@ -2215,6 +2267,7 @@ function checkResults(){
   let totalHits=0,permHitsTotal=0,t3Hits=0,spHits=0,cnHits=0;
   
   history.forEach(entry=>{
+    // Check regular operator entries
     if(entry.operator===opName&&!entry.checked){
       const hits=entry.predictions.filter(n=>allActual.includes(n));
       let permHits=0;
@@ -2246,6 +2299,50 @@ function checkResults(){
       // Self-learning: adjust weights
       if(lastResults&&lastResults[opName]){
         adjustWeights(lastResults[opName].predictions.slice(0,10),allActual);
+      }
+    }
+    
+    // Check SNIPER entries against ALL operators' actual results
+    if(entry.operator==='SNIPER'&&!entry.checked){
+      // Gather actual numbers from all 3 operators for the same date
+      const allOpsActual=[];
+      const t3ByOp={};
+      operators.forEach(op=>{
+        const draw=op.draws.find(d=>d.date===date);
+        if(draw){
+          allOpsActual.push(...draw.top3,...(draw.special||[]),...(draw.consolation||[]));
+          t3ByOp[op.name]=draw.top3;
+        }
+      });
+      if(allOpsActual.length>0){
+        const sniperHits=entry.predictions.filter(n=>allOpsActual.includes(n));
+        let sniperPermHits=0;
+        let sniperPermDetails=[];
+        entry.predictions.forEach(n=>{
+          if(!allOpsActual.includes(n)){
+            const perms=getPerms(n);
+            const winningPerm=perms.find(p=>allOpsActual.includes(p));
+            if(winningPerm){
+              sniperPermHits++;
+              // Find which operator it won in
+              let prizeType='CONSOLATION';
+              let winOp='';
+              for(const op of operators){
+                const dr=op.draws.find(d=>d.date===date);
+                if(dr){
+                  if(dr.top3.includes(winningPerm)){prizeType='TOP3';winOp=op.name;break;}
+                  if((dr.special||[]).includes(winningPerm)){prizeType='SPECIAL';winOp=op.name;break;}
+                  if((dr.consolation||[]).includes(winningPerm)){prizeType='CONSOLATION';winOp=op.name;break;}
+                }
+              }
+              sniperPermDetails.push({predicted:n,won:winningPerm,prize:prizeType+(winOp?' ('+winOp+')':'')});
+            }
+          }
+        });
+        entry.checked=true;
+        entry.hits=sniperHits;
+        entry.permHits=sniperPermHits;
+        entry.permWinDetails=sniperPermDetails;
       }
     }
   });
@@ -2602,6 +2699,123 @@ CURRENT APP STATE:
   
   chat.scrollTop=chat.scrollHeight;
 }
+
+// ============================================================
+// DRAW SCHEDULE & NOTIFICATIONS
+// ============================================================
+// Regular draws: Wed, Sat, Sun at 7PM Malaysia time (UTC+8)
+// 2026 Special Draws (Tuesdays): Jan 27, Feb 10, Feb 17, Apr 7, Jul 28, Sep 1, Oct 27, Dec 29
+const SPECIAL_DRAWS_2026=['2026-01-27','2026-02-10','2026-02-17','2026-04-07','2026-07-28','2026-09-01','2026-10-27','2026-12-29'];
+
+function isDrawDay(date){
+  const d=new Date(date);
+  const dayOfWeek=d.getDay(); // 0=Sun, 3=Wed, 6=Sat
+  const isoDate=date.toISOString().slice(0,10);
+  if(dayOfWeek===0||dayOfWeek===3||dayOfWeek===6)return{isDraw:true,type:'regular'};
+  if(SPECIAL_DRAWS_2026.includes(isoDate))return{isDraw:true,type:'special'};
+  return{isDraw:false};
+}
+
+function getNextDraw(){
+  const now=new Date();
+  for(let i=0;i<14;i++){
+    const check=new Date(now);
+    check.setDate(now.getDate()+i);
+    const info=isDrawDay(check);
+    if(info.isDraw){
+      const drawTime=new Date(check);
+      drawTime.setHours(19,0,0,0); // 7PM
+      // If today is draw day but 7PM already passed, skip to next
+      if(i===0&&now>drawTime)continue;
+      return{date:drawTime,type:info.type,dayName:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][drawTime.getDay()]};
+    }
+  }
+  return null;
+}
+
+async function enableNotifications(){
+  if(!('Notification' in window)){toast('Notifications not supported on this device');return;}
+  const perm=await Notification.requestPermission();
+  if(perm!=='granted'){toast('Notification permission denied');return;}
+  localStorage.setItem('b4d_notify',(Date.now()+'').toString());
+  scheduleNextDrawNotification();
+  toast('✅ Draw reminders enabled!');
+  render();
+}
+
+function disableNotifications(){
+  localStorage.removeItem('b4d_notify');
+  if(window._b4dNotifyTimer){clearTimeout(window._b4dNotifyTimer);window._b4dNotifyTimer=null;}
+  toast('Draw reminders disabled');
+  render();
+}
+
+function scheduleNextDrawNotification(){
+  if(!localStorage.getItem('b4d_notify'))return;
+  if(Notification.permission!=='granted')return;
+  
+  const next=getNextDraw();
+  if(!next)return;
+  
+  // Schedule 3 notifications: 2 hours before, 30 min before, and at draw time
+  const nowMs=Date.now();
+  const drawMs=next.date.getTime();
+  
+  const reminders=[
+    {offset:2*60*60*1000,label:'2 hours'},
+    {offset:30*60*1000,label:'30 minutes'},
+    {offset:0,label:'now'}
+  ];
+  
+  if(window._b4dNotifyTimer)clearTimeout(window._b4dNotifyTimer);
+  
+  reminders.forEach(r=>{
+    const fireAt=drawMs-r.offset;
+    const delay=fireAt-nowMs;
+    if(delay>0&&delay<7*24*60*60*1000){ // Within 7 days
+      setTimeout(()=>{
+        const emoji=next.type==='special'?'⭐':'🎰';
+        const title=next.type==='special'?'⭐ SPECIAL Draw Reminder':'🎰 4D Draw Reminder';
+        const body=r.label==='now'
+          ?`${emoji} Draw starting now! (${next.dayName} ${next.date.toLocaleDateString('en-MY',{day:'numeric',month:'short'})})`
+          :`${emoji} Draw in ${r.label}. Open Beast Mode 4D to run your predictions!`;
+        try{
+          new Notification(title,{body,icon:'icon-192.png',badge:'icon-192.png',tag:'b4d-draw-'+r.label,requireInteraction:r.label==='now'});
+        }catch(e){console.warn('notif err',e);}
+      },delay);
+    }
+  });
+  
+  // Re-schedule after the draw
+  const afterDraw=drawMs+5*60*1000-nowMs;
+  if(afterDraw>0){
+    window._b4dNotifyTimer=setTimeout(scheduleNextDrawNotification,afterDraw);
+  }
+}
+
+function formatDrawCountdown(){
+  const next=getNextDraw();
+  if(!next)return null;
+  const nowMs=Date.now();
+  const diff=next.date.getTime()-nowMs;
+  if(diff<0)return null;
+  
+  const days=Math.floor(diff/(1000*60*60*24));
+  const hours=Math.floor((diff%(1000*60*60*24))/(1000*60*60));
+  const mins=Math.floor((diff%(1000*60*60))/(1000*60));
+  
+  let str='';
+  if(days>0)str+=days+'d ';
+  if(hours>0||days>0)str+=hours+'h ';
+  str+=mins+'m';
+  
+  const fullName={Sat:'Saturday',Sun:'Sunday',Wed:'Wednesday',Tue:'Tuesday (Special)'}[next.dayName]||next.dayName;
+  
+  return{countdown:str,dayName:fullName,type:next.type,date:next.date};
+}
+
+// Initial schedule on load
+setTimeout(()=>{if(localStorage.getItem('b4d_notify'))scheduleNextDrawNotification();},2000);
 
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').then(()=>{}).catch(()=>{});}
 

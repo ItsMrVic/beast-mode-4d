@@ -1,4 +1,4 @@
-const CACHE_NAME = 'beast4d-v3.4.1';
+const CACHE_NAME = 'beast4d-v3.5';
 
 self.addEventListener('install', event => {
   self.skipWaiting();
