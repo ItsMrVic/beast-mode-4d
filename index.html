@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v3.6</title>
+<title>Beast Mode 4D v3.7</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -149,6 +149,12 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
 .celebration-msg.show{display:block}
 @keyframes celebPop{0%{transform:translate(-50%,-50%) scale(0.5);opacity:0}50%{transform:translate(-50%,-50%) scale(1.1)}100%{transform:translate(-50%,-50%) scale(1);opacity:1}}
 
+/* Oracle jar spin animation (mimics Magnum Pudu live draw) */
+.oracle-jar{width:58px;height:70px;background:linear-gradient(180deg,#1e1b4b,#312e81);border:2px solid #8b5cf6;border-radius:10px 10px 20px 20px;display:flex;align-items:center;justify-content:center;font-family:monospace;font-size:32px;font-weight:900;color:#c084fc;box-shadow:inset 0 2px 8px rgba(0,0,0,0.5),0 4px 12px rgba(139,92,246,0.3);position:relative;overflow:hidden;transition:all 0.3s}
+.oracle-jar::before{content:'';position:absolute;top:-4px;left:-2px;right:-2px;height:8px;background:linear-gradient(90deg,#fbbf24,#f59e0b,#fbbf24);border-radius:4px;box-shadow:0 2px 4px rgba(0,0,0,0.4)}
+.oracle-jar.jar-locked{background:linear-gradient(180deg,#7c2d12,#dc2626);border-color:#fbbf24;color:#fde047;box-shadow:inset 0 2px 8px rgba(0,0,0,0.5),0 0 20px rgba(251,191,36,0.6);transform:scale(1.05);animation:jarLock 0.4s ease}
+@keyframes jarLock{0%{transform:scale(1.2) rotate(10deg)}50%{transform:scale(0.95) rotate(-5deg)}100%{transform:scale(1.05) rotate(0deg)}}
+
 /* Learning indicator */
 .learning-badge{display:inline-flex;align-items:center;gap:4px;font-size:9px;background:linear-gradient(135deg,#8b5cf6,#6366f1);color:#fff;padding:3px 8px;border-radius:10px;font-weight:700}
 .learning-badge::before{content:'🧠';font-size:10px}
@@ -215,7 +221,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v3.6</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v3.7</span>
       <div class="sub">AI-Powered Sniper Prediction Engine + DeepSeek AI</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
@@ -226,6 +232,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
 <div class="page active" id="pgPredict"></div>
 <div class="page" id="pgHistory"></div>
 <div class="page" id="pgLive"></div>
+<div class="page" id="pgOracle"></div>
 <div class="page" id="pgDashboard"></div>
 <div class="page" id="pgData"></div>
 
@@ -234,6 +241,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <button class="active" onclick="navTo('Predict')"><span class="ico">🎯</span>Predict</button>
   <button onclick="navTo('History')"><span class="ico">📜</span>History</button>
   <button onclick="navTo('Live')"><span class="ico">📡</span>Live</button>
+  <button onclick="navTo('Oracle')"><span class="ico">🔮</span>Oracle</button>
   <button onclick="navTo('Dashboard')"><span class="ico">📊</span>Dashboard</button>
   <button onclick="navTo('Data')"><span class="ico">💾</span>Data</button>
 </div>
@@ -1087,7 +1095,7 @@ function navTo(page){
   activeNav=page;
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('pg'+page).classList.add('active');
-  document.querySelectorAll('.bnav button').forEach((b,i)=>{b.classList.toggle('active',['Predict','History','Live','Dashboard','Data'][i]===page)});
+  document.querySelectorAll('.bnav button').forEach((b,i)=>{b.classList.toggle('active',['Predict','History','Live','Oracle','Dashboard','Data'][i]===page)});
   render();
 }
 
@@ -1132,6 +1140,7 @@ function render(){
   if(activeNav==='Predict')renderPredict();
   else if(activeNav==='History')renderHistory();
   else if(activeNav==='Live')renderLive();
+  else if(activeNav==='Oracle')renderOracle();
   else if(activeNav==='Dashboard')renderDashboard();
   else if(activeNav==='Data')renderData();
   // Learning badge
@@ -1484,6 +1493,7 @@ function renderHistory(){
       <select onchange="localStorage.setItem('b4d_histFilter',this.value);render()" style="flex:1;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:5px 7px;font-size:10px;font-family:inherit">
         <option value="all"${histFilter==='all'?' selected':''}>🎯 All Operators</option>
         <option value="SNIPER"${histFilter==='SNIPER'?' selected':''}>🎯 Sniper Mode Only</option>
+        <option value="ORACLE"${histFilter==='ORACLE'?' selected':''}>🔮 Oracle Mode Only</option>
         <option value="MAGNUM"${histFilter==='MAGNUM'?' selected':''}>Magnum Only</option>
         <option value="TOTO"${histFilter==='TOTO'?' selected':''}>Toto Only</option>
         <option value="DAMACAI"${histFilter==='DAMACAI'?' selected':''}>Damacai Only</option>
@@ -1519,7 +1529,7 @@ function renderHistory(){
   filtered.forEach(e=>{if(!byDate[e.date])byDate[e.date]=[];byDate[e.date].push(e);});
   const sortedDates=Object.keys(byDate).sort().reverse();
   
-  const opC={MAGNUM:'#D4A017',TOTO:'#DC2626',DAMACAI:'#2563EB',SNIPER:'#ff6633'};
+  const opC={MAGNUM:'#D4A017',TOTO:'#DC2626',DAMACAI:'#2563EB',SNIPER:'#ff6633',ORACLE:'#c084fc'};
   
   sortedDates.forEach(date=>{
     const entries=byDate[date];
@@ -1553,15 +1563,16 @@ function renderHistory(){
       h+=`<div style="padding:0 10px 10px 10px">`;
       entries.forEach(entry=>{
         const isSniper=entry.operator==='SNIPER';
+        const isOracle=entry.operator==='ORACLE';
         const opColor=opC[entry.operator]||'#888';
         const permDetails=entry.permWinDetails||[];
         const permWinNums=new Set(permDetails.map(p=>p.predicted));
         const hasWin=entry.checked&&(entry.hits?.length>0||entry.permHits>0);
         
-        h+=`<div class="hist-item" style="margin:6px 0;padding:10px;border-radius:8px;background:#0a0a15;border:1px solid #1a1a3a;${isSniper?'border-left:3px solid #ff6633':''}${hasWin?';box-shadow:0 0 0 1px rgba(34,197,94,0.2)':''}">
+        h+=`<div class="hist-item" style="margin:6px 0;padding:10px;border-radius:8px;background:#0a0a15;border:1px solid #1a1a3a;${isSniper?'border-left:3px solid #ff6633':isOracle?'border-left:3px solid #c084fc':''}${hasWin?';box-shadow:0 0 0 1px rgba(34,197,94,0.2)':''}">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
             <div style="display:flex;align-items:center;gap:6px">
-              ${isSniper?`<span style="font-size:10px;color:#ff6633;font-weight:800">🎯 SNIPER</span>`:`<span style="font-size:10px;font-weight:700;color:${opColor}">${entry.operator}</span>`}
+              ${isSniper?`<span style="font-size:10px;color:#ff6633;font-weight:800">🎯 SNIPER</span>`:isOracle?`<span style="font-size:10px;color:#c084fc;font-weight:800">🔮 ORACLE</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:`<span style="font-size:10px;font-weight:700;color:${opColor}">${entry.operator}</span>`}
               <span style="font-size:8px;background:#1a1a2e;color:var(--dim2);padding:2px 6px;border-radius:3px">${entry.targetDay}</span>
             </div>
             ${hasWin?`<span style="font-size:9px;color:var(--green);font-weight:700">🏆 WIN</span>`:entry.checked?`<span style="font-size:9px;color:var(--dim3)">✅ No hit</span>`:`<span style="font-size:9px;color:#a78bfa">⏳ Pending</span>`}
@@ -1830,6 +1841,268 @@ function addLiveToDatabase(opName){
   operators[opIdx].draws.sort((a,b)=>b.date.localeCompare(a.date));
   saveAll();renderLive();
   toast(`✅ ${opName} ${liveDate} added to database!`);
+}
+
+// ============================================================
+// ORACLE MODE — Multi-Timeframe Consensus Predictor
+// ============================================================
+// Theory: Analyze 4 time windows (last 3, 6, 9, 12 draws)
+// A digit is "hot" at a position if it appeared frequently in that window
+// STRICT CONSENSUS: only digits appearing in 3+ windows are candidates
+// Then combine candidates per position to form final numbers
+// ============================================================
+
+let lastOracleResults=null;
+
+function oracleAnalyze(opDraws){
+  if(opDraws.length<12)return null;
+  
+  const windows=[3,6,9,12];
+  // For each window, get digit frequency per position (0-3)
+  // Using top3 prizes for strongest signal
+  const windowAnalysis=windows.map(n=>{
+    const recent=opDraws.slice(0,n);
+    const posFreq=[{},{},{},{}];
+    recent.forEach(d=>{
+      d.top3.forEach(num=>{
+        for(let i=0;i<4;i++){
+          const digit=num[i];
+          if(!posFreq[i][digit])posFreq[i][digit]=0;
+          posFreq[i][digit]++;
+        }
+      });
+    });
+    // Get top 4 digits per position (most frequent)
+    const topPerPos=posFreq.map(freq=>{
+      const sorted=Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,4);
+      return sorted.map(([d])=>d);
+    });
+    return{window:n,topPerPos,posFreq};
+  });
+  
+  // STRICT CONSENSUS: For each position, count how many windows have each digit in top 4
+  const consensusPerPos=[{},{},{},{}];
+  for(let pos=0;pos<4;pos++){
+    for(let d=0;d<=9;d++){
+      const digit=d.toString();
+      let votes=0;
+      const inWindows=[];
+      windowAnalysis.forEach(wa=>{
+        if(wa.topPerPos[pos].includes(digit)){
+          votes++;
+          inWindows.push(wa.window);
+        }
+      });
+      if(votes>=3){ // STRICT: must appear in 3+ windows
+        consensusPerPos[pos][digit]={votes,inWindows};
+      }
+    }
+  }
+  
+  // Check if we have consensus digits for all 4 positions
+  const hasAllPositions=consensusPerPos.every(pos=>Object.keys(pos).length>0);
+  if(!hasAllPositions){
+    // Fallback: if any position has zero consensus, use top 2 from overall frequency
+    for(let pos=0;pos<4;pos++){
+      if(Object.keys(consensusPerPos[pos]).length===0){
+        const allFreq={};
+        windowAnalysis.forEach(wa=>{
+          Object.entries(wa.posFreq[pos]).forEach(([d,c])=>{
+            allFreq[d]=(allFreq[d]||0)+c;
+          });
+        });
+        const top2=Object.entries(allFreq).sort((a,b)=>b[1]-a[1]).slice(0,2);
+        top2.forEach(([d])=>{consensusPerPos[pos][d]={votes:1,inWindows:[],fallback:true};});
+      }
+    }
+  }
+  
+  // Generate numbers with "jar spin" randomness from consensus pool
+  // Weight by votes: 4-window consensus more likely chosen than 3-window
+  function weightedPick(pool){
+    const weighted=[];
+    Object.entries(pool).forEach(([d,info])=>{
+      const weight=info.votes===4?4:info.votes===3?2:1;
+      for(let i=0;i<weight;i++)weighted.push(d);
+    });
+    return weighted[Math.floor(Math.random()*weighted.length)];
+  }
+  
+  const predictions=[];
+  const seen=new Set();
+  let attempts=0;
+  while(predictions.length<5&&attempts<50){
+    const num=[0,1,2,3].map(pos=>weightedPick(consensusPerPos[pos])).join('');
+    if(!seen.has(num)){
+      seen.add(num);
+      // Compute strength: sum of votes across positions
+      let strength=0;
+      for(let i=0;i<4;i++){
+        const info=consensusPerPos[i][num[i]];
+        if(info)strength+=info.votes;
+      }
+      predictions.push({num,strength,maxStrength:16});
+    }
+    attempts++;
+  }
+  
+  return{
+    windows:windowAnalysis,
+    consensusPerPos,
+    predictions:predictions.sort((a,b)=>b.strength-a.strength)
+  };
+}
+
+function renderOracle(){
+  const pg=document.getElementById('pgOracle');
+  let h=`<div style="background:linear-gradient(135deg,rgba(168,85,247,0.12),rgba(236,72,153,0.06));border:1px solid rgba(168,85,247,0.3);border-radius:12px;padding:14px;margin-bottom:14px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <div style="font-size:32px">🔮</div>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:800;color:#c084fc;letter-spacing:1px">ORACLE MODE</div>
+        <div style="font-size:9px;color:var(--dim2)">Multi-Timeframe Consensus Predictor</div>
+      </div>
+    </div>
+    <div style="font-size:9px;color:var(--dim);line-height:1.5">Analyzes <b style="color:#c084fc">4 time windows</b> (3d, 6d, 9d, 12d) to find digits that are hot across multiple timeframes. Only digits appearing in <b style="color:#c084fc">3+ windows</b> are used. Then mimics the Magnum Pudu jar spin — picks digits from the consensus pool with weighted randomness for each position.</div>
+  </div>`;
+  
+  // Target day + RUN button
+  const selectedOracleDay=localStorage.getItem('b4d_oracleDay')||'Sat';
+  h+=`<div style="display:flex;gap:8px;margin-bottom:14px">
+    <select id="oracleDay" onchange="localStorage.setItem('b4d_oracleDay',this.value);render()" style="flex:1;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:12px;font-family:inherit">
+      <option value="Sat"${selectedOracleDay==='Sat'?' selected':''}>Saturday</option>
+      <option value="Sun"${selectedOracleDay==='Sun'?' selected':''}>Sunday</option>
+      <option value="Wed"${selectedOracleDay==='Wed'?' selected':''}>Wednesday</option>
+      <option value="Tue"${selectedOracleDay==='Tue'?' selected':''}>Tuesday (Special)</option>
+    </select>
+    <button class="btn" onclick="runOracle()" id="oracleBtn" style="background:linear-gradient(135deg,#8b5cf6,#ec4899);border:none;color:#fff;font-weight:800;padding:10px 20px;font-size:12px;border-radius:8px;letter-spacing:1px">🔮 SPIN</button>
+  </div>`;
+  
+  // Jar spin animation container
+  h+=`<div id="oracleJars" style="display:none;background:#0a0a15;border:1px solid #333366;border-radius:12px;padding:20px;margin-bottom:14px;text-align:center">
+    <div style="font-size:10px;color:#c084fc;margin-bottom:10px;letter-spacing:2px">🎡 SPINNING THE JARS...</div>
+    <div style="display:flex;justify-content:center;gap:10px">
+      <div class="oracle-jar" id="jar0">?</div>
+      <div class="oracle-jar" id="jar1">?</div>
+      <div class="oracle-jar" id="jar2">?</div>
+      <div class="oracle-jar" id="jar3">?</div>
+    </div>
+  </div>`;
+  
+  // Results
+  if(lastOracleResults){
+    const opColors={MAGNUM:'#D4A017',TOTO:'#DC2626',DAMACAI:'#2563EB'};
+    ['MAGNUM','TOTO','DAMACAI'].forEach(opName=>{
+      const res=lastOracleResults[opName];
+      if(!res)return;
+      h+=`<div style="background:rgba(168,85,247,0.04);border:1px solid ${opColors[opName]}33;border-left:3px solid ${opColors[opName]};border-radius:10px;padding:12px;margin-bottom:12px">
+        <div style="font-size:12px;font-weight:800;color:${opColors[opName]};margin-bottom:10px;letter-spacing:1px">${opName}</div>`;
+      
+      // Consensus per position visualization
+      h+=`<div style="font-size:8px;color:var(--dim3);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">Position Consensus</div>
+      <div style="display:flex;gap:6px;margin-bottom:12px">`;
+      for(let pos=0;pos<4;pos++){
+        const digits=Object.entries(res.consensusPerPos[pos]).sort((a,b)=>b[1].votes-a[1].votes);
+        h+=`<div style="flex:1;background:#0a0a15;border:1px solid #1a1a3a;border-radius:6px;padding:6px;text-align:center">
+          <div style="font-size:7px;color:var(--dim3);margin-bottom:4px">POS ${pos+1}</div>`;
+        digits.slice(0,4).forEach(([d,info])=>{
+          const color=info.votes===4?'#22c55e':info.votes===3?'#f59e0b':'#888';
+          h+=`<div style="font-family:monospace;font-size:14px;color:${color};font-weight:800;margin:1px 0">${d}<span style="font-size:7px;color:var(--dim3);margin-left:3px">×${info.votes}</span></div>`;
+        });
+        h+=`</div>`;
+      }
+      h+=`</div>`;
+      
+      // Final 5 numbers
+      h+=`<div style="font-size:8px;color:var(--dim3);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">🎡 Oracle Picks (5 numbers)</div>`;
+      res.predictions.forEach((p,i)=>{
+        const pct=Math.round((p.strength/p.maxStrength)*100);
+        const strengthColor=pct>=75?'#22c55e':pct>=50?'#f59e0b':'#888';
+        h+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:#0a0a15;border:1px solid #1a1a3a;border-radius:8px;margin-bottom:4px">
+          <div style="width:22px;height:22px;border-radius:50%;background:${opColors[opName]};color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center">${i+1}</div>
+          <div style="font-family:monospace;font-size:20px;font-weight:900;color:#fff;letter-spacing:3px;flex:1">${p.num}</div>
+          <div style="text-align:right">
+            <div style="font-size:10px;font-weight:800;color:${strengthColor}">${pct}%</div>
+            <div style="font-size:7px;color:var(--dim3)">strength</div>
+          </div>
+        </div>`;
+      });
+      
+      h+=`</div>`;
+    });
+  } else {
+    h+=`<div style="text-align:center;padding:40px 0;color:var(--dim3)">
+      <div style="font-size:50px;margin-bottom:10px">🎡</div>
+      <div style="font-size:12px;color:var(--dim2)">Tap SPIN to generate Oracle predictions</div>
+      <div style="font-size:9px;margin-top:4px">Based on your proven multi-timeframe method</div>
+      <div style="font-size:9px;color:#c084fc;margin-top:12px;font-style:italic">"Past winnings: RM7,000 — let's find another 5794"</div>
+    </div>`;
+  }
+  
+  pg.innerHTML=h;
+}
+
+function runOracle(){
+  const btn=document.getElementById('oracleBtn');
+  const jars=document.getElementById('oracleJars');
+  btn.disabled=true;btn.textContent='🎡 SPINNING...';
+  jars.style.display='block';
+  
+  // Start spinning animation
+  const spinIntervals=[];
+  for(let i=0;i<4;i++){
+    const jar=document.getElementById('jar'+i);
+    spinIntervals.push(setInterval(()=>{
+      jar.textContent=Math.floor(Math.random()*10);
+    },60));
+  }
+  
+  // Calculate results in background
+  setTimeout(()=>{
+    const results={};
+    operators.forEach(op=>{
+      const res=oracleAnalyze(op.draws);
+      if(res)results[op.name]=res;
+    });
+    lastOracleResults=results;
+    
+    // Stop jars one by one with final digits from MAGNUM's top pick
+    const showcase=results.MAGNUM?.predictions[0]?.num||results.TOTO?.predictions[0]?.num||'1234';
+    for(let i=0;i<4;i++){
+      setTimeout(()=>{
+        clearInterval(spinIntervals[i]);
+        const jar=document.getElementById('jar'+i);
+        jar.textContent=showcase[i];
+        jar.classList.add('jar-locked');
+      },1500+i*400);
+    }
+    
+    // Save to history
+    setTimeout(()=>{
+      const now=new Date().toISOString().slice(0,10);
+      const tDay=document.getElementById('oracleDay')?.value||'Sat';
+      Object.entries(results).forEach(([opName,res])=>{
+        const preds=res.predictions.map(p=>p.num);
+        history.push({
+          date:now,
+          operator:'ORACLE',
+          subOperator:opName,
+          targetDay:tDay,
+          predictions:preds,
+          checked:false,
+          hits:[],
+          permHits:0,
+          oracleMeta:{strengths:res.predictions.map(p=>({num:p.num,strength:p.strength,maxStrength:p.maxStrength}))}
+        });
+      });
+      saveAll();
+      
+      btn.disabled=false;btn.textContent='🔮 SPIN';
+      setTimeout(()=>{jars.style.display='none'},2000);
+      render();
+      toast('🔮 Oracle predictions generated!');
+    },3500);
+  },200);
 }
 
 function renderDashboard(){
@@ -2571,6 +2844,28 @@ function checkResults(){
         entry.permHits=sniperPermHits;
         entry.permWinDetails=sniperPermDetails;
       }
+    }
+    
+    // Check ORACLE entries — only match when subOperator equals the operator being checked
+    if(entry.operator==='ORACLE'&&entry.subOperator===opName&&!entry.checked){
+      const oracleHits=entry.predictions.filter(n=>allActual.includes(n));
+      let oraclePermHits=0;
+      let oraclePermDetails=[];
+      entry.predictions.forEach(n=>{
+        if(!allActual.includes(n)){
+          const perms=getPerms(n);
+          const winningPerm=perms.find(p=>allActual.includes(p));
+          if(winningPerm){
+            oraclePermHits++;
+            const prizeType=t3.includes(winningPerm)?'TOP3':sp.includes(winningPerm)?'SPECIAL':'CONSOLATION';
+            oraclePermDetails.push({predicted:n,won:winningPerm,prize:prizeType});
+          }
+        }
+      });
+      entry.checked=true;
+      entry.hits=oracleHits;
+      entry.permHits=oraclePermHits;
+      entry.permWinDetails=oraclePermDetails;
     }
   });
   
