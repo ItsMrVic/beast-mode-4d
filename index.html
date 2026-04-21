@@ -1852,104 +1852,258 @@ function addLiveToDatabase(opName){
 // Then combine candidates per position to form final numbers
 // ============================================================
 
-let lastOracleResults=null;
+// CROSS-OPERATOR MIGRATION ENGINE
+// ============================================================
+// Theory: The same 4 digits often appear across operators in consecutive
+// draws, just in different permutations. e.g. 5049 in Damacai → 4905 in Toto
+// We scan other operators' recent draws, extract digit sets, generate all
+// permutations, and score by recency + historical migration confirmation.
+// ============================================================
 
-function oracleAnalyze(opDraws){
-  if(opDraws.length<12)return null;
-  
-  const windows=[3,6,9,12];
-  // For each window, get digit frequency per position (0-3)
-  // Using top3 prizes for strongest signal
-  const windowAnalysis=windows.map(n=>{
-    const recent=opDraws.slice(0,n);
-    const posFreq=[{},{},{},{}];
-    recent.forEach(d=>{
-      d.top3.forEach(num=>{
-        for(let i=0;i<4;i++){
-          const digit=num[i];
-          if(!posFreq[i][digit])posFreq[i][digit]=0;
-          posFreq[i][digit]++;
+function digitKey(num){return num.split('').sort().join('');}
+
+function getAllPermutations4(num){
+  const d=num.split('');
+  const res=new Set();
+  function p(cur,rem){
+    if(!rem.length){res.add(cur);return;}
+    for(let i=0;i<rem.length;i++)p(cur+rem[i],[...rem.slice(0,i),...rem.slice(i+1)]);
+  }
+  p('',d);return[...res];
+}
+
+function crossOperatorAnalysis(targetDraws,otherOpsDraws,lookback=6){
+  const scores={};
+
+  // Step 1: Score permutations of digit sets seen in other ops' recent draws
+  otherOpsDraws.forEach(({name:srcName,draws:opDraws})=>{
+    opDraws.slice(0,lookback).forEach((draw,idx)=>{
+      const recency=lookback-idx;
+      draw.top3.forEach(num=>{
+        if(num.length!==4)return;
+        const sig=digitKey(num);
+        getAllPermutations4(num).forEach(perm=>{
+          if(!scores[perm])scores[perm]={baseScore:0,migBonus:0,sig,srcDates:[],srcOps:new Set(),histConfirmed:false};
+          scores[perm].baseScore+=recency*3;
+          if(!scores[perm].srcDates.includes(draw.date))scores[perm].srcDates.push(draw.date);
+          scores[perm].srcOps.add(srcName);
+        });
+      });
+    });
+  });
+
+  // Step 2: Historical migration rate — did this digit set appear in target op
+  // within 3 draws of appearing in another op? Scan last 80 draws for confirmation.
+  const targetSigMap={};
+  targetDraws.slice(0,120).forEach((draw,idx)=>{
+    draw.top3.forEach(num=>{
+      if(num.length!==4)return;
+      const sig=digitKey(num);
+      if(!targetSigMap[sig])targetSigMap[sig]=[];
+      targetSigMap[sig].push(idx);
+    });
+  });
+
+  let migCount=0,totalChecked=0;
+  otherOpsDraws.forEach(({draws:opDraws})=>{
+    opDraws.slice(0,80).forEach((draw,srcIdx)=>{
+      draw.top3.forEach(num=>{
+        if(num.length!==4)return;
+        const sig=digitKey(num);
+        totalChecked++;
+        if(targetSigMap[sig]){
+          const migrated=targetSigMap[sig].some(ti=>Math.abs(ti-srcIdx)<=3);
+          if(migrated){
+            migCount++;
+            getAllPermutations4(num).forEach(perm=>{
+              if(scores[perm]){scores[perm].migBonus+=8;scores[perm].histConfirmed=true;}
+            });
+          }
         }
       });
     });
-    // Get top 4 digits per position (most frequent)
-    const topPerPos=posFreq.map(freq=>{
-      const sorted=Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,4);
-      return sorted.map(([d])=>d);
-    });
-    return{window:n,topPerPos,posFreq};
   });
-  
-  // STRICT CONSENSUS: For each position, count how many windows have each digit in top 4
+
+  const migrationRate=totalChecked>0?Math.round((migCount/totalChecked)*100):0;
+  const candidates=Object.entries(scores)
+    .map(([num,info])=>({
+      num,score:info.baseScore+info.migBonus,sig:info.sig,
+      srcDates:info.srcDates,srcOps:[...info.srcOps],
+      histConfirmed:info.histConfirmed
+    }))
+    .sort((a,b)=>b.score-a.score)
+    .slice(0,5);
+
+  return{candidates,migrationRate,migCount,totalChecked};
+}
+
+let lastOracleResults=null;
+
+function oracleAnalyze(opDraws,targetDay){
+  if(opDraws.length<12)return null;
+
+  // P2: All prizes helper — top3 + special + consolation (23 numbers per draw vs 3)
+  function allPrizeNums(draw){
+    return[...draw.top3,...(draw.special||[]),...(draw.consolation||[])].filter(n=>n&&n.length===4);
+  }
+
+  function buildPosFreq(draws){
+    const f=[{},{},{},{}];
+    draws.forEach(d=>allPrizeNums(d).forEach(n=>{
+      for(let i=0;i<4;i++)f[i][n[i]]=(f[i][n[i]]||0)+1;
+    }));
+    return f;
+  }
+
+  function topDigits(posFreq,n=4){
+    return posFreq.map(freq=>
+      Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,n).map(([d])=>d)
+    );
+  }
+
+  // P3: Non-overlapping windows — each draw votes exactly once
+  // [draws 1-3], [draws 4-6], [draws 7-9], [draws 10-12]
+  const windowSlices=[[0,3],[3,6],[6,9],[9,12]];
+  const windowAnalysis=windowSlices.map(([s,e],idx)=>{
+    const slice=opDraws.slice(s,e);
+    const posFreq=buildPosFreq(slice);
+    return{window:`W${idx+1}`,label:`Draws ${s+1}–${e}`,topPerPos:topDigits(posFreq),posFreq,isDay:false,draws:slice.length};
+  });
+
+  // Day window (P1): last 10 draws matching the selected day, votes 2×
+  const dayDraws=targetDay?opDraws.filter(d=>d.day===targetDay).slice(0,10):[];
+  const hasDayWindow=dayDraws.length>=3;
+  if(hasDayWindow){
+    const dayPosFreq=buildPosFreq(dayDraws);
+    windowAnalysis.push({window:'Day',label:`${targetDay}(${dayDraws.length})`,topPerPos:topDigits(dayPosFreq,4),posFreq:dayPosFreq,isDay:true,draws:dayDraws.length});
+  }
+
+  // Consensus — standard windows vote 1 each, day window votes 2
+  const maxVotes=hasDayWindow?6:4;
   const consensusPerPos=[{},{},{},{}];
   for(let pos=0;pos<4;pos++){
     for(let d=0;d<=9;d++){
       const digit=d.toString();
-      let votes=0;
-      const inWindows=[];
+      let votes=0;const inWindows=[];let dayBoosted=false;
       windowAnalysis.forEach(wa=>{
         if(wa.topPerPos[pos].includes(digit)){
-          votes++;
-          inWindows.push(wa.window);
+          const wv=wa.isDay?2:1;
+          votes+=wv;inWindows.push(wa.window);
+          if(wa.isDay)dayBoosted=true;
         }
       });
-      if(votes>=3){ // STRICT: must appear in 3+ windows
-        consensusPerPos[pos][digit]={votes,inWindows};
-      }
+      if(votes>=3)consensusPerPos[pos][digit]={votes,inWindows,dayBoosted};
     }
   }
-  
-  // Check if we have consensus digits for all 4 positions
+
+  // Fallback for positions with zero consensus
   const hasAllPositions=consensusPerPos.every(pos=>Object.keys(pos).length>0);
   if(!hasAllPositions){
-    // Fallback: if any position has zero consensus, use top 2 from overall frequency
     for(let pos=0;pos<4;pos++){
       if(Object.keys(consensusPerPos[pos]).length===0){
         const allFreq={};
-        windowAnalysis.forEach(wa=>{
-          Object.entries(wa.posFreq[pos]).forEach(([d,c])=>{
-            allFreq[d]=(allFreq[d]||0)+c;
-          });
-        });
-        const top2=Object.entries(allFreq).sort((a,b)=>b[1]-a[1]).slice(0,2);
-        top2.forEach(([d])=>{consensusPerPos[pos][d]={votes:1,inWindows:[],fallback:true};});
+        windowAnalysis.forEach(wa=>{Object.entries(wa.posFreq[pos]).forEach(([d,c])=>{allFreq[d]=(allFreq[d]||0)+c;});});
+        Object.entries(allFreq).sort((a,b)=>b[1]-a[1]).slice(0,2).forEach(([d])=>{consensusPerPos[pos][d]={votes:1,inWindows:[],fallback:true,dayBoosted:false};});
       }
     }
   }
-  
-  // Generate numbers with "jar spin" randomness from consensus pool
-  // Weight by votes: 4-window consensus more likely chosen than 3-window
+
+  // P5: Digit sum zone — find the 6-unit range with highest frequency in last 40 draws
+  const sumNums=opDraws.slice(0,40).flatMap(d=>allPrizeNums(d));
+  const sumFreq={};
+  sumNums.forEach(n=>{const s=[...n].reduce((a,d)=>a+parseInt(d),0);sumFreq[s]=(sumFreq[s]||0)+1;});
+  let sumZone=[0,36],bestSumCount=0;
+  for(let s=0;s<=31;s++){let c=0;for(let i=s;i<=s+5;i++)c+=sumFreq[i]||0;if(c>bestSumCount){bestSumCount=c;sumZone=[s,s+5];}}
+
+  // P6: Pair frequency from last 30 draws (all prizes)
+  const pairNums=opDraws.slice(0,30).flatMap(d=>allPrizeNums(d));
+  const pairF=[{},{},{}];
+  pairNums.forEach(n=>{for(let i=0;i<3;i++){const pp=n.slice(i,i+2);pairF[i][pp]=(pairF[i][pp]||0)+1;}});
+  function pairScore(num){let s=0;for(let i=0;i<3;i++)s+=pairF[i][num.slice(i,i+2)]||0;return s;}
+
+  // P4: Cold digit detection per position (last 20 draws, all prizes)
+  // Per Vic: operators substitute ONE hot digit with a cold digit to dodge payouts
+  // We detect cold digits and generate "Operator Dodge Variants" to counter this
+  const coldPerPos=Array(4).fill(null).map(()=>[]);
+  for(let pos=0;pos<4;pos++){
+    const seenDigits=new Set();
+    opDraws.slice(0,20).forEach(d=>allPrizeNums(d).forEach(n=>seenDigits.add(n[pos])));
+    // Truly cold = never seen in last 20 draws at this position
+    for(let d=0;d<=9;d++){if(!seenDigits.has(d.toString()))coldPerPos[pos].push(d.toString());}
+    // If no truly cold, use least-frequent 2 digits (lukewarm = still rare)
+    if(coldPerPos[pos].length===0){
+      const posF={};
+      opDraws.slice(0,20).forEach(d=>allPrizeNums(d).forEach(n=>{posF[n[pos]]=(posF[n[pos]]||0)+1;}));
+      Object.entries(posF).sort((a,b)=>a[1]-b[1]).slice(0,2).forEach(([d])=>coldPerPos[pos].push(d));
+    }
+  }
+
+  // P8: Repeat detection — did this exact number appear in the last 5 draws?
+  const recent5Set=new Set(opDraws.slice(0,5).flatMap(d=>allPrizeNums(d)));
+
+  // Weighted pick with day boost
   function weightedPick(pool){
     const weighted=[];
     Object.entries(pool).forEach(([d,info])=>{
-      const weight=info.votes===4?4:info.votes===3?2:1;
-      for(let i=0;i<weight;i++)weighted.push(d);
+      const base=info.votes>=5?5:info.votes>=4?4:info.votes>=3?2:1;
+      const dayExtra=info.dayBoosted?3:0;
+      for(let i=0;i<base+dayExtra;i++)weighted.push(d);
     });
     return weighted[Math.floor(Math.random()*weighted.length)];
   }
-  
+
+  // Generate 5 predictions — P5 sum filter applied during generation
   const predictions=[];
-  const seen=new Set();
+  const seenNums=new Set();
   let attempts=0;
-  while(predictions.length<5&&attempts<50){
+  while(predictions.length<5&&attempts<300){
     const num=[0,1,2,3].map(pos=>weightedPick(consensusPerPos[pos])).join('');
-    if(!seen.has(num)){
-      seen.add(num);
-      // Compute strength: sum of votes across positions
-      let strength=0;
-      for(let i=0;i<4;i++){
-        const info=consensusPerPos[i][num[i]];
-        if(info)strength+=info.votes;
-      }
-      predictions.push({num,strength,maxStrength:16});
+    const digitSum=[...num].reduce((a,d)=>a+parseInt(d),0);
+    if(!seenNums.has(num)&&digitSum>=sumZone[0]&&digitSum<=sumZone[1]){
+      seenNums.add(num);
+      let strength=0,dayCount=0;
+      for(let i=0;i<4;i++){const info=consensusPerPos[i][num[i]];if(info){strength+=info.votes;if(info.dayBoosted)dayCount++;}}
+      const ps=pairScore(num);
+      const isRepeat=recent5Set.has(num);
+      predictions.push({num,strength,maxStrength:maxVotes*4,dayCount,pairScore:ps,isRepeat});
     }
     attempts++;
   }
-  
+  // P6: Re-rank by strength + pair score combined
+  predictions.sort((a,b)=>(b.strength*10+b.pairScore)-(a.strength*10+a.pairScore));
+
+  // P4: Operator Dodge Variants
+  // Theory (Vic): operator sees hot prediction, swaps ONE digit with a cold one to avoid payout
+  // Counter: generate the dodged version of each top pick so we buy both
+  const dodgeVariants=[];
+  predictions.slice(0,3).forEach(p=>{
+    for(let pos=0;pos<4;pos++){
+      const cold=coldPerPos[pos].filter(cd=>cd!==p.num[pos]);
+      if(cold.length>0){
+        const v=p.num.split('');v[pos]=cold[0];
+        const vNum=v.join('');
+        const vSum=[...vNum].reduce((a,d)=>a+parseInt(d),0);
+        if(!dodgeVariants.find(x=>x.num===vNum)&&vNum!==p.num){
+          dodgeVariants.push({
+            num:vNum,baseNum:p.num,swapPos:pos,
+            coldDigit:cold[0],hotDigit:p.num[pos],
+            sumInZone:vSum>=sumZone[0]&&vSum<=sumZone[1]
+          });
+        }
+      }
+    }
+  });
+
   return{
+    targetDay:targetDay||null,
+    dayDrawsUsed:dayDraws.length,
+    hasDayWindow,
     windows:windowAnalysis,
     consensusPerPos,
-    predictions:predictions.sort((a,b)=>b.strength-a.strength)
+    predictions,
+    sumZone,
+    coldPerPos,
+    dodgeVariants:dodgeVariants.slice(0,6),
   };
 }
 
@@ -1963,7 +2117,7 @@ function renderOracle(){
         <div style="font-size:9px;color:var(--dim2)">Multi-Timeframe Consensus Predictor</div>
       </div>
     </div>
-    <div style="font-size:9px;color:var(--dim);line-height:1.5">Analyzes <b style="color:#c084fc">4 time windows</b> (3d, 6d, 9d, 12d) to find digits that are hot across multiple timeframes. Only digits appearing in <b style="color:#c084fc">3+ windows</b> are used. Then mimics the Magnum Pudu jar spin — picks digits from the consensus pool with weighted randomness for each position.</div>
+    <div style="font-size:9px;color:var(--dim);line-height:1.5">Analyzes <b style="color:#c084fc">5 time windows</b> (3d, 6d, 9d, 12d + <b style="color:#a78bfa">target day</b>) to find digits hot across multiple timeframes. Day-matched draws vote <b style="color:#a78bfa">2×</b> — picks marked <b style="color:#a78bfa">★ DAY</b> are confirmed by same-day history. Only digits in <b style="color:#c084fc">3+ votes</b> qualify.</div>
   </div>`;
   
   // Target day + RUN button
@@ -1989,45 +2143,135 @@ function renderOracle(){
     </div>
   </div>`;
   
+  // P7: Oracle performance stats from history
+  const oracleHistory=history.filter(e=>e.operator==='ORACLE'&&e.checked);
+  if(oracleHistory.length>0){
+    const total=oracleHistory.length;
+    const straight=oracleHistory.filter(e=>e.hits&&e.hits.length>0).length;
+    const perm=oracleHistory.filter(e=>e.permHits>0).length;
+    const dodge=oracleHistory.filter(e=>e.crossOpHits&&e.crossOpHits.length>0).length;
+    const anyHit=oracleHistory.filter(e=>(e.hits&&e.hits.length>0)||e.permHits>0).length;
+    h+=`<div style="background:#0a0a15;border:1px solid #1a1a3a;border-radius:10px;padding:10px 12px;margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap">
+      <div style="font-size:8px;color:#c084fc;font-weight:800;width:100%;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px">Oracle Track Record (${total} spins checked)</div>
+      <div style="flex:1;text-align:center;background:#0d0d1a;border-radius:6px;padding:6px">
+        <div style="font-size:16px;font-weight:900;color:#22c55e">${straight}</div>
+        <div style="font-size:7px;color:var(--dim3)">Straight</div>
+      </div>
+      <div style="flex:1;text-align:center;background:#0d0d1a;border-radius:6px;padding:6px">
+        <div style="font-size:16px;font-weight:900;color:#f59e0b">${perm}</div>
+        <div style="font-size:7px;color:var(--dim3)">Perm hits</div>
+      </div>
+      <div style="flex:1;text-align:center;background:#0d0d1a;border-radius:6px;padding:6px">
+        <div style="font-size:16px;font-weight:900;color:#f59e0b">${dodge}</div>
+        <div style="font-size:7px;color:var(--dim3)">Cross-op hits</div>
+      </div>
+      <div style="flex:1;text-align:center;background:#0d0d1a;border-radius:6px;padding:6px">
+        <div style="font-size:16px;font-weight:900;color:#c084fc">${Math.round(anyHit/total*100)}%</div>
+        <div style="font-size:7px;color:var(--dim3)">Any hit rate</div>
+      </div>
+    </div>`;
+  }
+
   // Results
-  if(lastOracleResults){
-    const opColors={MAGNUM:'#D4A017',TOTO:'#DC2626',DAMACAI:'#2563EB'};
+  if(lastOracleResults){\n    const opColors={MAGNUM:'#D4A017',TOTO:'#DC2626',DAMACAI:'#2563EB'};
     ['MAGNUM','TOTO','DAMACAI'].forEach(opName=>{
       const res=lastOracleResults[opName];
       if(!res)return;
       h+=`<div style="background:rgba(168,85,247,0.04);border:1px solid ${opColors[opName]}33;border-left:3px solid ${opColors[opName]};border-radius:10px;padding:12px;margin-bottom:12px">
         <div style="font-size:12px;font-weight:800;color:${opColors[opName]};margin-bottom:10px;letter-spacing:1px">${opName}</div>`;
-      
+
       // Consensus per position visualization
-      h+=`<div style="font-size:8px;color:var(--dim3);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">Position Consensus</div>
+      h+=`<div style="font-size:8px;color:var(--dim3);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">Position Consensus ${res.hasDayWindow?`<span style="background:#7c3aed22;color:#a78bfa;border:1px solid #7c3aed44;border-radius:4px;padding:1px 5px;margin-left:4px">+${res.targetDay} window (${res.dayDrawsUsed} draws)</span>`:''}</div>
       <div style="display:flex;gap:6px;margin-bottom:12px">`;
       for(let pos=0;pos<4;pos++){
         const digits=Object.entries(res.consensusPerPos[pos]).sort((a,b)=>b[1].votes-a[1].votes);
+        const coldHere=res.coldPerPos[pos]||[];
         h+=`<div style="flex:1;background:#0a0a15;border:1px solid #1a1a3a;border-radius:6px;padding:6px;text-align:center">
           <div style="font-size:7px;color:var(--dim3);margin-bottom:4px">POS ${pos+1}</div>`;
         digits.slice(0,4).forEach(([d,info])=>{
-          const color=info.votes===4?'#22c55e':info.votes===3?'#f59e0b':'#888';
-          h+=`<div style="font-family:monospace;font-size:14px;color:${color};font-weight:800;margin:1px 0">${d}<span style="font-size:7px;color:var(--dim3);margin-left:3px">×${info.votes}</span></div>`;
+          const color=info.votes>=5?'#a78bfa':info.votes===4?'#22c55e':info.votes===3?'#f59e0b':'#888';
+          const dayDot=info.dayBoosted?`<span style="font-size:6px;color:#a78bfa;vertical-align:super">★</span>`:'';
+          h+=`<div style="font-family:monospace;font-size:14px;color:${color};font-weight:800;margin:1px 0">${d}${dayDot}<span style="font-size:7px;color:var(--dim3);margin-left:3px">×${info.votes}</span></div>`;
         });
+        if(coldHere.length>0){
+          h+=`<div style="font-size:7px;color:#6b7280;margin-top:3px;border-top:1px solid #1a1a2a;padding-top:3px">❄ ${coldHere.join(' ')}</div>`;
+        }
         h+=`</div>`;
       }
       h+=`</div>`;
-      
-      // Final 5 numbers
-      h+=`<div style="font-size:8px;color:var(--dim3);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">🎡 Oracle Picks (5 numbers)</div>`;
+
+      // Sum zone info
+      h+=`<div style="font-size:8px;color:var(--dim3);margin-bottom:8px">Sum zone: <span style="color:#f59e0b;font-weight:700">${res.sumZone[0]}–${res.sumZone[1]}</span> (P5 filter active)</div>`;
+
+      // Oracle Picks
+      h+=`<div style="font-size:8px;color:var(--dim3);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">🎡 Oracle Picks</div>`;
       res.predictions.forEach((p,i)=>{
         const pct=Math.round((p.strength/p.maxStrength)*100);
         const strengthColor=pct>=75?'#22c55e':pct>=50?'#f59e0b':'#888';
-        h+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:#0a0a15;border:1px solid #1a1a3a;border-radius:8px;margin-bottom:4px">
+        const dayBadge=p.dayCount>=3
+          ?`<span style="font-size:7px;background:#7c3aed22;color:#a78bfa;border:1px solid #7c3aed55;border-radius:4px;padding:1px 5px">★DAY</span>`
+          :p.dayCount>=2
+          ?`<span style="font-size:7px;background:#7c3aed11;color:#7c6aad;border:1px solid #7c3aed33;border-radius:4px;padding:1px 5px">★DAY</span>`:'';
+        const repeatBadge=p.isRepeat?`<span style="font-size:7px;background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid #22c55e44;border-radius:4px;padding:1px 5px">🔁 REPEAT</span>`:'';
+        const pairBadge=p.pairScore>=6?`<span style="font-size:7px;background:rgba(59,130,246,0.1);color:#60a5fa;border:1px solid #3b82f644;border-radius:4px;padding:1px 5px">P${p.pairScore}</span>`:'';
+        h+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:#0a0a15;border:1px solid ${p.dayCount>=2?'#7c3aed44':p.isRepeat?'#22c55e33':'#1a1a3a'};border-radius:8px;margin-bottom:4px">
           <div style="width:22px;height:22px;border-radius:50%;background:${opColors[opName]};color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center">${i+1}</div>
           <div style="font-family:monospace;font-size:20px;font-weight:900;color:#fff;letter-spacing:3px;flex:1">${p.num}</div>
-          <div style="text-align:right">
+          <div style="display:flex;flex-direction:column;gap:2px;align-items:flex-end">
+            <div style="display:flex;gap:3px;flex-wrap:wrap;justify-content:flex-end">${dayBadge}${repeatBadge}${pairBadge}</div>
             <div style="font-size:10px;font-weight:800;color:${strengthColor}">${pct}%</div>
-            <div style="font-size:7px;color:var(--dim3)">strength</div>
           </div>
         </div>`;
       });
-      
+
+      // P4: Operator Dodge Variants
+      if(res.dodgeVariants&&res.dodgeVariants.length>0){
+        h+=`<div style="margin-top:12px;padding:10px;background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.2);border-radius:8px">`;
+        h+=`<div style="font-size:8px;color:#ef4444;font-weight:800;margin-bottom:3px;text-transform:uppercase;letter-spacing:0.5px">🎰 Operator Dodge Variants</div>`;
+        h+=`<div style="font-size:8px;color:var(--dim3);margin-bottom:8px;line-height:1.4">Operator takes your hot pick → swaps 1 digit with a cold one. Buy these too to counter the swap.</div>`;
+        res.dodgeVariants.forEach((v,i)=>{
+          const digits=v.num.split('');
+          const numHtml=digits.map((d,pos)=>
+            pos===v.swapPos
+              ?`<span style="color:#ef4444;text-decoration:underline;text-underline-offset:3px">${d}</span>`
+              :`<span>${d}</span>`
+          ).join('<span style="opacity:0.3;margin:0 1px"> </span>');
+          const sumTag=v.sumInZone?`<span style="font-size:7px;color:#22c55e">✓ sum</span>`:`<span style="font-size:7px;color:#888">✗ sum</span>`;
+          h+=`<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:#0a0a15;border:1px solid #2a1a1a;border-radius:8px;margin-bottom:4px">
+            <div style="width:20px;height:20px;border-radius:50%;background:#ef444422;color:#ef4444;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center">${i+1}</div>
+            <div style="font-family:monospace;font-size:20px;font-weight:900;letter-spacing:3px;flex:1">${numHtml}</div>
+            <div style="text-align:right;display:flex;flex-direction:column;gap:2px;align-items:flex-end">
+              ${sumTag}
+              <div style="font-size:7px;color:var(--dim3)">base: ${v.baseNum}</div>
+              <div style="font-size:7px;color:#ef4444">pos${v.swapPos+1}: ${v.hotDigit}→${v.coldDigit}</div>
+            </div>
+          </div>`;
+        });
+        h+=`</div>`;
+      }
+
+      // Cross-operator migration candidates
+      if(res.crossOp&&res.crossOp.candidates.length>0){
+        const otherNames=(['MAGNUM','TOTO','DAMACAI'].filter(n=>n!==opName)).join(' & ');
+        h+=`<div style="margin-top:12px;padding:10px;background:rgba(255,165,0,0.05);border:1px solid rgba(255,165,0,0.25);border-radius:8px">`;
+        h+=`<div style="font-size:8px;color:#f59e0b;font-weight:800;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px">🔀 Cross-Op Migration (from ${otherNames})</div>`;
+        h+=`<div style="font-size:8px;color:var(--dim3);margin-bottom:8px">Migration rate: <span style="color:${res.crossOp.migrationRate>=15?'#22c55e':'#888'}">${res.crossOp.migrationRate}%</span> (${res.crossOp.migCount}/${res.crossOp.totalChecked} digit sets confirmed)</div>`;
+        res.crossOp.candidates.forEach((c,i)=>{
+          const badge=c.histConfirmed
+            ?`<span style="font-size:7px;background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid #22c55e44;border-radius:4px;padding:1px 5px">✓ CONFIRMED</span>`
+            :`<span style="font-size:7px;background:rgba(255,165,0,0.1);color:#f59e0b;border:1px solid #f59e0b44;border-radius:4px;padding:1px 5px">FRESH</span>`;
+          h+=`<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:#0a0a15;border:1px solid #1a1a2a;border-radius:8px;margin-bottom:4px">
+            <div style="width:20px;height:20px;border-radius:50%;background:#f59e0b22;color:#f59e0b;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center">${i+1}</div>
+            <div style="font-family:monospace;font-size:20px;font-weight:900;color:#f59e0b;letter-spacing:3px;flex:1">${c.num}</div>
+            <div style="text-align:right;display:flex;flex-direction:column;gap:2px;align-items:flex-end">
+              ${badge}
+              <div style="font-size:7px;color:var(--dim3)">from ${c.srcOps.join('+')}</div>
+            </div>
+          </div>`;
+        });
+        h+=`</div>`;
+      }
+
       h+=`</div>`;
     });
   } else {
@@ -2057,12 +2301,20 @@ function runOracle(){
     },60));
   }
   
+  // Read target day BEFORE setTimeout so it's captured correctly
+  const tDay=document.getElementById('oracleDay')?.value||'Sat';
+
   // Calculate results in background
   setTimeout(()=>{
     const results={};
     operators.forEach(op=>{
-      const res=oracleAnalyze(op.draws);
-      if(res)results[op.name]=res;
+      const res=oracleAnalyze(op.draws,tDay);
+      if(res){
+        // Cross-operator migration: pass the OTHER 2 operators' draws
+        const otherOps=operators.filter(o=>o.name!==op.name).map(o=>({name:o.name,draws:o.draws}));
+        res.crossOp=crossOperatorAnalysis(op.draws,otherOps);
+        results[op.name]=res;
+      }
     });
     lastOracleResults=results;
     
@@ -2080,7 +2332,6 @@ function runOracle(){
     // Save to history
     setTimeout(()=>{
       const now=new Date().toISOString().slice(0,10);
-      const tDay=document.getElementById('oracleDay')?.value||'Sat';
       Object.entries(results).forEach(([opName,res])=>{
         const preds=res.predictions.map(p=>p.num);
         history.push({
@@ -2092,7 +2343,10 @@ function runOracle(){
           checked:false,
           hits:[],
           permHits:0,
-          oracleMeta:{strengths:res.predictions.map(p=>({num:p.num,strength:p.strength,maxStrength:p.maxStrength}))}
+          oracleMeta:{
+            strengths:res.predictions.map(p=>({num:p.num,strength:p.strength,maxStrength:p.maxStrength})),
+            crossOp:res.crossOp?.candidates?.map(c=>c.num)||[]
+          }
         });
       });
       saveAll();
@@ -2862,10 +3116,22 @@ function checkResults(){
           }
         }
       });
+      // Also check cross-op candidates
+      const crossOpNums=entry.oracleMeta?.crossOp||[];
+      const crossOpHits=crossOpNums.filter(n=>allActual.includes(n));
+      let crossOpPermHits=0;
+      crossOpNums.forEach(n=>{
+        if(!allActual.includes(n)){
+          const perms=getPerms(n);
+          if(perms.find(p=>allActual.includes(p)))crossOpPermHits++;
+        }
+      });
       entry.checked=true;
       entry.hits=oracleHits;
       entry.permHits=oraclePermHits;
       entry.permWinDetails=oraclePermDetails;
+      entry.crossOpHits=crossOpHits;
+      entry.crossOpPermHits=crossOpPermHits;
     }
   });
   
