@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v4.0</title>
+<title>Beast Mode 4D v4.1</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -221,7 +221,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v4.0</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v4.1</span>
       <div class="sub">AI-Powered Sniper Prediction Engine + DeepSeek AI</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
@@ -1494,6 +1494,8 @@ function renderHistory(){
         <option value="all"${histFilter==='all'?' selected':''}>🎯 All Operators</option>
         <option value="SNIPER"${histFilter==='SNIPER'?' selected':''}>🎯 Sniper Mode Only</option>
         <option value="ORACLE"${histFilter==='ORACLE'?' selected':''}>🔮 Oracle Mode Only</option>
+        <option value="DODGE"${histFilter==='DODGE'?' selected':''}>🎰 Dodge Variants Only</option>
+        <option value="CROSSOP"${histFilter==='CROSSOP'?' selected':''}>🔀 Cross-Op Migration Only</option>
         <option value="MAGNUM"${histFilter==='MAGNUM'?' selected':''}>Magnum Only</option>
         <option value="TOTO"${histFilter==='TOTO'?' selected':''}>Toto Only</option>
         <option value="DAMACAI"${histFilter==='DAMACAI'?' selected':''}>Damacai Only</option>
@@ -1529,7 +1531,7 @@ function renderHistory(){
   filtered.forEach(e=>{if(!byDate[e.date])byDate[e.date]=[];byDate[e.date].push(e);});
   const sortedDates=Object.keys(byDate).sort().reverse();
   
-  const opC={MAGNUM:'#D4A017',TOTO:'#DC2626',DAMACAI:'#2563EB',SNIPER:'#ff6633',ORACLE:'#c084fc'};
+  const opC={MAGNUM:'#D4A017',TOTO:'#DC2626',DAMACAI:'#2563EB',SNIPER:'#ff6633',ORACLE:'#c084fc',DODGE:'#ef4444',CROSSOP:'#f59e0b'};
   
   sortedDates.forEach(date=>{
     const entries=byDate[date];
@@ -1564,15 +1566,18 @@ function renderHistory(){
       entries.forEach(entry=>{
         const isSniper=entry.operator==='SNIPER';
         const isOracle=entry.operator==='ORACLE';
+        const isDodge=entry.operator==='DODGE';
+        const isCrossOp=entry.operator==='CROSSOP';
         const opColor=opC[entry.operator]||'#888';
         const permDetails=entry.permWinDetails||[];
         const permWinNums=new Set(permDetails.map(p=>p.predicted));
         const hasWin=entry.checked&&(entry.hits?.length>0||entry.permHits>0);
+        const borderLeft=isSniper?'border-left:3px solid #ff6633':isOracle?'border-left:3px solid #c084fc':isDodge?'border-left:3px solid #ef4444':isCrossOp?'border-left:3px solid #f59e0b':'';
         
-        h+=`<div class="hist-item" style="margin:6px 0;padding:10px;border-radius:8px;background:#0a0a15;border:1px solid #1a1a3a;${isSniper?'border-left:3px solid #ff6633':isOracle?'border-left:3px solid #c084fc':''}${hasWin?';box-shadow:0 0 0 1px rgba(34,197,94,0.2)':''}">
+        h+=`<div class="hist-item" style="margin:6px 0;padding:10px;border-radius:8px;background:#0a0a15;border:1px solid #1a1a3a;${borderLeft}${hasWin?';box-shadow:0 0 0 1px rgba(34,197,94,0.2)':''}">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
             <div style="display:flex;align-items:center;gap:6px">
-              ${isSniper?`<span style="font-size:10px;color:#ff6633;font-weight:800">🎯 SNIPER</span>`:isOracle?`<span style="font-size:10px;color:#c084fc;font-weight:800">🔮 ORACLE</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:`<span style="font-size:10px;font-weight:700;color:${opColor}">${entry.operator}</span>`}
+              ${isSniper?`<span style="font-size:10px;color:#ff6633;font-weight:800">🎯 SNIPER</span>`:isOracle?`<span style="font-size:10px;color:#c084fc;font-weight:800">🔮 ORACLE</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isDodge?`<span style="font-size:10px;color:#ef4444;font-weight:800">🎰 DODGE</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isCrossOp?`<span style="font-size:10px;color:#f59e0b;font-weight:800">🔀 CROSS-OP</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:`<span style="font-size:10px;font-weight:700;color:${opColor}">${entry.operator}</span>`}
               <span style="font-size:8px;background:#1a1a2e;color:var(--dim2);padding:2px 6px;border-radius:3px">${entry.targetDay}</span>
             </div>
             ${hasWin?`<span style="font-size:9px;color:var(--green);font-weight:700">🏆 WIN</span>`:entry.checked?`<span style="font-size:9px;color:var(--dim3)">✅ No hit</span>`:`<span style="font-size:9px;color:#a78bfa">⏳ Pending</span>`}
@@ -2330,32 +2335,72 @@ function runOracle(){
       },1500+i*400);
     }
     
-    // Save to history
+    // Save to history — 3 entry types per operator so every tier is independently trackable
     setTimeout(()=>{
       const now=new Date().toISOString().slice(0,10);
       Object.entries(results).forEach(([opName,res])=>{
-        const preds=res.predictions.map(p=>p.num);
+        // TIER 1: Primary Oracle picks (5 high-consensus numbers)
         history.push({
           date:now,
           operator:'ORACLE',
           subOperator:opName,
           targetDay:tDay,
-          predictions:preds,
+          predictions:res.predictions.map(p=>p.num),
           checked:false,
           hits:[],
           permHits:0,
           oracleMeta:{
             strengths:res.predictions.map(p=>({num:p.num,strength:p.strength,maxStrength:p.maxStrength})),
-            crossOp:res.crossOp?.candidates?.map(c=>c.num)||[]
+            crossOp:res.crossOp?.candidates?.map(c=>c.num)||[]  // kept for backward compat
           }
         });
+        // TIER 2: Operator Dodge Variants (counter hot→cold digit swap)
+        if(res.dodgeVariants&&res.dodgeVariants.length>0){
+          history.push({
+            date:now,
+            operator:'DODGE',
+            subOperator:opName,
+            targetDay:tDay,
+            predictions:res.dodgeVariants.map(v=>v.num),
+            checked:false,
+            hits:[],
+            permHits:0,
+            dodgeMeta:{
+              variants:res.dodgeVariants.map(v=>({
+                num:v.num,baseNum:v.baseNum,swapPos:v.swapPos,
+                hotDigit:v.hotDigit,coldDigit:v.coldDigit,sumInZone:v.sumInZone
+              }))
+            }
+          });
+        }
+        // TIER 3: Cross-Op Migration candidates (digit sets moving between operators)
+        if(res.crossOp&&res.crossOp.candidates&&res.crossOp.candidates.length>0){
+          history.push({
+            date:now,
+            operator:'CROSSOP',
+            subOperator:opName,
+            targetDay:tDay,
+            predictions:res.crossOp.candidates.map(c=>c.num),
+            checked:false,
+            hits:[],
+            permHits:0,
+            crossOpMeta:{
+              migrationRate:res.crossOp.migrationRate,
+              migCount:res.crossOp.migCount,
+              totalChecked:res.crossOp.totalChecked,
+              candidates:res.crossOp.candidates.map(c=>({
+                num:c.num,fromOp:c.fromOp,confirmed:c.confirmed
+              }))
+            }
+          });
+        }
       });
       saveAll();
       
       btn.disabled=false;btn.textContent='🔮 SPIN';
       setTimeout(()=>{jars.style.display='none'},2000);
       render();
-      toast('🔮 Oracle predictions generated!');
+      toast('🔮 Oracle + Dodge + Cross-Op saved to history!');
     },3500);
   },200);
 }
@@ -3133,6 +3178,50 @@ function checkResults(){
       entry.permWinDetails=oraclePermDetails;
       entry.crossOpHits=crossOpHits;
       entry.crossOpPermHits=crossOpPermHits;
+    }
+    
+    // Check DODGE entries — Operator Dodge Variants (hot→cold swap counters)
+    if(entry.operator==='DODGE'&&entry.subOperator===opName&&!entry.checked){
+      const dodgeHits=entry.predictions.filter(n=>allActual.includes(n));
+      let dodgePermHits=0;
+      let dodgePermDetails=[];
+      entry.predictions.forEach(n=>{
+        if(!allActual.includes(n)){
+          const perms=getPerms(n);
+          const winningPerm=perms.find(p=>allActual.includes(p));
+          if(winningPerm){
+            dodgePermHits++;
+            const prizeType=t3.includes(winningPerm)?'TOP3':sp.includes(winningPerm)?'SPECIAL':'CONSOLATION';
+            dodgePermDetails.push({predicted:n,won:winningPerm,prize:prizeType});
+          }
+        }
+      });
+      entry.checked=true;
+      entry.hits=dodgeHits;
+      entry.permHits=dodgePermHits;
+      entry.permWinDetails=dodgePermDetails;
+    }
+    
+    // Check CROSSOP entries — Cross-Op Migration candidates
+    if(entry.operator==='CROSSOP'&&entry.subOperator===opName&&!entry.checked){
+      const coHits=entry.predictions.filter(n=>allActual.includes(n));
+      let coPermHits=0;
+      let coPermDetails=[];
+      entry.predictions.forEach(n=>{
+        if(!allActual.includes(n)){
+          const perms=getPerms(n);
+          const winningPerm=perms.find(p=>allActual.includes(p));
+          if(winningPerm){
+            coPermHits++;
+            const prizeType=t3.includes(winningPerm)?'TOP3':sp.includes(winningPerm)?'SPECIAL':'CONSOLATION';
+            coPermDetails.push({predicted:n,won:winningPerm,prize:prizeType});
+          }
+        }
+      });
+      entry.checked=true;
+      entry.hits=coHits;
+      entry.permHits=coPermHits;
+      entry.permWinDetails=coPermDetails;
     }
   });
   
