@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v4.1</title>
+<title>Beast Mode 4D v4.2</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -221,7 +221,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v4.1</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v4.2</span>
       <div class="sub">AI-Powered Sniper Prediction Engine + DeepSeek AI</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
@@ -1140,7 +1140,7 @@ function render(){
   if(activeNav==='Predict')renderPredict();
   else if(activeNav==='History')renderHistory();
   else if(activeNav==='Live')renderLive();
-  else if(activeNav==='Oracle')renderOracle();
+  else if(activeNav==='Oracle')renderEngines();
   else if(activeNav==='Dashboard')renderDashboard();
   else if(activeNav==='Data')renderData();
   // Learning badge
@@ -1496,6 +1496,8 @@ function renderHistory(){
         <option value="ORACLE"${histFilter==='ORACLE'?' selected':''}>🔮 Oracle Mode Only</option>
         <option value="DODGE"${histFilter==='DODGE'?' selected':''}>🎰 Dodge Variants Only</option>
         <option value="CROSSOP"${histFilter==='CROSSOP'?' selected':''}>🔀 Cross-Op Migration Only</option>
+        <option value="HOTHAND"${histFilter==='HOTHAND'?' selected':''}>🔥 Hot Hand Only</option>
+        <option value="FUSION"${histFilter==='FUSION'?' selected':''}>💎 FUSION Only</option>
         <option value="MAGNUM"${histFilter==='MAGNUM'?' selected':''}>Magnum Only</option>
         <option value="TOTO"${histFilter==='TOTO'?' selected':''}>Toto Only</option>
         <option value="DAMACAI"${histFilter==='DAMACAI'?' selected':''}>Damacai Only</option>
@@ -1531,7 +1533,7 @@ function renderHistory(){
   filtered.forEach(e=>{if(!byDate[e.date])byDate[e.date]=[];byDate[e.date].push(e);});
   const sortedDates=Object.keys(byDate).sort().reverse();
   
-  const opC={MAGNUM:'#D4A017',TOTO:'#DC2626',DAMACAI:'#2563EB',SNIPER:'#ff6633',ORACLE:'#c084fc',DODGE:'#ef4444',CROSSOP:'#f59e0b'};
+  const opC={MAGNUM:'#D4A017',TOTO:'#DC2626',DAMACAI:'#2563EB',SNIPER:'#ff6633',ORACLE:'#c084fc',DODGE:'#ef4444',CROSSOP:'#f59e0b',HOTHAND:'#fb923c',FUSION:'#eab308'};
   
   sortedDates.forEach(date=>{
     const entries=byDate[date];
@@ -1568,16 +1570,19 @@ function renderHistory(){
         const isOracle=entry.operator==='ORACLE';
         const isDodge=entry.operator==='DODGE';
         const isCrossOp=entry.operator==='CROSSOP';
+        const isHotHand=entry.operator==='HOTHAND';
+        const isFusion=entry.operator==='FUSION';
         const opColor=opC[entry.operator]||'#888';
         const permDetails=entry.permWinDetails||[];
         const permWinNums=new Set(permDetails.map(p=>p.predicted));
         const hasWin=entry.checked&&(entry.hits?.length>0||entry.permHits>0);
-        const borderLeft=isSniper?'border-left:3px solid #ff6633':isOracle?'border-left:3px solid #c084fc':isDodge?'border-left:3px solid #ef4444':isCrossOp?'border-left:3px solid #f59e0b':'';
+        const borderLeft=isSniper?'border-left:3px solid #ff6633':isOracle?'border-left:3px solid #c084fc':isDodge?'border-left:3px solid #ef4444':isCrossOp?'border-left:3px solid #f59e0b':isHotHand?'border-left:3px solid #fb923c':isFusion?'border-left:3px solid #eab308':'';
+        const fusionExtra=isFusion?';background:linear-gradient(90deg,rgba(234,179,8,0.08),#0a0a15)':'';
         
-        h+=`<div class="hist-item" style="margin:6px 0;padding:10px;border-radius:8px;background:#0a0a15;border:1px solid #1a1a3a;${borderLeft}${hasWin?';box-shadow:0 0 0 1px rgba(34,197,94,0.2)':''}">
+        h+=`<div class="hist-item" style="margin:6px 0;padding:10px;border-radius:8px;background:#0a0a15;border:1px solid #1a1a3a;${borderLeft}${fusionExtra}${hasWin?';box-shadow:0 0 0 1px rgba(34,197,94,0.2)':''}">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
             <div style="display:flex;align-items:center;gap:6px">
-              ${isSniper?`<span style="font-size:10px;color:#ff6633;font-weight:800">🎯 SNIPER</span>`:isOracle?`<span style="font-size:10px;color:#c084fc;font-weight:800">🔮 ORACLE</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isDodge?`<span style="font-size:10px;color:#ef4444;font-weight:800">🎰 DODGE</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isCrossOp?`<span style="font-size:10px;color:#f59e0b;font-weight:800">🔀 CROSS-OP</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:`<span style="font-size:10px;font-weight:700;color:${opColor}">${entry.operator}</span>`}
+              ${isSniper?`<span style="font-size:10px;color:#ff6633;font-weight:800">🎯 SNIPER</span>`:isOracle?`<span style="font-size:10px;color:#c084fc;font-weight:800">🔮 ORACLE</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isDodge?`<span style="font-size:10px;color:#ef4444;font-weight:800">🎰 DODGE</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isCrossOp?`<span style="font-size:10px;color:#f59e0b;font-weight:800">🔀 CROSS-OP</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isHotHand?`<span style="font-size:10px;color:#fb923c;font-weight:800">🔥 HOT HAND</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>${entry.hotHandMeta?.lane?`<span style="font-size:7px;background:#fb923c22;color:#fb923c;padding:1px 4px;border-radius:3px">${entry.hotHandMeta.lane}</span>`:''}`:isFusion?`<span style="font-size:10px;color:#eab308;font-weight:800">💎 FUSION</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:`<span style="font-size:10px;font-weight:700;color:${opColor}">${entry.operator}</span>`}
               <span style="font-size:8px;background:#1a1a2e;color:var(--dim2);padding:2px 6px;border-radius:3px">${entry.targetDay}</span>
             </div>
             ${hasWin?`<span style="font-size:9px;color:var(--green);font-weight:700">🏆 WIN</span>`:entry.checked?`<span style="font-size:9px;color:var(--dim3)">✅ No hit</span>`:`<span style="font-size:9px;color:#a78bfa">⏳ Pending</span>`}
@@ -2112,8 +2117,155 @@ function oracleAnalyze(opDraws,targetDay){
   };
 }
 
-function renderOracle(){
-  const pg=document.getElementById('pgOracle');
+// ============================================================
+// HOT HAND MODE — Short-term streak capture (Grok's proven method)
+// Reproduces the exact method that won Vic RM7K on 5794 and RM1,750 on 9631
+// Rules:
+//   - Only last N draws (default 6)
+//   - Only top 3 prizes (NOT special/consolation)
+//   - Primary hot = top 3 most-frequent digits
+//   - Secondary hot = next 3 digits
+//   - Position-aware: digits placed at positions where they actually appear
+//   - Digit sum zone 15-22 (Grok's zone)
+// ============================================================
+function hotHandAnalyze(draws,windowSize){
+  windowSize=windowSize||6;
+  const recent=draws.slice(0,windowSize);
+  if(recent.length<3)return null;
+  
+  // Top 3 prizes only — NOT special/consolation (key Grok rule)
+  const nums=recent.flatMap(d=>(d.top3||[]).filter(n=>n&&n.length===4));
+  if(nums.length<6)return null;
+  
+  // Overall digit frequency across all positions
+  const freq={};
+  for(let d=0;d<=9;d++)freq[d.toString()]=0;
+  nums.forEach(n=>{for(const d of n)freq[d]++;});
+  
+  const sorted=Object.entries(freq).sort((a,b)=>b[1]-a[1]);
+  const primary=sorted.slice(0,3).map(e=>({digit:e[0],count:e[1]}));
+  const secondary=sorted.slice(3,6).map(e=>({digit:e[0],count:e[1]}));
+  const primaryDigits=new Set(primary.map(p=>p.digit));
+  const secondaryDigits=new Set(secondary.map(p=>p.digit));
+  
+  // Per-position frequency for each hot digit
+  const posFreq={};
+  [...primaryDigits,...secondaryDigits].forEach(d=>{posFreq[d]=[0,0,0,0];});
+  nums.forEach(n=>{
+    for(let i=0;i<4;i++){
+      if(posFreq[n[i]])posFreq[n[i]][i]++;
+    }
+  });
+  
+  // Classify positional role for each hot digit
+  const positionRoles={};
+  Object.entries(posFreq).forEach(([d,p])=>{
+    const startScore=p[0]+p[1];
+    const endScore=p[2]+p[3];
+    if(startScore>endScore*1.3)positionRoles[d]='start';
+    else if(endScore>startScore*1.3)positionRoles[d]='end';
+    else positionRoles[d]='mid';
+  });
+  
+  // Sum zone from recent data, clamped to Grok's 15-22 default
+  const sums=nums.map(n=>[...n].reduce((a,d)=>a+parseInt(d),0));
+  const sumMin=Math.min(...sums);
+  const sumMax=Math.max(...sums);
+  const sumZone=[Math.max(15,sumMin),Math.min(22,sumMax)];
+  if(sumZone[0]>sumZone[1]){sumZone[0]=sumMin;sumZone[1]=sumMax;}
+  
+  // Build position-aware digit pools (top 5 digits per position by frequency)
+  const allHot=[...primaryDigits,...secondaryDigits];
+  const posPool=[[],[],[],[]];
+  for(let pos=0;pos<4;pos++){
+    const scored=[];
+    for(const d of allHot){
+      const count=posFreq[d][pos]||0;
+      if(count>0)scored.push({digit:d,count});
+    }
+    scored.sort((a,b)=>b.count-a.count);
+    posPool[pos]=scored.slice(0,5).map(s=>s.digit);
+    if(posPool[pos].length<2)posPool[pos]=allHot.slice(0,4);
+  }
+  
+  // Score a 4-digit number
+  function scoreNum(num){
+    let s=0;
+    const seenDigits=new Set(num);
+    for(const d of seenDigits){
+      if(primaryDigits.has(d))s+=10;
+      else if(secondaryDigits.has(d))s+=5;
+    }
+    for(let i=0;i<4;i++){
+      const d=num[i];
+      const pf=posFreq[d];
+      if(pf)s+=pf[i]*0.8;
+    }
+    const ds=[...num].reduce((a,d)=>a+parseInt(d),0);
+    if(ds>=sumZone[0]&&ds<=sumZone[1])s+=5;
+    return s;
+  }
+  
+  // Generate candidates from position pools (max 5^4=625)
+  const candidates=[];
+  const seen=new Set();
+  for(const d0 of posPool[0])for(const d1 of posPool[1])for(const d2 of posPool[2])for(const d3 of posPool[3]){
+    const num=d0+d1+d2+d3;
+    if(seen.has(num))continue;
+    seen.add(num);
+    candidates.push({num,score:scoreNum(num)});
+  }
+  
+  // Filter to sum zone and sort
+  const filtered=candidates.filter(c=>{
+    const s=[...c.num].reduce((a,d)=>a+parseInt(d),0);
+    return s>=sumZone[0]&&s<=sumZone[1];
+  });
+  filtered.sort((a,b)=>b.score-a.score);
+  
+  // Diversity: unique digit sets (so 9631 and 6193 aren't both in top 6)
+  const diverse=[];
+  const seenSets=new Set();
+  for(const c of filtered){
+    const digitSet=[...c.num].sort().join('');
+    if(seenSets.has(digitSet))continue;
+    seenSets.add(digitSet);
+    diverse.push(c);
+    if(diverse.length>=6)break;
+  }
+  if(diverse.length<6){
+    for(const c of filtered){
+      if(!diverse.includes(c)){
+        diverse.push(c);
+        if(diverse.length>=6)break;
+      }
+    }
+  }
+  const finalPicks=diverse.slice(0,6);
+  
+  // Annotate picks
+  const picksOut=finalPicks.map(c=>{
+    const seenD=new Set(c.num);
+    const primCount=[...seenD].filter(d=>primaryDigits.has(d)).length;
+    const stars=primCount>=3?3:primCount>=2?2:1;
+    const ds=[...c.num].reduce((a,d)=>a+parseInt(d),0);
+    return{
+      num:c.num,score:c.score,stars,primaryCount:primCount,
+      sum:ds,sumInZone:ds>=sumZone[0]&&ds<=sumZone[1]
+    };
+  });
+  
+  return{
+    windowSize:recent.length,drawsAnalyzed:recent.length,
+    totalDigits:nums.length*4,
+    primary,secondary,positionRoles,posFreq,sumZone,picks:picksOut
+  };
+}
+
+// Hot Hand results state
+let lastHotHandResults=null;
+
+function renderOracleBody(){
   let h=`<div style="background:linear-gradient(135deg,rgba(168,85,247,0.12),rgba(236,72,153,0.06));border:1px solid rgba(168,85,247,0.3);border-radius:12px;padding:14px;margin-bottom:14px">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
       <div style="font-size:32px">🔮</div>
@@ -2289,7 +2441,7 @@ function renderOracle(){
     </div>`;
   }
   
-  pg.innerHTML=h;
+  return h;
 }
 
 function runOracle(){
@@ -2403,6 +2555,266 @@ function runOracle(){
       toast('🔮 Oracle + Dodge + Cross-Op saved to history!');
     },3500);
   },200);
+}
+
+// ============================================================
+// ENGINES DISPATCHER — Oracle ⇄ Hot Hand mode switcher
+// ============================================================
+let engineMode=localStorage.getItem('b4d_engineMode')||'oracle';
+
+function setEngineMode(m){
+  engineMode=m;
+  localStorage.setItem('b4d_engineMode',m);
+  render();
+}
+
+function renderEngines(){
+  const pg=document.getElementById('pgOracle');
+  const oracleActive=engineMode==='oracle';
+  const hotActive=engineMode==='hothand';
+  
+  // Mode switcher at top — two prominent buttons
+  let h=`<div style="display:flex;gap:6px;margin-bottom:14px;background:#0a0a15;border:1px solid #1a1a3a;border-radius:12px;padding:5px">
+    <button onclick="setEngineMode('oracle')" style="flex:1;background:${oracleActive?'linear-gradient(135deg,#8b5cf6,#ec4899)':'transparent'};border:none;color:${oracleActive?'#fff':'var(--dim2)'};padding:12px 8px;border-radius:8px;cursor:pointer;font-family:inherit;transition:all 0.2s">
+      <div style="font-size:11px;font-weight:800;letter-spacing:1.2px">🔮 ORACLE</div>
+      <div style="font-size:8px;margin-top:2px;opacity:0.85">Multi-timeframe consensus</div>
+    </button>
+    <button onclick="setEngineMode('hothand')" style="flex:1;background:${hotActive?'linear-gradient(135deg,#f97316,#ef4444)':'transparent'};border:none;color:${hotActive?'#fff':'var(--dim2)'};padding:12px 8px;border-radius:8px;cursor:pointer;font-family:inherit;transition:all 0.2s">
+      <div style="font-size:11px;font-weight:800;letter-spacing:1.2px">🔥 HOT HAND</div>
+      <div style="font-size:8px;margin-top:2px;opacity:0.85">Short-term streak</div>
+    </button>
+  </div>`;
+  
+  // FUSION indicator banner if any fusion picks exist
+  const fusionPicks=computeFusionPicks();
+  if(fusionPicks.length>0){
+    h+=`<div style="background:linear-gradient(135deg,rgba(234,179,8,0.18),rgba(250,204,21,0.08));border:1px solid rgba(234,179,8,0.45);border-radius:10px;padding:12px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="font-size:24px">💎</div>
+        <div style="flex:1">
+          <div style="font-size:12px;font-weight:800;color:#eab308;letter-spacing:1px">FUSION SIGNALS ACTIVE</div>
+          <div style="font-size:9px;color:var(--dim2);margin-top:2px">${fusionPicks.length} number${fusionPicks.length>1?'s':''} confirmed by BOTH Oracle + Hot Hand</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
+        ${fusionPicks.map(f=>`<div style="background:#0a0a15;border:2px solid #eab308;border-radius:8px;padding:6px 10px;font-family:monospace;font-size:16px;font-weight:900;color:#eab308;letter-spacing:2px">${f.num}</div>`).join('')}
+      </div>
+      <div style="font-size:8px;color:#eab308;margin-top:8px;font-weight:700;text-align:center">💎 PLAY STRAIGHT ON ALL 3 OPERATORS (5794 strategy)</div>
+    </div>`;
+  }
+  
+  // Render active engine
+  if(oracleActive){
+    h+=renderOracleBody();
+  }else{
+    h+=renderHotHandBody();
+  }
+  
+  pg.innerHTML=h;
+}
+
+// ============================================================
+// HOT HAND UI — the scan button + results display
+// ============================================================
+function renderHotHandBody(){
+  const winSize=parseInt(localStorage.getItem('b4d_hhWindow')||'6');
+  
+  let h=`<div style="background:linear-gradient(135deg,rgba(249,115,22,0.12),rgba(220,38,38,0.06));border:1px solid rgba(249,115,22,0.3);border-radius:12px;padding:14px;margin-bottom:14px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <div style="font-size:32px">🔥</div>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:800;color:#fb923c;letter-spacing:1px">HOT HAND MODE</div>
+        <div style="font-size:9px;color:var(--dim2)">Short-Term Recent-Form Streak Analyzer</div>
+      </div>
+    </div>
+    <div style="font-size:9px;color:var(--dim);line-height:1.5">Grok's proven method that won <b style="color:#fbbf24">RM7K on 5794</b> and <b style="color:#fbbf24">RM1,750 on 9631</b>. Analyzes last <b style="color:#fb923c">${winSize} draws</b> using only <b style="color:#fb923c">top 3 prizes</b>. Two lanes: <b style="color:#fb923c">MAGNUM solo</b> + <b style="color:#fb923c">TOTO+DAMACAI pooled</b> (shared ecosystem).</div>
+  </div>`;
+  
+  // Window size selector
+  h+=`<div style="display:flex;gap:6px;margin-bottom:12px;align-items:center">
+    <div style="font-size:9px;color:var(--dim2);margin-right:4px">WINDOW:</div>
+    ${[4,6,8].map(n=>`<button onclick="localStorage.setItem('b4d_hhWindow','${n}');render()" style="padding:6px 12px;border:1px solid ${n===winSize?'#fb923c':'#1a1a3a'};background:${n===winSize?'#fb923c22':'#0a0a15'};color:${n===winSize?'#fb923c':'var(--dim2)'};border-radius:6px;font-size:10px;font-weight:700;cursor:pointer">${n} draws</button>`).join('')}
+  </div>`;
+  
+  // SCAN button
+  h+=`<button id="hothandBtn" onclick="runHotHand()" style="width:100%;padding:16px;background:linear-gradient(135deg,#f97316,#ef4444);border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:900;letter-spacing:2px;cursor:pointer;margin-bottom:14px;box-shadow:0 4px 12px rgba(249,115,22,0.25)">🔥 SCAN HOT STREAK</button>`;
+  
+  // Results
+  if(lastHotHandResults){
+    // MAGNUM lane
+    if(lastHotHandResults.magnum){
+      h+=renderHotHandLane('🟡 MAGNUM (solo lane)','#D4A017',lastHotHandResults.magnum,lastHotHandResults.fusionMagnum||[]);
+    }
+    // TOTO+DMC pooled lane
+    if(lastHotHandResults.totoDmc){
+      h+=renderHotHandLane('🔀 TOTO + DAMACAI (pooled)','#c084fc',lastHotHandResults.totoDmc,lastHotHandResults.fusionPool||[]);
+    }
+  }else{
+    h+=`<div style="background:#0a0a15;border:1px dashed #2a2a4a;border-radius:10px;padding:24px;text-align:center">
+      <div style="font-size:32px;margin-bottom:8px">🎯</div>
+      <div style="font-size:11px;color:var(--dim2);margin-bottom:4px">Tap SCAN to detect hot streaks</div>
+      <div style="font-size:9px;color:var(--dim3);font-style:italic">"Short windows, ruthless focus"</div>
+    </div>`;
+  }
+  
+  return h;
+}
+
+function renderHotHandLane(title,color,result,fusionNums){
+  const pr=result.primary.map(p=>`<span style="color:#fb923c;font-weight:800">${p.digit}</span><span style="font-size:7px;color:var(--dim3);margin-left:1px">(${p.count})</span>`).join(' ');
+  const sec=result.secondary.map(p=>`<span style="color:#fbbf24">${p.digit}</span><span style="font-size:7px;color:var(--dim3);margin-left:1px">(${p.count})</span>`).join(' ');
+  const roleIcon={start:'🔺',end:'🔻',mid:'◾'};
+  
+  let h=`<div style="background:rgba(249,115,22,0.04);border:1px solid ${color}33;border-left:3px solid ${color};border-radius:10px;padding:12px;margin-bottom:12px">
+    <div style="font-size:11px;font-weight:800;color:${color};margin-bottom:10px;letter-spacing:1px">${title}</div>
+    
+    <div style="background:#0a0a15;border:1px solid #1a1a3a;border-radius:8px;padding:10px;margin-bottom:10px">
+      <div style="font-size:8px;color:var(--dim3);margin-bottom:4px;letter-spacing:0.5px">PRIMARY HOT (top 3)</div>
+      <div style="font-size:14px;letter-spacing:4px;margin-bottom:8px">${pr}</div>
+      <div style="font-size:8px;color:var(--dim3);margin-bottom:4px;letter-spacing:0.5px">SECONDARY HOT (next 3)</div>
+      <div style="font-size:13px;letter-spacing:4px;margin-bottom:8px">${sec}</div>
+      <div style="font-size:8px;color:var(--dim3);margin-bottom:3px">POSITION TRENDS</div>
+      <div style="font-size:9px;color:var(--dim2)">${Object.entries(result.positionRoles).map(([d,r])=>`${roleIcon[r]||'◾'}${d}`).join(' ')}</div>
+      <div style="font-size:8px;color:var(--dim3);margin-top:6px">Sum zone: <b style="color:#fb923c">${result.sumZone[0]}-${result.sumZone[1]}</b> · ${result.drawsAnalyzed} draws · ${result.totalDigits} digits counted</div>
+    </div>
+    
+    <div style="font-size:9px;color:var(--dim3);margin-bottom:6px;letter-spacing:0.5px">🔥 HOT PICKS</div>`;
+  
+  result.picks.forEach((p,i)=>{
+    const isFusion=fusionNums.includes(p.num);
+    const starStr='★'.repeat(p.stars)+'☆'.repeat(3-p.stars);
+    h+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:${isFusion?'linear-gradient(90deg,rgba(234,179,8,0.18),rgba(250,204,21,0.05))':'#0a0a15'};border:${isFusion?'2px solid #eab308':'1px solid #1a1a3a'};border-radius:8px;margin-bottom:4px">
+      <div style="width:22px;height:22px;border-radius:50%;background:${isFusion?'#eab308':color+'22'};color:${isFusion?'#000':color};font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center">${i+1}</div>
+      <div style="font-family:monospace;font-size:20px;font-weight:900;letter-spacing:3px;flex:1">${p.num}</div>
+      ${isFusion?`<span style="font-size:8px;background:#eab308;color:#000;padding:2px 6px;border-radius:4px;font-weight:800">💎 FUSION</span>`:''}
+      <div style="text-align:right;display:flex;flex-direction:column;gap:2px">
+        <div style="font-size:10px;color:#fbbf24;letter-spacing:1px">${starStr}</div>
+        <div style="font-size:7px;color:${p.sumInZone?'#22c55e':'#888'}">sum:${p.sum}${p.sumInZone?'✓':'✗'}</div>
+      </div>
+    </div>`;
+  });
+  
+  h+=`</div>`;
+  return h;
+}
+
+// ============================================================
+// Hot Hand SCAN handler — runs both lanes, detects FUSION, saves history
+// ============================================================
+function runHotHand(){
+  const btn=document.getElementById('hothandBtn');
+  if(btn){btn.disabled=true;btn.textContent='🔥 SCANNING...';btn.style.opacity='0.7';}
+  
+  setTimeout(()=>{
+    try{
+      const winSize=parseInt(localStorage.getItem('b4d_hhWindow')||'6');
+      
+      // Lane A: MAGNUM solo
+      const magnumOp=operators.find(o=>o.name==='MAGNUM');
+      const magnumResult=magnumOp?hotHandAnalyze(magnumOp.draws,winSize):null;
+      
+      // Lane B: TOTO + DAMACAI pooled (sort by date desc, keep chronological)
+      const toto=operators.find(o=>o.name==='TOTO');
+      const dmc=operators.find(o=>o.name==='DAMACAI');
+      let totoDmcResult=null;
+      if(toto&&dmc){
+        const pool=[...(toto.draws||[]),...(dmc.draws||[])].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+        // Pool has 2 operators worth — use 2x window to keep equivalence
+        totoDmcResult=hotHandAnalyze(pool,winSize*2);
+      }
+      
+      // FUSION: detect numbers appearing in BOTH Oracle Primary picks AND Hot Hand picks
+      const oracleAllPicks=new Set();
+      const oraclePickMap={}; // num -> op name
+      if(lastOracleResults){
+        Object.entries(lastOracleResults).forEach(([opName,res])=>{
+          if(res&&res.predictions){
+            res.predictions.forEach(p=>{
+              oracleAllPicks.add(p.num);
+              oraclePickMap[p.num]=opName;
+            });
+          }
+        });
+      }
+      const fusionMagnum=magnumResult?magnumResult.picks.filter(p=>oracleAllPicks.has(p.num)).map(p=>p.num):[];
+      const fusionPool=totoDmcResult?totoDmcResult.picks.filter(p=>oracleAllPicks.has(p.num)).map(p=>p.num):[];
+      
+      lastHotHandResults={
+        magnum:magnumResult,totoDmc:totoDmcResult,
+        fusionMagnum,fusionPool,windowSize:winSize
+      };
+      
+      // Save to history — HOTHAND and FUSION tiers
+      const now=new Date().toISOString().slice(0,10);
+      const tDay=document.getElementById('oracleDay')?.value||'Wed';
+      
+      if(magnumResult&&magnumResult.picks.length>0){
+        history.push({
+          date:now,operator:'HOTHAND',subOperator:'MAGNUM',targetDay:tDay,
+          predictions:magnumResult.picks.map(p=>p.num),
+          checked:false,hits:[],permHits:0,
+          hotHandMeta:{lane:'MAGNUM',windowSize:winSize,primary:magnumResult.primary.map(p=>p.digit).join(','),stars:magnumResult.picks.map(p=>({num:p.num,stars:p.stars}))}
+        });
+      }
+      if(totoDmcResult&&totoDmcResult.picks.length>0){
+        // Save the pooled result as separate entries for TOTO and DAMACAI
+        // Both should be checked independently (either op hitting = win)
+        ['TOTO','DAMACAI'].forEach(opName=>{
+          history.push({
+            date:now,operator:'HOTHAND',subOperator:opName,targetDay:tDay,
+            predictions:totoDmcResult.picks.map(p=>p.num),
+            checked:false,hits:[],permHits:0,
+            hotHandMeta:{lane:'TOTO+DMC',windowSize:winSize*2,primary:totoDmcResult.primary.map(p=>p.digit).join(','),stars:totoDmcResult.picks.map(p=>({num:p.num,stars:p.stars}))}
+          });
+        });
+      }
+      
+      // FUSION entries — per-operator, since fusion picks are played on all 3 ops
+      const allFusionNums=[...new Set([...fusionMagnum,...fusionPool])];
+      if(allFusionNums.length>0){
+        ['MAGNUM','TOTO','DAMACAI'].forEach(opName=>{
+          history.push({
+            date:now,operator:'FUSION',subOperator:opName,targetDay:tDay,
+            predictions:allFusionNums,
+            checked:false,hits:[],permHits:0,
+            fusionMeta:{fromOracle:allFusionNums.map(n=>oraclePickMap[n]||'?'),hhLanes:allFusionNums.map(n=>fusionMagnum.includes(n)&&fusionPool.includes(n)?'BOTH':fusionMagnum.includes(n)?'MAGNUM':'TOTO+DMC')}
+          });
+        });
+      }
+      
+      saveAll();
+      if(btn){btn.disabled=false;btn.textContent='🔥 SCAN HOT STREAK';btn.style.opacity='1';}
+      render();
+      toast(allFusionNums.length>0?`🔥 Hot Hand + 💎 ${allFusionNums.length} FUSION signals!`:'🔥 Hot Hand scan complete!');
+    }catch(e){
+      console.error('Hot Hand error',e);
+      if(btn){btn.disabled=false;btn.textContent='🔥 SCAN HOT STREAK';btn.style.opacity='1';}
+      toast('⚠️ Hot Hand scan failed — check data');
+    }
+  },300);
+}
+
+// ============================================================
+// FUSION — cross-reference Oracle picks with Hot Hand picks
+// Returns array of {num, fromOracle, hhLane} for the engines banner
+// ============================================================
+function computeFusionPicks(){
+  if(!lastOracleResults||!lastHotHandResults)return[];
+  const oracleNums=new Set();
+  const oracleMap={};
+  Object.entries(lastOracleResults).forEach(([op,res])=>{
+    if(res&&res.predictions)res.predictions.forEach(p=>{oracleNums.add(p.num);oracleMap[p.num]=op;});
+  });
+  const hhNums=new Set();
+  if(lastHotHandResults.magnum)lastHotHandResults.magnum.picks.forEach(p=>hhNums.add(p.num));
+  if(lastHotHandResults.totoDmc)lastHotHandResults.totoDmc.picks.forEach(p=>hhNums.add(p.num));
+  const fusion=[];
+  oracleNums.forEach(num=>{
+    if(hhNums.has(num)){
+      fusion.push({num,fromOracle:oracleMap[num]});
+    }
+  });
+  return fusion;
 }
 
 function renderDashboard(){
@@ -3222,6 +3634,50 @@ function checkResults(){
       entry.hits=coHits;
       entry.permHits=coPermHits;
       entry.permWinDetails=coPermDetails;
+    }
+    
+    // Check HOTHAND entries — Short-term streak picks (Grok method)
+    if(entry.operator==='HOTHAND'&&entry.subOperator===opName&&!entry.checked){
+      const hhHits=entry.predictions.filter(n=>allActual.includes(n));
+      let hhPermHits=0;
+      let hhPermDetails=[];
+      entry.predictions.forEach(n=>{
+        if(!allActual.includes(n)){
+          const perms=getPerms(n);
+          const winningPerm=perms.find(p=>allActual.includes(p));
+          if(winningPerm){
+            hhPermHits++;
+            const prizeType=t3.includes(winningPerm)?'TOP3':sp.includes(winningPerm)?'SPECIAL':'CONSOLATION';
+            hhPermDetails.push({predicted:n,won:winningPerm,prize:prizeType});
+          }
+        }
+      });
+      entry.checked=true;
+      entry.hits=hhHits;
+      entry.permHits=hhPermHits;
+      entry.permWinDetails=hhPermDetails;
+    }
+    
+    // Check FUSION entries — numbers confirmed by BOTH engines
+    if(entry.operator==='FUSION'&&entry.subOperator===opName&&!entry.checked){
+      const fHits=entry.predictions.filter(n=>allActual.includes(n));
+      let fPermHits=0;
+      let fPermDetails=[];
+      entry.predictions.forEach(n=>{
+        if(!allActual.includes(n)){
+          const perms=getPerms(n);
+          const winningPerm=perms.find(p=>allActual.includes(p));
+          if(winningPerm){
+            fPermHits++;
+            const prizeType=t3.includes(winningPerm)?'TOP3':sp.includes(winningPerm)?'SPECIAL':'CONSOLATION';
+            fPermDetails.push({predicted:n,won:winningPerm,prize:prizeType});
+          }
+        }
+      });
+      entry.checked=true;
+      entry.hits=fHits;
+      entry.permHits=fPermHits;
+      entry.permWinDetails=fPermDetails;
     }
   });
   
