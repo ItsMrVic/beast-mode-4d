@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v4.3</title>
+<title>Beast Mode 4D v4.3.1</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -221,7 +221,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v4.3</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v4.3.1</span>
       <div class="sub">AI-Powered Sniper Prediction Engine + DeepSeek AI</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
@@ -1514,6 +1514,11 @@ function renderHistory(){
       <button class="btn btn-sm btn-outline" style="flex:1;font-size:9px;padding:5px" onclick="collapseAllHistory()">▲ Collapse</button>
       <button class="btn btn-sm btn-outline" style="flex:1;font-size:9px;padding:5px;border-color:#441111;color:#884444" onclick="clearCheckedHistory()">🗑️ Clear Checked</button>
     </div>
+    <div style="display:flex;gap:4px;margin-top:4px;border-top:1px dashed #1a1a3a;padding-top:6px">
+      <button class="btn btn-sm btn-outline" style="flex:1;font-size:9px;padding:5px;color:#a78bfa;border-color:#3b2a5a" onclick="selectAllPending()">☑️ Select All Pending</button>
+      <button class="btn btn-sm btn-outline" style="flex:1;font-size:9px;padding:5px" onclick="deselectAllPending()">⬜ Deselect All</button>
+      <button class="btn btn-sm btn-outline" style="flex:1;font-size:9px;padding:5px;border-color:#7f1d1d;color:#ef4444;background:#1a0505" onclick="deleteSelectedPending()">🗑️ Delete Selected</button>
+    </div>
   </div>`;
   
   // Filter entries
@@ -1566,6 +1571,8 @@ function renderHistory(){
     if(isExpanded){
       h+=`<div style="padding:0 10px 10px 10px">`;
       entries.forEach(entry=>{
+        // Assign stable ID if missing (for delete-selection)
+        if(!entry.id)entry.id='h'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
         const isSniper=entry.operator==='SNIPER';
         const isOracle=entry.operator==='ORACLE';
         const isDodge=entry.operator==='DODGE';
@@ -1585,7 +1592,7 @@ function renderHistory(){
               ${isSniper?`<span style="font-size:10px;color:#ff6633;font-weight:800">🎯 SNIPER</span>`:isOracle?`<span style="font-size:10px;color:#c084fc;font-weight:800">🔮 ORACLE</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isDodge?`<span style="font-size:10px;color:#ef4444;font-weight:800">🎰 DODGE</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isCrossOp?`<span style="font-size:10px;color:#f59e0b;font-weight:800">🔀 CROSS-OP</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isHotHand?`<span style="font-size:10px;color:#fb923c;font-weight:800">🔥 HOT HAND</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>${entry.hotHandMeta?.lane?`<span style="font-size:7px;background:#fb923c22;color:#fb923c;padding:1px 4px;border-radius:3px">${entry.hotHandMeta.lane}</span>`:''}`:isFusion?`<span style="font-size:10px;color:#eab308;font-weight:800">💎 FUSION</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:`<span style="font-size:10px;font-weight:700;color:${opColor}">${entry.operator}</span>`}
               <span style="font-size:8px;background:#1a1a2e;color:var(--dim2);padding:2px 6px;border-radius:3px">${entry.targetDay}</span>
             </div>
-            ${hasWin?`<span style="font-size:9px;color:var(--green);font-weight:700">🏆 WIN</span>`:entry.checked?`<span style="font-size:9px;color:var(--dim3)">✅ No hit</span>`:`<span style="font-size:9px;color:#a78bfa">⏳ Pending</span>`}
+            ${hasWin?`<span style="font-size:9px;color:var(--green);font-weight:700">🏆 WIN</span>`:entry.checked?`<span style="font-size:9px;color:var(--dim3)">✅ No hit</span>`:`<div style="display:flex;align-items:center;gap:6px"><span style="font-size:9px;color:#a78bfa">⏳ Pending</span><label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:9px;color:#ef4444" onclick="event.stopPropagation()"><input type="checkbox" ${entry.__delSel?'checked':''} onchange="toggleDeleteSelection('${entry.id}')" style="cursor:pointer;accent-color:#ef4444">🗑️</label></div>`}
           </div>
           
           <div class="hist-nums" style="margin:6px 0">${entry.predictions.map(n=>{
@@ -1651,6 +1658,48 @@ function clearCheckedHistory(){
   history=history.filter(e=>!e.checked);
   saveAll();render();
   toast(`🗑️ ${checkedCount} checked entries removed`);
+}
+
+// ============================================================
+// PER-ENTRY DELETE SELECTION (for pending entries)
+// ============================================================
+function toggleDeleteSelection(id){
+  const entry=history.find(e=>e.id===id);
+  if(!entry)return;
+  entry.__delSel=!entry.__delSel;
+  // Re-render just to update button visual state; no save needed (selection is ephemeral)
+  render();
+}
+
+function selectAllPending(){
+  // Respect the current filter — only select pending entries visible under current filter
+  const currentFilter=localStorage.getItem('b4d_histFilter')||'all';
+  let filtered=history.filter(e=>!e.checked);
+  if(currentFilter!=='all')filtered=filtered.filter(e=>e.operator===currentFilter);
+  if(filtered.length===0){toast('No pending entries to select');return;}
+  filtered.forEach(e=>{
+    if(!e.id)e.id='h'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+    e.__delSel=true;
+  });
+  render();
+  toast(`☑️ ${filtered.length} pending entries selected`);
+}
+
+function deselectAllPending(){
+  const count=history.filter(e=>e.__delSel).length;
+  if(count===0){toast('Nothing selected');return;}
+  history.forEach(e=>{e.__delSel=false;});
+  render();
+  toast(`⬜ Deselected ${count}`);
+}
+
+function deleteSelectedPending(){
+  const selected=history.filter(e=>e.__delSel);
+  if(selected.length===0){toast('No entries selected for deletion');return;}
+  if(!confirm(`Delete ${selected.length} selected pending entries?\n\n• Cannot be undone\n• Stats are NOT affected`))return;
+  history=history.filter(e=>!e.__delSel);
+  saveAll();render();
+  toast(`🗑️ Deleted ${selected.length} entries`);
 }
 
 // ============================================================
@@ -2762,7 +2811,7 @@ function runHotHand(){
       
       lastHotHandResults={
         magnum:magnumResult,totoDmc:totoDmcResult,
-        fusionMagnum,fusionPool,weeks,windowDays
+        fusionMagnum,fusionPool,weeks
       };
       
       // Save to history — HOTHAND and FUSION tiers
@@ -2774,7 +2823,7 @@ function runHotHand(){
           date:now,operator:'HOTHAND',subOperator:'MAGNUM',targetDay:tDay,
           predictions:magnumResult.picks.map(p=>p.num),
           checked:false,hits:[],permHits:0,
-          hotHandMeta:{lane:'MAGNUM',weeks,windowDays,drawsAnalyzed:magnumResult.drawsAnalyzed,primary:magnumResult.primary.map(p=>p.digit).join(','),stars:magnumResult.picks.map(p=>({num:p.num,stars:p.stars}))}
+          hotHandMeta:{lane:'MAGNUM',weeks,drawsAnalyzed:magnumResult.drawsAnalyzed,primary:magnumResult.primary.map(p=>p.digit).join(','),stars:magnumResult.picks.map(p=>({num:p.num,stars:p.stars}))}
         });
       }
       if(totoDmcResult&&totoDmcResult.picks.length>0){
@@ -2785,7 +2834,7 @@ function runHotHand(){
             date:now,operator:'HOTHAND',subOperator:opName,targetDay:tDay,
             predictions:totoDmcResult.picks.map(p=>p.num),
             checked:false,hits:[],permHits:0,
-            hotHandMeta:{lane:'TOTO+DMC',weeks,windowDays,drawsAnalyzed:totoDmcResult.drawsAnalyzed,primary:totoDmcResult.primary.map(p=>p.digit).join(','),stars:totoDmcResult.picks.map(p=>({num:p.num,stars:p.stars}))}
+            hotHandMeta:{lane:'TOTO+DMC',weeks,drawsAnalyzed:totoDmcResult.drawsAnalyzed,primary:totoDmcResult.primary.map(p=>p.digit).join(','),stars:totoDmcResult.picks.map(p=>({num:p.num,stars:p.stars}))}
           });
         });
       }
