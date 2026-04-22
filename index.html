@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v4.3.1</title>
+<title>Beast Mode 4D v4.3.2</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -221,7 +221,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v4.3.1</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v4.3.2</span>
       <div class="sub">AI-Powered Sniper Prediction Engine + DeepSeek AI</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
@@ -1515,7 +1515,7 @@ function renderHistory(){
       <button class="btn btn-sm btn-outline" style="flex:1;font-size:9px;padding:5px;border-color:#441111;color:#884444" onclick="clearCheckedHistory()">🗑️ Clear Checked</button>
     </div>
     <div style="display:flex;gap:4px;margin-top:4px;border-top:1px dashed #1a1a3a;padding-top:6px">
-      <button class="btn btn-sm btn-outline" style="flex:1;font-size:9px;padding:5px;color:#a78bfa;border-color:#3b2a5a" onclick="selectAllPending()">☑️ Select All Pending</button>
+      <button class="btn btn-sm btn-outline" style="flex:1;font-size:9px;padding:5px;color:#a78bfa;border-color:#3b2a5a" onclick="selectAllPending()">☑️ Select All Visible</button>
       <button class="btn btn-sm btn-outline" style="flex:1;font-size:9px;padding:5px" onclick="deselectAllPending()">⬜ Deselect All</button>
       <button class="btn btn-sm btn-outline" style="flex:1;font-size:9px;padding:5px;border-color:#7f1d1d;color:#ef4444;background:#1a0505" onclick="deleteSelectedPending()">🗑️ Delete Selected</button>
     </div>
@@ -1592,7 +1592,7 @@ function renderHistory(){
               ${isSniper?`<span style="font-size:10px;color:#ff6633;font-weight:800">🎯 SNIPER</span>`:isOracle?`<span style="font-size:10px;color:#c084fc;font-weight:800">🔮 ORACLE</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isDodge?`<span style="font-size:10px;color:#ef4444;font-weight:800">🎰 DODGE</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isCrossOp?`<span style="font-size:10px;color:#f59e0b;font-weight:800">🔀 CROSS-OP</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isHotHand?`<span style="font-size:10px;color:#fb923c;font-weight:800">🔥 HOT HAND</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>${entry.hotHandMeta?.lane?`<span style="font-size:7px;background:#fb923c22;color:#fb923c;padding:1px 4px;border-radius:3px">${entry.hotHandMeta.lane}</span>`:''}`:isFusion?`<span style="font-size:10px;color:#eab308;font-weight:800">💎 FUSION</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:`<span style="font-size:10px;font-weight:700;color:${opColor}">${entry.operator}</span>`}
               <span style="font-size:8px;background:#1a1a2e;color:var(--dim2);padding:2px 6px;border-radius:3px">${entry.targetDay}</span>
             </div>
-            ${hasWin?`<span style="font-size:9px;color:var(--green);font-weight:700">🏆 WIN</span>`:entry.checked?`<span style="font-size:9px;color:var(--dim3)">✅ No hit</span>`:`<div style="display:flex;align-items:center;gap:6px"><span style="font-size:9px;color:#a78bfa">⏳ Pending</span><label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:9px;color:#ef4444" onclick="event.stopPropagation()"><input type="checkbox" ${entry.__delSel?'checked':''} onchange="toggleDeleteSelection('${entry.id}')" style="cursor:pointer;accent-color:#ef4444">🗑️</label></div>`}
+            ${hasWin?`<div style="display:flex;align-items:center;gap:6px"><span style="font-size:9px;color:var(--green);font-weight:700">🏆 WIN</span><label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:9px;color:#ef4444" onclick="event.stopPropagation()"><input type="checkbox" ${entry.__delSel?'checked':''} onchange="toggleDeleteSelection('${entry.id}')" style="cursor:pointer;accent-color:#ef4444">🗑️</label></div>`:entry.checked?`<div style="display:flex;align-items:center;gap:6px"><span style="font-size:9px;color:var(--dim3)">✅ No hit</span><label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:9px;color:#ef4444" onclick="event.stopPropagation()"><input type="checkbox" ${entry.__delSel?'checked':''} onchange="toggleDeleteSelection('${entry.id}')" style="cursor:pointer;accent-color:#ef4444">🗑️</label></div>`:`<div style="display:flex;align-items:center;gap:6px"><span style="font-size:9px;color:#a78bfa">⏳ Pending</span><label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:9px;color:#ef4444" onclick="event.stopPropagation()"><input type="checkbox" ${entry.__delSel?'checked':''} onchange="toggleDeleteSelection('${entry.id}')" style="cursor:pointer;accent-color:#ef4444">🗑️</label></div>`}
           </div>
           
           <div class="hist-nums" style="margin:6px 0">${entry.predictions.map(n=>{
@@ -1672,17 +1672,21 @@ function toggleDeleteSelection(id){
 }
 
 function selectAllPending(){
-  // Respect the current filter — only select pending entries visible under current filter
+  // Selects ALL entries visible under the current filter (pending OR checked)
   const currentFilter=localStorage.getItem('b4d_histFilter')||'all';
-  let filtered=history.filter(e=>!e.checked);
+  const currentStatus=localStorage.getItem('b4d_histStatus')||'all';
+  let filtered=history.slice();
   if(currentFilter!=='all')filtered=filtered.filter(e=>e.operator===currentFilter);
-  if(filtered.length===0){toast('No pending entries to select');return;}
+  if(currentStatus==='wins')filtered=filtered.filter(e=>e.checked&&(e.hits?.length>0||e.permHits>0));
+  else if(currentStatus==='checked')filtered=filtered.filter(e=>e.checked);
+  else if(currentStatus==='pending')filtered=filtered.filter(e=>!e.checked);
+  if(filtered.length===0){toast('No entries visible to select');return;}
   filtered.forEach(e=>{
     if(!e.id)e.id='h'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
     e.__delSel=true;
   });
   render();
-  toast(`☑️ ${filtered.length} pending entries selected`);
+  toast(`☑️ ${filtered.length} entries selected`);
 }
 
 function deselectAllPending(){
@@ -1696,7 +1700,14 @@ function deselectAllPending(){
 function deleteSelectedPending(){
   const selected=history.filter(e=>e.__delSel);
   if(selected.length===0){toast('No entries selected for deletion');return;}
-  if(!confirm(`Delete ${selected.length} selected pending entries?\n\n• Cannot be undone\n• Stats are NOT affected`))return;
+  const pendingCount=selected.filter(e=>!e.checked).length;
+  const checkedCount=selected.filter(e=>e.checked).length;
+  const winCount=selected.filter(e=>e.checked&&(e.hits?.length>0||e.permHits>0)).length;
+  let msg=`Delete ${selected.length} selected entries?\n`;
+  if(pendingCount>0)msg+=`• ${pendingCount} pending\n`;
+  if(checkedCount>0)msg+=`• ${checkedCount} checked`+(winCount>0?` (includes ${winCount} WIN${winCount>1?'s':''})`:'')+`\n`;
+  msg+=`\n• Cannot be undone`;
+  if(!confirm(msg))return;
   history=history.filter(e=>!e.__delSel);
   saveAll();render();
   toast(`🗑️ Deleted ${selected.length} entries`);
@@ -2177,29 +2188,10 @@ function oracleAnalyze(opDraws,targetDay){
 //   - Position-aware: digits placed at positions where they actually appear
 //   - Digit sum zone 15-22 (Grok's zone)
 // ============================================================
-function hotHandAnalyze(draws,weeks){
-  weeks=weeks||1;
-  if(!draws||draws.length<3)return null;
-  
-  // Filter draws to last N weeks based on calendar date (not fixed draw count)
-  // Auto-handles Special Draw weeks (4 draws/week) vs normal weeks (3 draws/week)
-  const cutoffDays=weeks*7;
-  const now=new Date();
-  now.setHours(0,0,0,0);
-  const cutoffDate=new Date(now.getTime()-cutoffDays*24*60*60*1000);
-  
-  const recent=draws.filter(d=>{
-    if(!d.date)return false;
-    const drawDate=new Date(d.date);
-    return drawDate>=cutoffDate;
-  });
-  
-  // Fallback: if not enough draws in window (e.g. fresh install), use minimum 3 most recent
-  if(recent.length<3){
-    const fallback=draws.slice(0,Math.min(draws.length,3*weeks));
-    if(fallback.length<3)return null;
-    recent.push(...fallback.filter(d=>!recent.includes(d)));
-  }
+function hotHandAnalyze(draws,windowSize){
+  windowSize=windowSize||6;
+  const recent=draws.slice(0,windowSize);
+  if(recent.length<3)return null;
   
   // Top 3 prizes only — NOT special/consolation (key Grok rule)
   const nums=recent.flatMap(d=>(d.top3||[]).filter(n=>n&&n.length===4));
@@ -2324,11 +2316,9 @@ function hotHandAnalyze(draws,weeks){
   });
   
   return{
-    weeks:weeks,
-    drawsAnalyzed:recent.length,
+    windowSize:recent.length,drawsAnalyzed:recent.length,
     totalDigits:nums.length*4,
-    primary,secondary,positionRoles,posFreq,sumZone,picks:picksOut,
-    dateRange:recent.length>0?{from:recent[recent.length-1].date,to:recent[0].date}:null
+    primary,secondary,positionRoles,posFreq,sumZone,picks:picksOut
   };
 }
 
@@ -2687,7 +2677,7 @@ function renderEngines(){
 // HOT HAND UI — the scan button + results display
 // ============================================================
 function renderHotHandBody(){
-  const weeks=parseInt(localStorage.getItem('b4d_hhWeeks')||'1');
+  const windowSize=parseInt(localStorage.getItem('b4d_hhWindow')||'6');
   
   let h=`<div style="background:linear-gradient(135deg,rgba(249,115,22,0.12),rgba(220,38,38,0.06));border:1px solid rgba(249,115,22,0.3);border-radius:12px;padding:14px;margin-bottom:14px">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
@@ -2697,13 +2687,13 @@ function renderHotHandBody(){
         <div style="font-size:9px;color:var(--dim2)">Short-Term Recent-Form Streak Analyzer</div>
       </div>
     </div>
-    <div style="font-size:9px;color:var(--dim);line-height:1.5">Grok's proven method that won <b style="color:#fbbf24">RM7K on 5794</b> and <b style="color:#fbbf24">RM1,750 on 9631</b>. Analyzes the last <b style="color:#fb923c">${weeks} week${weeks>1?'s':''}</b> of draws using only <b style="color:#fb923c">top 3 prizes</b>. Two lanes: <b style="color:#fb923c">MAGNUM solo</b> + <b style="color:#fb923c">TOTO+DAMACAI pooled</b>.</div>
+    <div style="font-size:9px;color:var(--dim);line-height:1.5">Grok's proven method that won <b style="color:#fbbf24">RM7K on 5794</b> and <b style="color:#fbbf24">RM1,750 on 9631</b>. Analyzes the last <b style="color:#fb923c">${windowSize} draws</b> using only <b style="color:#fb923c">top 3 prizes</b>. Two lanes: <b style="color:#fb923c">MAGNUM solo</b> + <b style="color:#fb923c">TOTO+DAMACAI pooled</b>.</div>
   </div>`;
   
-  // Week window selector — 1/2/3/4 weeks
+  // Window selector — 4/6/8 draws (6 = Grok's proven default that won 5794, 9631, 4671, 2167, 1276)
   h+=`<div style="display:flex;gap:6px;margin-bottom:12px;align-items:center">
     <div style="font-size:9px;color:var(--dim2);margin-right:4px">WINDOW:</div>
-    ${[1,2,3,4].map(n=>`<button onclick="localStorage.setItem('b4d_hhWeeks','${n}');render()" style="padding:6px 12px;border:1px solid ${n===weeks?'#fb923c':'#1a1a3a'};background:${n===weeks?'#fb923c22':'#0a0a15'};color:${n===weeks?'#fb923c':'var(--dim2)'};border-radius:6px;font-size:10px;font-weight:700;cursor:pointer">${n} week${n>1?'s':''}</button>`).join('')}
+    ${[4,6,8].map(n=>`<button onclick="localStorage.setItem('b4d_hhWindow','${n}');render()" style="padding:6px 12px;border:1px solid ${n===windowSize?'#fb923c':'#1a1a3a'};background:${n===windowSize?'#fb923c22':'#0a0a15'};color:${n===windowSize?'#fb923c':'var(--dim2)'};border-radius:6px;font-size:10px;font-weight:700;cursor:pointer">${n} draws</button>`).join('')}
   </div>`;
   
   // SCAN button
@@ -2777,41 +2767,42 @@ function runHotHand(){
   
   setTimeout(()=>{
     try{
-      const weeks=parseInt(localStorage.getItem('b4d_hhWeeks')||'1');
+      const windowSize=parseInt(localStorage.getItem('b4d_hhWindow')||'6');
       
-      // Lane A: MAGNUM solo (date-filtered, will typically get weeks*3 draws)
+      // Lane A: MAGNUM solo (original proven method)
       const magnumOp=operators.find(o=>o.name==='MAGNUM');
-      const magnumResult=magnumOp?hotHandAnalyze(magnumOp.draws,weeks):null;
+      const magnumResult=magnumOp?hotHandAnalyze(magnumOp.draws,windowSize):null;
       
-      // Lane B: TOTO + DAMACAI pooled (date-filtered, will get weeks*6 draws since 2 ops)
+      // Lane B: TOTO + DAMACAI pooled (original proven method)
       const toto=operators.find(o=>o.name==='TOTO');
       const dmc=operators.find(o=>o.name==='DAMACAI');
       let totoDmcResult=null;
       if(toto&&dmc){
         const pool=[...(toto.draws||[]),...(dmc.draws||[])].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
-        // Same weeks value — the date filter in hotHandAnalyze makes it operator-aware automatically
-        totoDmcResult=hotHandAnalyze(pool,weeks);
+        // Pool has 2 ops — use 2x window to keep equivalent sample size
+        totoDmcResult=hotHandAnalyze(pool,windowSize*2);
       }
       
-      // FUSION: detect numbers appearing in BOTH Oracle Primary picks AND Hot Hand picks
-      const oracleAllPicks=new Set();
-      const oraclePickMap={}; // num -> op name
+      // FUSION: use digit-set matching (more meaningful for 4D)
+      // Oracle picks 7461 + Hot Hand picks any permutation of {1,4,6,7} = FUSION
+      const digitSetKey=n=>[...n].sort().join('');
+      const oracleAllSets=new Map(); // setKey -> {num, op}
       if(lastOracleResults){
         Object.entries(lastOracleResults).forEach(([opName,res])=>{
           if(res&&res.predictions){
             res.predictions.forEach(p=>{
-              oracleAllPicks.add(p.num);
-              oraclePickMap[p.num]=opName;
+              const key=digitSetKey(p.num);
+              if(!oracleAllSets.has(key))oracleAllSets.set(key,{num:p.num,op:opName});
             });
           }
         });
       }
-      const fusionMagnum=magnumResult?magnumResult.picks.filter(p=>oracleAllPicks.has(p.num)).map(p=>p.num):[];
-      const fusionPool=totoDmcResult?totoDmcResult.picks.filter(p=>oracleAllPicks.has(p.num)).map(p=>p.num):[];
+      const fusionMagnum=magnumResult?magnumResult.picks.filter(p=>oracleAllSets.has(digitSetKey(p.num))).map(p=>p.num):[];
+      const fusionPool=totoDmcResult?totoDmcResult.picks.filter(p=>oracleAllSets.has(digitSetKey(p.num))).map(p=>p.num):[];
       
       lastHotHandResults={
         magnum:magnumResult,totoDmc:totoDmcResult,
-        fusionMagnum,fusionPool,weeks
+        fusionMagnum,fusionPool,windowSize
       };
       
       // Save to history — HOTHAND and FUSION tiers
@@ -2823,7 +2814,7 @@ function runHotHand(){
           date:now,operator:'HOTHAND',subOperator:'MAGNUM',targetDay:tDay,
           predictions:magnumResult.picks.map(p=>p.num),
           checked:false,hits:[],permHits:0,
-          hotHandMeta:{lane:'MAGNUM',weeks,drawsAnalyzed:magnumResult.drawsAnalyzed,primary:magnumResult.primary.map(p=>p.digit).join(','),stars:magnumResult.picks.map(p=>({num:p.num,stars:p.stars}))}
+          hotHandMeta:{lane:'MAGNUM',windowSize,drawsAnalyzed:magnumResult.drawsAnalyzed,primary:magnumResult.primary.map(p=>p.digit).join(','),stars:magnumResult.picks.map(p=>({num:p.num,stars:p.stars}))}
         });
       }
       if(totoDmcResult&&totoDmcResult.picks.length>0){
@@ -2834,7 +2825,7 @@ function runHotHand(){
             date:now,operator:'HOTHAND',subOperator:opName,targetDay:tDay,
             predictions:totoDmcResult.picks.map(p=>p.num),
             checked:false,hits:[],permHits:0,
-            hotHandMeta:{lane:'TOTO+DMC',weeks,drawsAnalyzed:totoDmcResult.drawsAnalyzed,primary:totoDmcResult.primary.map(p=>p.digit).join(','),stars:totoDmcResult.picks.map(p=>({num:p.num,stars:p.stars}))}
+            hotHandMeta:{lane:'TOTO+DMC',windowSize:windowSize*2,drawsAnalyzed:totoDmcResult.drawsAnalyzed,primary:totoDmcResult.primary.map(p=>p.digit).join(','),stars:totoDmcResult.picks.map(p=>({num:p.num,stars:p.stars}))}
           });
         });
       }
@@ -2847,7 +2838,7 @@ function runHotHand(){
             date:now,operator:'FUSION',subOperator:opName,targetDay:tDay,
             predictions:allFusionNums,
             checked:false,hits:[],permHits:0,
-            fusionMeta:{fromOracle:allFusionNums.map(n=>oraclePickMap[n]||'?'),hhLanes:allFusionNums.map(n=>fusionMagnum.includes(n)&&fusionPool.includes(n)?'BOTH':fusionMagnum.includes(n)?'MAGNUM':'TOTO+DMC')}
+            fusionMeta:{fromOracle:allFusionNums.map(n=>{const s=oracleAllSets.get(digitSetKey(n));return s?s.op:'?';}),hhLanes:allFusionNums.map(n=>fusionMagnum.includes(n)&&fusionPool.includes(n)?'BOTH':fusionMagnum.includes(n)?'MAGNUM':'TOTO+DMC')}
           });
         });
       }
