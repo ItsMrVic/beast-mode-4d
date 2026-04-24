@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v4.3.2</title>
+<title>Beast Mode 4D v4.4</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -221,7 +221,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v4.3.2</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v4.4</span>
       <div class="sub">AI-Powered Sniper Prediction Engine + DeepSeek AI</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
@@ -1591,6 +1591,7 @@ function renderHistory(){
             <div style="display:flex;align-items:center;gap:6px">
               ${isSniper?`<span style="font-size:10px;color:#ff6633;font-weight:800">🎯 SNIPER</span>`:isOracle?`<span style="font-size:10px;color:#c084fc;font-weight:800">🔮 ORACLE</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isDodge?`<span style="font-size:10px;color:#ef4444;font-weight:800">🎰 DODGE</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isCrossOp?`<span style="font-size:10px;color:#f59e0b;font-weight:800">🔀 CROSS-OP</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isHotHand?`<span style="font-size:10px;color:#fb923c;font-weight:800">🔥 HOT HAND</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>${entry.hotHandMeta?.lane?`<span style="font-size:7px;background:#fb923c22;color:#fb923c;padding:1px 4px;border-radius:3px">${entry.hotHandMeta.lane}</span>`:''}`:isFusion?`<span style="font-size:10px;color:#eab308;font-weight:800">💎 FUSION</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:`<span style="font-size:10px;font-weight:700;color:${opColor}">${entry.operator}</span>`}
               <span style="font-size:8px;background:#1a1a2e;color:var(--dim2);padding:2px 6px;border-radius:3px">${entry.targetDay}</span>
+              ${entry.generatedAt?`<span style="font-size:7px;color:var(--dim3);font-style:italic" title="${entry.generatedAt}">🕐 ${(()=>{const d=new Date(entry.generatedAt);return d.toLocaleDateString('en-MY',{month:'short',day:'numeric'})+' '+d.toLocaleTimeString('en-MY',{hour:'2-digit',minute:'2-digit',hour12:true});})()}</span>`:''}
             </div>
             ${hasWin?`<div style="display:flex;align-items:center;gap:6px"><span style="font-size:9px;color:var(--green);font-weight:700">🏆 WIN</span><label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:9px;color:#ef4444" onclick="event.stopPropagation()"><input type="checkbox" ${entry.__delSel?'checked':''} onchange="toggleDeleteSelection('${entry.id}')" style="cursor:pointer;accent-color:#ef4444">🗑️</label></div>`:entry.checked?`<div style="display:flex;align-items:center;gap:6px"><span style="font-size:9px;color:var(--dim3)">✅ No hit</span><label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:9px;color:#ef4444" onclick="event.stopPropagation()"><input type="checkbox" ${entry.__delSel?'checked':''} onchange="toggleDeleteSelection('${entry.id}')" style="cursor:pointer;accent-color:#ef4444">🗑️</label></div>`:`<div style="display:flex;align-items:center;gap:6px"><span style="font-size:9px;color:#a78bfa">⏳ Pending</span><label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:9px;color:#ef4444" onclick="event.stopPropagation()"><input type="checkbox" ${entry.__delSel?'checked':''} onchange="toggleDeleteSelection('${entry.id}')" style="cursor:pointer;accent-color:#ef4444">🗑️</label></div>`}
           </div>
@@ -2326,7 +2327,30 @@ function hotHandAnalyze(draws,windowSize){
 let lastHotHandResults=null;
 
 function renderOracleBody(){
-  let h=`<div style="background:linear-gradient(135deg,rgba(168,85,247,0.12),rgba(236,72,153,0.06));border:1px solid rgba(168,85,247,0.3);border-radius:12px;padding:14px;margin-bottom:14px">
+  let h='';
+  
+  // 🎯 ORACLE SNIPER — cross-operator consensus numbers
+  const snipers=computeOracleSniper();
+  if(snipers.length>0){
+    h+=`<div style="background:linear-gradient(135deg,rgba(255,60,60,0.15),rgba(255,165,0,0.08));border:2px solid #ff6633;border-radius:12px;padding:14px;margin-bottom:14px;box-shadow:0 4px 16px rgba(255,102,51,0.2)">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <div style="font-size:28px">🎯</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:800;color:#ff6633;letter-spacing:1px">ORACLE SNIPER</div>
+          <div style="font-size:8px;color:var(--dim2);margin-top:2px">${snipers.length} cross-operator consensus number${snipers.length>1?'s':''} — PLAY ON ALL 3 OPS</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
+        ${snipers.map(s=>`<div style="background:#0a0a15;border:2px solid #ff6633;border-radius:8px;padding:6px 10px;display:flex;flex-direction:column;align-items:center;gap:2px">
+          <div style="font-family:monospace;font-size:16px;font-weight:900;color:#ff6633;letter-spacing:2px">${s.displayNum}</div>
+          <div style="font-size:7px;color:var(--dim3)">${s.ops.length===3?'🔥 ALL 3':s.ops.join('+')}</div>
+        </div>`).join('')}
+      </div>
+      <div style="font-size:8px;color:#ff6633;margin-top:8px;font-weight:700;text-align:center">🎯 Strong signal — Oracle agrees across operators (digit-set match)</div>
+    </div>`;
+  }
+  
+  h+=`<div style="background:linear-gradient(135deg,rgba(168,85,247,0.12),rgba(236,72,153,0.06));border:1px solid rgba(168,85,247,0.3);border-radius:12px;padding:14px;margin-bottom:14px">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
       <div style="font-size:32px">🔮</div>
       <div style="flex:1">
@@ -2553,7 +2577,7 @@ function runOracle(){
       Object.entries(results).forEach(([opName,res])=>{
         // TIER 1: Primary Oracle picks (5 high-consensus numbers)
         history.push({
-          date:now,
+          date:now,generatedAt:new Date().toISOString(),
           operator:'ORACLE',
           subOperator:opName,
           targetDay:tDay,
@@ -2569,7 +2593,7 @@ function runOracle(){
         // TIER 2: Operator Dodge Variants (counter hot→cold digit swap)
         if(res.dodgeVariants&&res.dodgeVariants.length>0){
           history.push({
-            date:now,
+            date:now,generatedAt:new Date().toISOString(),
             operator:'DODGE',
             subOperator:opName,
             targetDay:tDay,
@@ -2588,7 +2612,7 @@ function runOracle(){
         // TIER 3: Cross-Op Migration candidates (digit sets moving between operators)
         if(res.crossOp&&res.crossOp.candidates&&res.crossOp.candidates.length>0){
           history.push({
-            date:now,
+            date:now,generatedAt:new Date().toISOString(),
             operator:'CROSSOP',
             subOperator:opName,
             targetDay:tDay,
@@ -2615,6 +2639,74 @@ function runOracle(){
       toast('🔮 Oracle + Dodge + Cross-Op saved to history!');
     },3500);
   },200);
+}
+
+// ============================================================
+// ORACLE SNIPER — numbers that appear in multiple operators' Primary picks
+// "Play straight on ALL 3 operators" signal
+// Uses digit-set matching (4D permutation awareness)
+// ============================================================
+function computeOracleSniper(){
+  if(!lastOracleResults)return[];
+  const digitSetKey=n=>[...n].sort().join('');
+  const opPicks={};  // opName -> Set of digit-set keys
+  Object.entries(lastOracleResults).forEach(([opName,res])=>{
+    if(res&&res.predictions){
+      opPicks[opName]=new Map();
+      res.predictions.forEach(p=>{
+        opPicks[opName].set(digitSetKey(p.num),p.num);
+      });
+    }
+  });
+  
+  // Count which digit-set keys appear across multiple operators
+  const keyOps={};  // key -> {ops: [opName], nums: [num]}
+  Object.entries(opPicks).forEach(([opName,map])=>{
+    map.forEach((num,key)=>{
+      if(!keyOps[key])keyOps[key]={ops:[],nums:[]};
+      keyOps[key].ops.push(opName);
+      keyOps[key].nums.push(num);
+    });
+  });
+  
+  // Keep only digit sets that appear in 2+ operators
+  const snipers=Object.entries(keyOps)
+    .filter(([,info])=>info.ops.length>=2)
+    .map(([key,info])=>({
+      displayNum:info.nums[0],  // use first form for display
+      allForms:info.nums,
+      ops:info.ops,
+      strength:info.ops.length  // 2 or 3 — higher = stronger
+    }))
+    .sort((a,b)=>b.strength-a.strength);
+  
+  return snipers;
+}
+
+// ============================================================
+// HOT HAND SNIPER — numbers where MAGNUM solo AND TOTO+DMC pool both agree
+// Cross-lane consensus = play on all 3 operators
+// ============================================================
+function computeHotHandSniper(){
+  if(!lastHotHandResults)return[];
+  if(!lastHotHandResults.magnum||!lastHotHandResults.totoDmc)return[];
+  
+  const digitSetKey=n=>[...n].sort().join('');
+  const magSets=new Map();
+  lastHotHandResults.magnum.picks.forEach(p=>magSets.set(digitSetKey(p.num),p.num));
+  
+  const snipers=[];
+  lastHotHandResults.totoDmc.picks.forEach(p=>{
+    const key=digitSetKey(p.num);
+    if(magSets.has(key)){
+      snipers.push({
+        magnumForm:magSets.get(key),
+        poolForm:p.num,
+        displayNum:p.num
+      });
+    }
+  });
+  return snipers;
 }
 
 // ============================================================
@@ -2701,6 +2793,26 @@ function renderHotHandBody(){
   
   // Results
   if(lastHotHandResults){
+    // 🎯 HOT HAND SNIPER — cross-lane consensus (MAGNUM + TOTO+DMC agree)
+    const hhSnipers=computeHotHandSniper();
+    if(hhSnipers.length>0){
+      h+=`<div style="background:linear-gradient(135deg,rgba(255,60,60,0.15),rgba(255,165,0,0.08));border:2px solid #ff6633;border-radius:12px;padding:14px;margin-bottom:14px;box-shadow:0 4px 16px rgba(255,102,51,0.2)">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <div style="font-size:28px">🎯</div>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:800;color:#ff6633;letter-spacing:1px">HOT HAND SNIPER</div>
+            <div style="font-size:8px;color:var(--dim2);margin-top:2px">${hhSnipers.length} cross-lane consensus — MAGNUM + TOTO+DMC both agree</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
+          ${hhSnipers.map(s=>`<div style="background:#0a0a15;border:2px solid #ff6633;border-radius:8px;padding:6px 10px;display:flex;flex-direction:column;align-items:center;gap:2px">
+            <div style="font-family:monospace;font-size:16px;font-weight:900;color:#ff6633;letter-spacing:2px">${s.displayNum}</div>
+            <div style="font-size:7px;color:var(--dim3)">${s.magnumForm===s.poolForm?'EXACT':'DIGIT SET'}</div>
+          </div>`).join('')}
+        </div>
+        <div style="font-size:8px;color:#ff6633;margin-top:8px;font-weight:700;text-align:center">🎯 Both lanes converged — strongest Hot Hand signal</div>
+      </div>`;
+    }
     // MAGNUM lane
     if(lastHotHandResults.magnum){
       h+=renderHotHandLane('🟡 MAGNUM (solo lane)','#D4A017',lastHotHandResults.magnum,lastHotHandResults.fusionMagnum||[]);
@@ -2811,7 +2923,7 @@ function runHotHand(){
       
       if(magnumResult&&magnumResult.picks.length>0){
         history.push({
-          date:now,operator:'HOTHAND',subOperator:'MAGNUM',targetDay:tDay,
+          date:now,generatedAt:new Date().toISOString(),operator:'HOTHAND',subOperator:'MAGNUM',targetDay:tDay,
           predictions:magnumResult.picks.map(p=>p.num),
           checked:false,hits:[],permHits:0,
           hotHandMeta:{lane:'MAGNUM',windowSize,drawsAnalyzed:magnumResult.drawsAnalyzed,primary:magnumResult.primary.map(p=>p.digit).join(','),stars:magnumResult.picks.map(p=>({num:p.num,stars:p.stars}))}
@@ -2822,7 +2934,7 @@ function runHotHand(){
         // Both should be checked independently (either op hitting = win)
         ['TOTO','DAMACAI'].forEach(opName=>{
           history.push({
-            date:now,operator:'HOTHAND',subOperator:opName,targetDay:tDay,
+            date:now,generatedAt:new Date().toISOString(),operator:'HOTHAND',subOperator:opName,targetDay:tDay,
             predictions:totoDmcResult.picks.map(p=>p.num),
             checked:false,hits:[],permHits:0,
             hotHandMeta:{lane:'TOTO+DMC',windowSize:windowSize*2,drawsAnalyzed:totoDmcResult.drawsAnalyzed,primary:totoDmcResult.primary.map(p=>p.digit).join(','),stars:totoDmcResult.picks.map(p=>({num:p.num,stars:p.stars}))}
@@ -2835,7 +2947,7 @@ function runHotHand(){
       if(allFusionNums.length>0){
         ['MAGNUM','TOTO','DAMACAI'].forEach(opName=>{
           history.push({
-            date:now,operator:'FUSION',subOperator:opName,targetDay:tDay,
+            date:now,generatedAt:new Date().toISOString(),operator:'FUSION',subOperator:opName,targetDay:tDay,
             predictions:allFusionNums,
             checked:false,hits:[],permHits:0,
             fusionMeta:{fromOracle:allFusionNums.map(n=>{const s=oracleAllSets.get(digitSetKey(n));return s?s.op:'?';}),hhLanes:allFusionNums.map(n=>fusionMagnum.includes(n)&&fusionPool.includes(n)?'BOTH':fusionMagnum.includes(n)?'MAGNUM':'TOTO+DMC')}
@@ -3065,7 +3177,7 @@ function runBeast(){
       const opToggles=getToggles(op.name);
       const preds=lastResults[op.name].predictions.slice(0,10).map(([n])=>n);
       const activeModules=Object.entries(opToggles).filter(([,v])=>v!==false).map(([k])=>k);
-      history.push({date:now,operator:op.name,targetDay:tDay,predictions:preds,checked:false,hits:[],permHits:0,modules:activeModules});
+      history.push({date:now,generatedAt:new Date().toISOString(),operator:op.name,targetDay:tDay,predictions:preds,checked:false,hits:[],permHits:0,modules:activeModules});
     });
     
     // Save SNIPER MODE predictions as a special entry
@@ -3075,7 +3187,7 @@ function runBeast(){
         const sniperNums=crossOp.playAllOps.slice(0,6).map(p=>p.num);
         const sniperMeta=crossOp.playAllOps.slice(0,6).map(p=>({num:p.num,origin:p.originOp,alsoHotIn:p.alsoHotIn}));
         history.push({
-          date:now,
+          date:now,generatedAt:new Date().toISOString(),
           operator:'SNIPER',
           targetDay:tDay,
           predictions:sniperNums,
