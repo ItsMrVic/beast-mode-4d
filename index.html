@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v4.4</title>
+<title>Beast Mode 4D v4.5</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -221,7 +221,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v4.4</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v4.5</span>
       <div class="sub">AI-Powered Sniper Prediction Engine + DeepSeek AI</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
@@ -274,8 +274,38 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
         <div><div style="font-size:8px;color:var(--dim3)">3rd</div><input class="num-in" id="mP3" maxlength="4" placeholder="0000" inputmode="numeric"></div>
       </div>
     </div>
-    <div class="field"><label>Special (comma separated)</label><input id="mSp" placeholder="1234, 5678..." style="font-size:11px;font-family:monospace"></div>
-    <div class="field"><label>Consolation (comma separated)</label><input id="mCn" placeholder="1234, 5678..." style="font-size:11px;font-family:monospace"></div>
+    <div class="field"><label>Special (10 numbers)</label>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:4px">
+        <input class="num-in" id="mSp1" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+        <input class="num-in" id="mSp2" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+        <input class="num-in" id="mSp3" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+        <input class="num-in" id="mSp4" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+        <input class="num-in" id="mSp5" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px">
+        <input class="num-in" id="mSp6" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+        <input class="num-in" id="mSp7" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+        <input class="num-in" id="mSp8" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+        <input class="num-in" id="mSp9" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+        <input class="num-in" id="mSp10" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+      </div>
+    </div>
+    <div class="field"><label>Consolation (10 numbers)</label>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:4px">
+        <input class="num-in" id="mCn1" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+        <input class="num-in" id="mCn2" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+        <input class="num-in" id="mCn3" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+        <input class="num-in" id="mCn4" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+        <input class="num-in" id="mCn5" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px">
+        <input class="num-in" id="mCn6" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+        <input class="num-in" id="mCn7" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+        <input class="num-in" id="mCn8" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+        <input class="num-in" id="mCn9" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+        <input class="num-in" id="mCn10" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+      </div>
+    </div>
     <div id="dupWarning"></div>
     <div class="actions">
       <button class="btn btn-outline" onclick="closeModal('modalAdd')">Cancel</button>
@@ -301,8 +331,38 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
         <input class="num-in" id="chk3" maxlength="4" placeholder="3rd" inputmode="numeric">
       </div>
     </div>
-    <div class="field"><label>Special (comma separated)</label><input id="chkSp" placeholder="1234, 5678..." style="font-size:11px;font-family:monospace"></div>
-    <div class="field"><label>Consolation (comma separated)</label><input id="chkCn" placeholder="1234, 5678..." style="font-size:11px;font-family:monospace"></div>
+    <div class="field"><label>Special (10 numbers)</label>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:4px">
+        <input class="num-in" id="chkSp1" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+        <input class="num-in" id="chkSp2" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+        <input class="num-in" id="chkSp3" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+        <input class="num-in" id="chkSp4" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+        <input class="num-in" id="chkSp5" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px">
+        <input class="num-in" id="chkSp6" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+        <input class="num-in" id="chkSp7" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+        <input class="num-in" id="chkSp8" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+        <input class="num-in" id="chkSp9" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+        <input class="num-in" id="chkSp10" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+      </div>
+    </div>
+    <div class="field"><label>Consolation (10 numbers)</label>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:4px">
+        <input class="num-in" id="chkCn1" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+        <input class="num-in" id="chkCn2" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+        <input class="num-in" id="chkCn3" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+        <input class="num-in" id="chkCn4" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+        <input class="num-in" id="chkCn5" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px">
+        <input class="num-in" id="chkCn6" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+        <input class="num-in" id="chkCn7" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+        <input class="num-in" id="chkCn8" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+        <input class="num-in" id="chkCn9" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+        <input class="num-in" id="chkCn10" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
+      </div>
+    </div>
     <div class="actions">
       <button class="btn btn-outline" onclick="closeModal('modalCheck')">Cancel</button>
       <button class="btn btn-green" onclick="checkResults()">✓ Check & Learn</button>
@@ -3370,8 +3430,13 @@ async function autoFetchResults(){
       document.getElementById('mP1').value=r.top3[0]||'';
       document.getElementById('mP2').value=r.top3[1]||'';
       document.getElementById('mP3').value=r.top3[2]||'';
-      document.getElementById('mSp').value=(r.special||[]).join(', ');
-      document.getElementById('mCn').value=(r.consolation||[]).join(', ');
+      const sp=r.special||[]; const cn=r.consolation||[];
+      for(let i=0;i<10;i++){
+        const sEl=document.getElementById('mSp'+(i+1));
+        const cEl=document.getElementById('mCn'+(i+1));
+        if(sEl)sEl.value=sp[i]||'';
+        if(cEl)cEl.value=cn[i]||'';
+      }
       
       statusEl.innerHTML=`<div class="fetch-status success">✅ ${opName} results found and auto-filled!</div>`;
       
@@ -3438,8 +3503,13 @@ function saveDraw(){
   const day=document.getElementById('mDay').value;
   const p=[document.getElementById('mP1').value,document.getElementById('mP2').value,document.getElementById('mP3').value].map(v=>v.replace(/\D/g,'').padStart(4,'0'));
   if(!date||p.some(n=>n.length!==4||n==='0000')){alert('Fill in date and all 3 prizes');return;}
-  const sp=document.getElementById('mSp').value.split(/[,\s]+/).filter(n=>n.length===4);
-  const cn=document.getElementById('mCn').value.split(/[,\s]+/).filter(n=>n.length===4);
+  const sp=[],cn=[];
+  for(let i=1;i<=10;i++){
+    const sv=(document.getElementById('mSp'+i)?.value||'').trim();
+    const cv=(document.getElementById('mCn'+i)?.value||'').trim();
+    if(sv.length===4&&/^\d{4}$/.test(sv))sp.push(sv);
+    if(cv.length===4&&/^\d{4}$/.test(cv))cn.push(cv);
+  }
   
   // DUPLICATE CHECK
   const existing=checkDuplicate(addOpIdx,date);
@@ -3632,8 +3702,13 @@ function autoFillCheck(){
   document.getElementById('chk1').value=draw.top3[0]||'';
   document.getElementById('chk2').value=draw.top3[1]||'';
   document.getElementById('chk3').value=draw.top3[2]||'';
-  document.getElementById('chkSp').value=(draw.special||[]).join(', ');
-  document.getElementById('chkCn').value=(draw.consolation||[]).join(', ');
+  const sp2=draw.special||[]; const cn2=draw.consolation||[];
+  for(let i=0;i<10;i++){
+    const sEl=document.getElementById('chkSp'+(i+1));
+    const cEl=document.getElementById('chkCn'+(i+1));
+    if(sEl)sEl.value=sp2[i]||'';
+    if(cEl)cEl.value=cn2[i]||'';
+  }
   toast(`✅ ${opName} ${date} results loaded!`);
 }
 
@@ -3641,8 +3716,13 @@ function checkResults(){
   const date=document.getElementById('chkDate').value;
   const opName=document.getElementById('chkOp').value;
   const t3=[document.getElementById('chk1').value,document.getElementById('chk2').value,document.getElementById('chk3').value].map(v=>v.replace(/\D/g,'').padStart(4,'0'));
-  const sp=document.getElementById('chkSp').value.split(/[,\s]+/).filter(n=>n.length===4);
-  const cn=document.getElementById('chkCn').value.split(/[,\s]+/).filter(n=>n.length===4);
+  const sp=[],cn=[];
+  for(let i=1;i<=10;i++){
+    const sv=(document.getElementById('chkSp'+i)?.value||'').trim();
+    const cv=(document.getElementById('chkCn'+i)?.value||'').trim();
+    if(sv.length===4&&/^\d{4}$/.test(sv))sp.push(sv);
+    if(cv.length===4&&/^\d{4}$/.test(cv))cn.push(cv);
+  }
   
   if(!date||t3.some(n=>n==='0000')){alert('Fill in date and top 3 prizes');return;}
   
