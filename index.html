@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v4.5</title>
+<title>Beast Mode 4D v4.7</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -221,7 +221,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v4.5</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v4.7</span>
       <div class="sub">AI-Powered Sniper Prediction Engine + DeepSeek AI</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
@@ -1553,6 +1553,7 @@ function renderHistory(){
       <select onchange="localStorage.setItem('b4d_histFilter',this.value);render()" style="flex:1;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:5px 7px;font-size:10px;font-family:inherit">
         <option value="all"${histFilter==='all'?' selected':''}>🎯 All Operators</option>
         <option value="SNIPER"${histFilter==='SNIPER'?' selected':''}>🎯 Sniper Mode Only</option>
+        <option value="ORACLE_SNIPER"${histFilter==='ORACLE_SNIPER'?' selected':''}>🎯 Oracle Sniper Only</option>
         <option value="ORACLE"${histFilter==='ORACLE'?' selected':''}>🔮 Oracle Mode Only</option>
         <option value="DODGE"${histFilter==='DODGE'?' selected':''}>🎰 Dodge Variants Only</option>
         <option value="CROSSOP"${histFilter==='CROSSOP'?' selected':''}>🔀 Cross-Op Migration Only</option>
@@ -1598,7 +1599,7 @@ function renderHistory(){
   filtered.forEach(e=>{if(!byDate[e.date])byDate[e.date]=[];byDate[e.date].push(e);});
   const sortedDates=Object.keys(byDate).sort().reverse();
   
-  const opC={MAGNUM:'#D4A017',TOTO:'#DC2626',DAMACAI:'#2563EB',SNIPER:'#ff6633',ORACLE:'#c084fc',DODGE:'#ef4444',CROSSOP:'#f59e0b',HOTHAND:'#fb923c',FUSION:'#eab308'};
+  const opC={MAGNUM:'#D4A017',TOTO:'#DC2626',DAMACAI:'#2563EB',SNIPER:'#ff6633',ORACLE_SNIPER:'#ff3366',ORACLE:'#c084fc',DODGE:'#ef4444',CROSSOP:'#f59e0b',HOTHAND:'#fb923c',FUSION:'#eab308'};
   
   sortedDates.forEach(date=>{
     const entries=byDate[date];
@@ -1624,7 +1625,7 @@ function renderHistory(){
           </div>
         </div>
         <div style="display:flex;gap:2px">
-          ${[...new Set(entries.map(e=>e.operator))].map(op=>`<span style="font-size:7px;background:${opC[op]||'#555'};color:#fff;padding:2px 5px;border-radius:3px;font-weight:700">${op==='SNIPER'?'🎯':op.charAt(0)}</span>`).join('')}
+          ${[...new Set(entries.map(e=>e.operator))].map(op=>`<span style="font-size:7px;background:${opC[op]||'#555'};color:#fff;padding:2px 5px;border-radius:3px;font-weight:700">${op==='SNIPER'?'🎯':op==='ORACLE_SNIPER'?'🎯O':op.charAt(0)}</span>`).join('')}
         </div>
       </div>`;
     
@@ -1634,6 +1635,7 @@ function renderHistory(){
         // Assign stable ID if missing (for delete-selection)
         if(!entry.id)entry.id='h'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
         const isSniper=entry.operator==='SNIPER';
+        const isOracleSniper=entry.operator==='ORACLE_SNIPER';
         const isOracle=entry.operator==='ORACLE';
         const isDodge=entry.operator==='DODGE';
         const isCrossOp=entry.operator==='CROSSOP';
@@ -1643,13 +1645,13 @@ function renderHistory(){
         const permDetails=entry.permWinDetails||[];
         const permWinNums=new Set(permDetails.map(p=>p.predicted));
         const hasWin=entry.checked&&(entry.hits?.length>0||entry.permHits>0);
-        const borderLeft=isSniper?'border-left:3px solid #ff6633':isOracle?'border-left:3px solid #c084fc':isDodge?'border-left:3px solid #ef4444':isCrossOp?'border-left:3px solid #f59e0b':isHotHand?'border-left:3px solid #fb923c':isFusion?'border-left:3px solid #eab308':'';
+        const borderLeft=isSniper?'border-left:3px solid #ff6633':isOracleSniper?'border-left:3px solid #ff3366':isOracle?'border-left:3px solid #c084fc':isDodge?'border-left:3px solid #ef4444':isCrossOp?'border-left:3px solid #f59e0b':isHotHand?'border-left:3px solid #fb923c':isFusion?'border-left:3px solid #eab308':'';
         const fusionExtra=isFusion?';background:linear-gradient(90deg,rgba(234,179,8,0.08),#0a0a15)':'';
         
         h+=`<div class="hist-item" style="margin:6px 0;padding:10px;border-radius:8px;background:#0a0a15;border:1px solid #1a1a3a;${borderLeft}${fusionExtra}${hasWin?';box-shadow:0 0 0 1px rgba(34,197,94,0.2)':''}">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
             <div style="display:flex;align-items:center;gap:6px">
-              ${isSniper?`<span style="font-size:10px;color:#ff6633;font-weight:800">🎯 SNIPER</span>`:isOracle?`<span style="font-size:10px;color:#c084fc;font-weight:800">🔮 ORACLE</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isDodge?`<span style="font-size:10px;color:#ef4444;font-weight:800">🎰 DODGE</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isCrossOp?`<span style="font-size:10px;color:#f59e0b;font-weight:800">🔀 CROSS-OP</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isHotHand?`<span style="font-size:10px;color:#fb923c;font-weight:800">🔥 HOT HAND</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>${entry.hotHandMeta?.lane?`<span style="font-size:7px;background:#fb923c22;color:#fb923c;padding:1px 4px;border-radius:3px">${entry.hotHandMeta.lane}</span>`:''}`:isFusion?`<span style="font-size:10px;color:#eab308;font-weight:800">💎 FUSION</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:`<span style="font-size:10px;font-weight:700;color:${opColor}">${entry.operator}</span>`}
+              ${isSniper?`<span style="font-size:10px;color:#ff6633;font-weight:800">🎯 SNIPER</span>`:isOracleSniper?`<span style="font-size:10px;color:#ff3366;font-weight:800">🎯 ORACLE SNIPER</span>`:isOracle?`<span style="font-size:10px;color:#c084fc;font-weight:800">🔮 ORACLE</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isDodge?`<span style="font-size:10px;color:#ef4444;font-weight:800">🎰 DODGE</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isCrossOp?`<span style="font-size:10px;color:#f59e0b;font-weight:800">🔀 CROSS-OP</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isHotHand?`<span style="font-size:10px;color:#fb923c;font-weight:800">🔥 HOT HAND</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>${entry.hotHandMeta?.lane?`<span style="font-size:7px;background:#fb923c22;color:#fb923c;padding:1px 4px;border-radius:3px">${entry.hotHandMeta.lane}</span>`:''}`:isFusion?`<span style="font-size:10px;color:#eab308;font-weight:800">💎 FUSION</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:`<span style="font-size:10px;font-weight:700;color:${opColor}">${entry.operator}</span>`}
               <span style="font-size:8px;background:#1a1a2e;color:var(--dim2);padding:2px 6px;border-radius:3px">${entry.targetDay}</span>
               ${entry.generatedAt?`<span style="font-size:7px;color:var(--dim3);font-style:italic" title="${entry.generatedAt}">🕐 ${(()=>{const d=new Date(entry.generatedAt);return d.toLocaleDateString('en-MY',{month:'short',day:'numeric'})+' '+d.toLocaleTimeString('en-MY',{hour:'2-digit',minute:'2-digit',hour12:true});})()}</span>`:''}
             </div>
@@ -2691,6 +2693,30 @@ function runOracle(){
           });
         }
       });
+      
+      // 🎯 ORACLE SNIPER — cross-operator consensus numbers (digit-set match)
+      // Uses the SAME computeOracleSniper() function that powers the visual banner
+      // Oracle logic itself is UNCHANGED — this just persists the sniper output to history
+      const oracleSnipers=computeOracleSniper();
+      if(oracleSnipers.length>0){
+        history.push({
+          date:now,generatedAt:new Date().toISOString(),
+          operator:'ORACLE_SNIPER',
+          targetDay:tDay,
+          predictions:oracleSnipers.map(s=>s.displayNum),
+          checked:false,
+          hits:[],
+          permHits:0,
+          oracleSniperMeta:{
+            picks:oracleSnipers.map(s=>({
+              num:s.displayNum,
+              ops:s.ops,
+              allThree:s.ops.length===3
+            }))
+          }
+        });
+      }
+      
       saveAll();
       
       btn.disabled=false;btn.textContent='🔮 SPIN';
@@ -2767,6 +2793,96 @@ function computeHotHandSniper(){
     }
   });
   return snipers;
+}
+
+// ============================================================
+// 🎨 BRAINSTORM CHART + CHI-SQUARE CONFIDENCE
+// Read-only visualization of Hot Hand data with statistical sanity check
+// Does NOT generate predictions, does NOT modify any engine logic
+// Replicates Vic's hand-drawn 4-tier color-coded chart automatically
+// ============================================================
+function chiSquareTest(observed){
+  // Chi-square goodness-of-fit test for digit uniformity
+  // H0: digits are uniformly distributed (no hot/cold pattern)
+  // H1: digits have non-uniform distribution (hot pattern is real)
+  // observed: array of 10 frequency counts (one per digit 0-9)
+  const total=observed.reduce((a,b)=>a+b,0);
+  if(total<10)return{chi2:0,significant:false,strength:'insufficient',pValue:1};
+  const expected=total/10; // uniform expectation
+  let chi2=0;
+  for(let i=0;i<10;i++){
+    const diff=observed[i]-expected;
+    chi2+=(diff*diff)/expected;
+  }
+  // Critical values for df=9 (10 digits - 1):
+  // p<0.05 -> chi2 > 16.92 (significant)
+  // p<0.01 -> chi2 > 21.67 (highly significant)
+  // p<0.001 -> chi2 > 27.88 (very highly significant)
+  let strength='WEAK',significant=false,pValue=1;
+  if(chi2>=27.88){strength='VERY STRONG';significant=true;pValue=0.001;}
+  else if(chi2>=21.67){strength='STRONG';significant=true;pValue=0.01;}
+  else if(chi2>=16.92){strength='MODERATE';significant=true;pValue=0.05;}
+  else if(chi2>=12.0){strength='WEAK';significant=false;pValue=0.2;}
+  else{strength='RANDOM';significant=false;pValue=0.5;}
+  return{chi2:chi2.toFixed(2),significant,strength,pValue};
+}
+
+function computeBrainstormChart(){
+  if(!lastHotHandResults)return null;
+  const out={hasMagnum:false,hasPool:false};
+  
+  // MAGNUM lane
+  if(lastHotHandResults.magnum){
+    const m=lastHotHandResults.magnum;
+    // Build frequency array from posFreq (sum across positions)
+    const freq=new Array(10).fill(0);
+    if(m.posFreq){
+      m.posFreq.forEach(posObj=>{
+        for(let d=0;d<10;d++)freq[d]+=(posObj[d]||0);
+      });
+    } else {
+      // Fallback: use primary+secondary counts
+      m.primary?.forEach(p=>freq[parseInt(p.digit)]+=p.count);
+      m.secondary?.forEach(p=>freq[parseInt(p.digit)]+=p.count);
+    }
+    out.magnum={
+      primary:m.primary?.map(p=>p.digit)||[],
+      secondary:m.secondary?.map(p=>p.digit)||[],
+      freq:freq,
+      chi2:chiSquareTest(freq)
+    };
+    out.hasMagnum=true;
+  }
+  
+  // TOTO+DAMACAI POOL lane
+  if(lastHotHandResults.totoDmc){
+    const t=lastHotHandResults.totoDmc;
+    const freq=new Array(10).fill(0);
+    if(t.posFreq){
+      t.posFreq.forEach(posObj=>{
+        for(let d=0;d<10;d++)freq[d]+=(posObj[d]||0);
+      });
+    } else {
+      t.primary?.forEach(p=>freq[parseInt(p.digit)]+=p.count);
+      t.secondary?.forEach(p=>freq[parseInt(p.digit)]+=p.count);
+    }
+    out.pool={
+      primary:t.primary?.map(p=>p.digit)||[],
+      secondary:t.secondary?.map(p=>p.digit)||[],
+      freq:freq,
+      chi2:chiSquareTest(freq)
+    };
+    out.hasPool=true;
+  }
+  
+  // Mid-heat / mid-cold: digits ranked 4-6 (mid-heat) and 7-10 (mid-cold) by combined freq
+  if(out.hasMagnum&&out.hasPool){
+    const combinedFreq=out.magnum.freq.map((v,i)=>v+out.pool.freq[i]);
+    const ranked=combinedFreq.map((c,d)=>({d:String(d),c})).sort((a,b)=>b.c-a.c);
+    out.midHeat=ranked[5]?.d||'?';  // 6th hottest = mid-heat
+    out.midCold=ranked[9]?.d||'?';  // 10th = coldest
+  }
+  return out;
 }
 
 // ============================================================
@@ -2873,6 +2989,68 @@ function renderHotHandBody(){
         <div style="font-size:8px;color:#ff6633;margin-top:8px;font-weight:700;text-align:center">🎯 Both lanes converged — strongest Hot Hand signal</div>
       </div>`;
     }
+    
+    // 🎨 BRAINSTORM CHART — Vic's hand-drawn chart, auto-generated from Hot Hand data
+    const chart=computeBrainstormChart();
+    if(chart){
+      const renderRow=(label,digits,bgColor,textColor,labelTip)=>{
+        const cells=[0,1,2].map(i=>{
+          const d=digits[i]||'?';
+          return `<div style="background:${bgColor};color:${textColor};font-family:monospace;font-size:18px;font-weight:900;padding:8px 0;text-align:center;border-radius:6px;border:1px solid rgba(0,0,0,0.3);min-width:36px">${d}</div>`;
+        }).join('');
+        return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+          <div style="font-size:8px;color:var(--dim2);width:118px;text-align:right;line-height:1.2">${label}<div style="color:var(--dim3);font-size:7px">${labelTip}</div></div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;flex:1">${cells}</div>
+        </div>`;
+      };
+      const chiBadge=(chi2Result)=>{
+        const colors={'VERY STRONG':'#22c55e','STRONG':'#22c55e','MODERATE':'#eab308','WEAK':'#f59e0b','RANDOM':'#ef4444','insufficient':'#6b7280'};
+        const c=colors[chi2Result.strength]||'#6b7280';
+        return `<span style="display:inline-block;background:${c}22;color:${c};border:1px solid ${c};padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700">${chi2Result.strength} (χ²=${chi2Result.chi2})</span>`;
+      };
+      
+      // Build chart rows
+      let rows='';
+      if(chart.hasPool){
+        rows+=renderRow('TOTO+DMC<br>3 HOT DIGIT',chart.pool.primary,'#dc2626','#fff','Top 3 most-frequent');
+        rows+=renderRow('TOTO+DMC<br>2nd HOT',chart.pool.secondary,'#eab308','#1a1a1a','4th-6th most-frequent');
+      }
+      if(chart.hasMagnum){
+        rows+=renderRow('MAGNUM<br>3 HOT DIGIT',chart.magnum.primary,'#dc2626','#fff','Top 3 most-frequent');
+        rows+=renderRow('MAGNUM<br>2nd HOT',chart.magnum.secondary,'#eab308','#1a1a1a','4th-6th most-frequent');
+      }
+      
+      // Mid heat / mid cold row
+      let midRow='';
+      if(chart.midHeat||chart.midCold){
+        midRow=`<div style="display:flex;align-items:center;gap:6px;margin-top:8px;padding-top:8px;border-top:1px dashed rgba(168,85,247,0.2)">
+          <div style="font-size:8px;color:var(--dim2);width:118px;text-align:right">Mid digits<div style="color:var(--dim3);font-size:7px">Borderline / Avoid</div></div>
+          <div style="display:flex;gap:6px;flex:1">
+            <div style="background:#fb923c;color:#000;font-family:monospace;font-size:18px;font-weight:900;padding:8px 16px;border-radius:6px;flex:1;text-align:center">${chart.midHeat||'?'}<div style="font-size:7px;font-weight:600;color:#000">MID HEAT</div></div>
+            <div style="background:#3b82f6;color:#fff;font-family:monospace;font-size:18px;font-weight:900;padding:8px 16px;border-radius:6px;flex:1;text-align:center">${chart.midCold||'?'}<div style="font-size:7px;font-weight:600;color:#fff">MID COLD</div></div>
+          </div>
+        </div>`;
+      }
+      
+      // Confidence indicators
+      let confidence='';
+      if(chart.hasPool||chart.hasMagnum){
+        confidence='<div style="margin-top:10px;padding-top:8px;border-top:1px dashed rgba(168,85,247,0.2);font-size:8px;color:var(--dim);line-height:1.5">';
+        if(chart.hasPool)confidence+=`<div style="margin-bottom:3px">📊 TOTO+DMC pool: ${chiBadge(chart.pool.chi2)}</div>`;
+        if(chart.hasMagnum)confidence+=`<div>📊 MAGNUM lane: ${chiBadge(chart.magnum.chi2)}</div>`;
+        confidence+=`<div style="margin-top:6px;color:var(--dim3);font-style:italic;font-size:7px">χ² test: STRONG/MODERATE = hot digits statistically distinct from random. WEAK/RANDOM = caution, signal may be noise.</div></div>`;
+      }
+      
+      h+=`<div style="background:linear-gradient(135deg,rgba(168,85,247,0.10),rgba(236,72,153,0.05));border:1px solid rgba(168,85,247,0.3);border-radius:12px;padding:12px;margin-bottom:14px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <div style="font-size:22px">🎨</div>
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:800;color:#c084fc;letter-spacing:1px">BRAINSTORM CHART</div>
+            <div style="font-size:8px;color:var(--dim2);margin-top:2px">Auto-generated visual sanity check (read-only — no predictions)</div>
+          </div>
+        </div>${rows}${midRow}${confidence}</div>`;
+    }
+    
     // MAGNUM lane
     if(lastHotHandResults.magnum){
       h+=renderHotHandLane('🟡 MAGNUM (solo lane)','#D4A017',lastHotHandResults.magnum,lastHotHandResults.fusionMagnum||[]);
@@ -3767,8 +3945,8 @@ function checkResults(){
       }
     }
     
-    // Check SNIPER entries against ALL operators' actual results
-    if(entry.operator==='SNIPER'&&!entry.checked){
+    // Check SNIPER and ORACLE_SNIPER entries against ALL operators' actual results
+    if((entry.operator==='SNIPER'||entry.operator==='ORACLE_SNIPER')&&!entry.checked){
       // Gather actual numbers from all 3 operators for the same date
       const allOpsActual=[];
       const t3ByOp={};
