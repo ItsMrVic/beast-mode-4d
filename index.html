@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v4.7</title>
+<title>Beast Mode 4D v4.8</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -221,7 +221,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v4.7</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v4.8</span>
       <div class="sub">AI-Powered Sniper Prediction Engine + DeepSeek AI</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
@@ -1631,7 +1631,43 @@ function renderHistory(){
     
     if(isExpanded){
       h+=`<div style="padding:0 10px 10px 10px">`;
-      entries.forEach(entry=>{
+      
+      // 🔄 v4.8: Group entries by operator within this date
+      // Order: MAGNUM (yellow), TOTO (red), DAMACAI (blue), SNIPER variants (cross-op picks)
+      // Items without subOperator use their own operator name as the group key
+      const opOrder=['MAGNUM','TOTO','DAMACAI','SNIPER','ORACLE_SNIPER'];
+      const byOp={};
+      entries.forEach(e=>{
+        // Group key: use subOperator if present (Oracle/Dodge/HotHand/Fusion picks), else operator
+        const key=e.subOperator||e.operator;
+        if(!byOp[key])byOp[key]=[];
+        byOp[key].push(e);
+      });
+      
+      // Sort groups: defined order first, anything else alphabetically
+      const groupKeys=Object.keys(byOp).sort((a,b)=>{
+        const ai=opOrder.indexOf(a), bi=opOrder.indexOf(b);
+        if(ai>=0&&bi>=0)return ai-bi;
+        if(ai>=0)return -1;
+        if(bi>=0)return 1;
+        return a.localeCompare(b);
+      });
+      
+      groupKeys.forEach(opKey=>{
+        const opEntries=byOp[opKey];
+        const opColor=opC[opKey]||'#888';
+        const opIcon=opKey==='SNIPER'?'🎯':opKey==='ORACLE_SNIPER'?'🎯':opKey==='MAGNUM'?'🟡':opKey==='TOTO'?'🔴':opKey==='DAMACAI'?'🔵':'';
+        const opLabel=opKey==='SNIPER'?'Cross-Op Sniper':opKey==='ORACLE_SNIPER'?'Oracle Sniper':opKey;
+        const opWins=opEntries.filter(e=>e.checked&&(e.hits?.length>0||e.permHits>0)).length;
+        
+        // Operator section header
+        h+=`<div style="margin:8px 0 6px 0;padding:5px 10px;background:linear-gradient(90deg,${opColor}22,transparent);border-left:3px solid ${opColor};border-radius:4px;display:flex;align-items:center;gap:6px">
+          <span style="font-size:11px">${opIcon}</span>
+          <span style="font-size:10px;font-weight:800;color:${opColor};letter-spacing:1px">${opLabel}</span>
+          <span style="font-size:8px;color:var(--dim2);margin-left:4px">${opEntries.length} entr${opEntries.length===1?'y':'ies'}${opWins>0?` · 🏆 ${opWins} win${opWins>1?'s':''}`:''}</span>
+        </div>`;
+      
+      opEntries.forEach(entry=>{
         // Assign stable ID if missing (for delete-selection)
         if(!entry.id)entry.id='h'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
         const isSniper=entry.operator==='SNIPER';
@@ -1686,6 +1722,7 @@ function renderHistory(){
           ${entry.modules&&!isSniper?`<details style="margin-top:6px"><summary style="font-size:8px;color:var(--dim3);cursor:pointer">🔧 Modules used (${entry.modules.length})</summary><div style="display:flex;flex-wrap:wrap;gap:2px;margin-top:4px">${entry.modules.map(m=>`<span style="font-size:6px;background:#1a1a3a;color:#888;padding:1px 3px;border-radius:2px">${m}</span>`).join('')}</div></details>`:''}
         </div>`;
       });
+      });  // end groupKeys.forEach
       h+=`</div>`;
     }
     h+=`</div>`;
@@ -2892,8 +2929,264 @@ function computeBrainstormChart(){
 }
 
 // ============================================================
-// ENGINES DISPATCHER — Oracle ⇄ Hot Hand mode switcher
+// 🎯 CONVICTION SCORE + PERMUTATION SUGGESTER (v4.8)
+// 
+// Computes a 0-100 score per number based on how many independent
+// engines picked it. Higher score = more cross-engine agreement.
+//
+// IMPORTANT CAVEAT (read this Vic):
+// Engines pull from overlapping data sources, so "5 engines agree"
+// is NOT 5 independent confirmations. It's correlated agreement.
+// A score of 85 does NOT mean 85% probability of winning.
+// It means "5 different methods looking at recent draws arrived
+// at this number." That's better than random — but not by 5x.
+//
+// Use as DIRECTIONAL guide, not as confidence multiplier.
 // ============================================================
+function computeConvictionScores(){
+  const scores=new Map(); // num -> {score, sources, digitSet}
+  const digitSetKey=n=>[...n].sort().join('');
+  
+  // Helper to add or update a number's score
+  const addScore=(num,points,sourceLabel)=>{
+    if(!num||num.length!==4)return;
+    if(!scores.has(num)){
+      scores.set(num,{
+        num,score:0,sources:[],digitSet:digitSetKey(num),
+        ops:new Set()
+      });
+    }
+    const e=scores.get(num);
+    if(!e.sources.includes(sourceLabel)){
+      e.score+=points;
+      e.sources.push(sourceLabel);
+    }
+  };
+  
+  // Source 1: Regular Predict mode (16-module fusion) — per operator
+  // This is what generated 5725 tonight on DAMACAI
+  if(lastResults){
+    Object.entries(lastResults).forEach(([opName,res])=>{
+      if(res&&res.predictions){
+        // Top 5 picks weighted higher
+        res.predictions.slice(0,5).forEach((p,i)=>{
+          const num=Array.isArray(p)?p[0]:p.num;
+          if(num){
+            addScore(num,20-i*2,`Predict-${opName}-#${i+1}`);
+            scores.get(num)?.ops.add(opName);
+          }
+        });
+        // Picks 6-10 add small weight
+        res.predictions.slice(5,10).forEach((p)=>{
+          const num=Array.isArray(p)?p[0]:p.num;
+          if(num){
+            addScore(num,5,`Predict-${opName}-tail`);
+            scores.get(num)?.ops.add(opName);
+          }
+        });
+      }
+    });
+    
+    // Source 2: SNIPER (cross-op fusion from Predict)
+    try{
+      const crossOp=crossOperatorFusion(lastResults);
+      if(crossOp&&crossOp.playAllOps){
+        crossOp.playAllOps.slice(0,6).forEach(p=>{
+          addScore(p.num,25,'SNIPER');
+        });
+      }
+    }catch(e){}
+  }
+  
+  // Source 3: Oracle picks per operator
+  if(lastOracleResults){
+    Object.entries(lastOracleResults).forEach(([opName,res])=>{
+      if(res&&res.predictions){
+        res.predictions.slice(0,5).forEach((p,i)=>{
+          if(p.num){
+            addScore(p.num,25-i*3,`Oracle-${opName}-#${i+1}`);
+            scores.get(p.num)?.ops.add(opName);
+          }
+        });
+      }
+    });
+    
+    // Source 4: Oracle Sniper (cross-op consensus)
+    try{
+      const oSnipers=computeOracleSniper();
+      oSnipers.forEach(s=>{
+        addScore(s.displayNum,30,'Oracle-Sniper');
+      });
+    }catch(e){}
+  }
+  
+  // Source 5: Hot Hand picks per lane
+  if(lastHotHandResults){
+    if(lastHotHandResults.magnum&&lastHotHandResults.magnum.picks){
+      lastHotHandResults.magnum.picks.slice(0,6).forEach((p,i)=>{
+        addScore(p.num,20-i*2,`HotHand-MAGNUM-#${i+1}`);
+        scores.get(p.num)?.ops.add('MAGNUM');
+      });
+    }
+    if(lastHotHandResults.totoDmc&&lastHotHandResults.totoDmc.picks){
+      lastHotHandResults.totoDmc.picks.slice(0,6).forEach((p,i)=>{
+        addScore(p.num,20-i*2,`HotHand-TOTO+DMC-#${i+1}`);
+        scores.get(p.num)?.ops.add('TOTO');
+        scores.get(p.num)?.ops.add('DAMACAI');
+      });
+    }
+    
+    // Source 6: Hot Hand Sniper (cross-lane consensus)
+    try{
+      const hhSnipers=computeHotHandSniper();
+      hhSnipers.forEach(s=>{
+        addScore(s.displayNum,25,'HotHand-Sniper');
+      });
+    }catch(e){}
+    
+    // Source 7: FUSION (Oracle + Hot Hand digit-set match)
+    if(lastHotHandResults.fusionMagnum){
+      lastHotHandResults.fusionMagnum.forEach(num=>{
+        addScore(num,20,'FUSION-MAGNUM');
+      });
+    }
+    if(lastHotHandResults.fusionPool){
+      lastHotHandResults.fusionPool.forEach(num=>{
+        addScore(num,20,'FUSION-POOL');
+      });
+    }
+  }
+  
+  // Source 8: Brainstorm Chart bonus — number's digits all in primary hot
+  try{
+    const chart=computeBrainstormChart();
+    if(chart){
+      const hotPrimary=new Set([
+        ...(chart.magnum?.primary||[]),
+        ...(chart.pool?.primary||[])
+      ]);
+      const hotSecondary=new Set([
+        ...(chart.magnum?.secondary||[]),
+        ...(chart.pool?.secondary||[])
+      ]);
+      scores.forEach(entry=>{
+        const digits=[...entry.num];
+        const allPrimary=digits.every(d=>hotPrimary.has(d));
+        const allHot=digits.every(d=>hotPrimary.has(d)||hotSecondary.has(d));
+        if(allPrimary){
+          entry.score+=15;
+          entry.sources.push('Brainstorm-AllPrimary');
+        }else if(allHot){
+          entry.score+=8;
+          entry.sources.push('Brainstorm-AllHot');
+        }
+      });
+    }
+  }catch(e){}
+  
+  // Cap score at 100
+  scores.forEach(e=>{e.score=Math.min(100,e.score);e.ops=Array.from(e.ops);});
+  
+  // Sort by score desc, return top picks (filtered to score >= 30 to remove noise)
+  return Array.from(scores.values())
+    .filter(e=>e.score>=30)
+    .sort((a,b)=>b.score-a.score);
+}
+
+// Convert score to tier label + color
+function convictionTier(score){
+  if(score>=70)return{tier:'HIGH',color:'#22c55e',label:'🔥🔥🔥 HIGH'};
+  if(score>=50)return{tier:'MED-HIGH',color:'#eab308',label:'🔥🔥 MED-HIGH'};
+  if(score>=35)return{tier:'MED',color:'#f59e0b',label:'🔥 MED'};
+  return{tier:'LOW',color:'#6b7280',label:'· LOW'};
+}
+
+// ============================================================
+// 🎲 PERMUTATION SUGGESTER
+// For a given 4-digit number, suggest the best straight permutations
+// based on Hot Hand's positional frequency data.
+// ============================================================
+function suggestPermutations(num){
+  if(!num||num.length!==4)return{perms:[],preferPerm:true,reason:''};
+  
+  // Get all unique permutations of the digits
+  const allPerms=new Set();
+  const digits=[...num];
+  const permute=(arr,start=0)=>{
+    if(start===arr.length){allPerms.add(arr.join(''));return;}
+    for(let i=start;i<arr.length;i++){
+      [arr[start],arr[i]]=[arr[i],arr[start]];
+      permute(arr,start+1);
+      [arr[start],arr[i]]=[arr[i],arr[start]];
+    }
+  };
+  permute([...digits]);
+  const perms=Array.from(allPerms);
+  
+  // Score each permutation by positional fit using Hot Hand posFreq
+  const scorePerm=(perm)=>{
+    let s=0;
+    if(lastHotHandResults){
+      const lanes=[lastHotHandResults.magnum,lastHotHandResults.totoDmc].filter(Boolean);
+      lanes.forEach(lane=>{
+        if(lane.posFreq){
+          for(let i=0;i<4;i++){
+            const d=perm[i];
+            const posCounts=lane.posFreq[d];
+            if(Array.isArray(posCounts))s+=posCounts[i]||0;
+          }
+        }
+      });
+    }
+    return s;
+  };
+  
+  const scored=perms.map(p=>({perm:p,score:scorePerm(p)}));
+  scored.sort((a,b)=>b.score-a.score);
+  
+  // Decide whether to recommend STRAIGHT or PERM
+  // Rule: only recommend straight bets when top perm score is meaningfully higher
+  const top=scored[0]?.score||0;
+  const median=scored[Math.floor(scored.length/2)]?.score||0;
+  // Differentiation factor: top must be significantly higher than median
+  const differentiated=top>0&&median>0&&(top/median>=2);
+  
+  return{
+    perms:scored.slice(0,3),
+    preferPerm:!differentiated,
+    reason:differentiated?
+      'Position-frequency data favors specific arrangements':
+      'Permutations roughly equal — PERM bet covers all'
+  };
+}
+
+// ============================================================
+// 📊 PER-TIER HIT RATE TRACKER (v4.8)
+// Computes hit rate separately for each tier so we can validate
+// whether conviction score actually correlates with hit rate.
+// ============================================================
+function computePerTierStats(){
+  const tiers=['ORACLE','DODGE','CROSSOP','HOTHAND','FUSION','SNIPER','ORACLE_SNIPER','MAGNUM','TOTO','DAMACAI'];
+  const stats={};
+  tiers.forEach(t=>{
+    stats[t]={total:0,checked:0,wins:0,permWins:0,straightWins:0};
+  });
+  history.forEach(h=>{
+    const op=h.operator;
+    if(stats[op]){
+      stats[op].total++;
+      if(h.checked){
+        stats[op].checked++;
+        const sw=(h.hits||[]).length;
+        const pw=h.permHits||0;
+        if(sw>0||pw>0)stats[op].wins++;
+        stats[op].straightWins+=sw;
+        stats[op].permWins+=pw;
+      }
+    }
+  });
+  return stats;
+}
 let engineMode=localStorage.getItem('b4d_engineMode')||'oracle';
 
 function setEngineMode(m){
@@ -2935,6 +3228,70 @@ function renderEngines(){
       </div>
       <div style="font-size:8px;color:#eab308;margin-top:8px;font-weight:700;text-align:center">💎 PLAY STRAIGHT ON ALL 3 OPERATORS (5794 strategy)</div>
     </div>`;
+  }
+  
+  // 🎯 CONVICTION BOARD — top picks ranked by cross-engine agreement (v4.8)
+  const convictionPicks=computeConvictionScores();
+  if(convictionPicks.length>0){
+    const top10=convictionPicks.slice(0,10);
+    h+=`<div style="background:linear-gradient(135deg,rgba(34,197,94,0.10),rgba(168,85,247,0.06));border:1px solid rgba(34,197,94,0.35);border-radius:12px;padding:12px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="font-size:24px">🎯</div>
+        <div style="flex:1">
+          <div style="font-size:12px;font-weight:800;color:#22c55e;letter-spacing:1px">CONVICTION BOARD</div>
+          <div style="font-size:8px;color:var(--dim2);margin-top:2px">Top picks by cross-engine agreement (${convictionPicks.length} qualifying)</div>
+        </div>
+      </div>`;
+    
+    // Top 3 — expanded with permutation suggestions
+    h+=`<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px">`;
+    top10.slice(0,3).forEach((pick,idx)=>{
+      const tier=convictionTier(pick.score);
+      const permData=suggestPermutations(pick.num);
+      const opsList=pick.ops&&pick.ops.length>0?pick.ops.join('+'):'all ops';
+      h+=`<div style="background:#0a0a15;border:2px solid ${tier.color};border-radius:10px;padding:10px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <div style="font-size:11px;font-weight:900;color:${tier.color};min-width:24px">#${idx+1}</div>
+          <div style="font-family:monospace;font-size:22px;font-weight:900;color:${tier.color};letter-spacing:3px">${pick.num}</div>
+          <div style="flex:1;text-align:right">
+            <div style="font-size:14px;font-weight:900;color:${tier.color}">${pick.score}<span style="font-size:9px;opacity:0.7">/100</span></div>
+            <div style="font-size:8px;color:${tier.color};font-weight:700">${tier.label}</div>
+          </div>
+        </div>
+        <div style="font-size:8px;color:var(--dim);margin-bottom:6px">📍 ${opsList} — ${pick.sources.length} engine${pick.sources.length>1?'s':''} agree</div>
+        <div style="background:#1a1a3a;border-radius:6px;padding:6px 8px;font-size:9px;color:var(--dim2)">
+          <div style="font-weight:700;margin-bottom:3px">💡 Suggested buys:</div>
+          ${permData.preferPerm?
+            `<div style="color:#fbbf24">→ <b>PERM bet</b> covers all ${permData.perms.length} permutations</div>`:
+            `<div style="color:#fbbf24">→ Top straight perms (positional fit):</div>
+             <div style="font-family:monospace;font-size:11px;color:${tier.color};margin-top:3px;letter-spacing:1px">${permData.perms.map(p=>p.perm).join('  ')}</div>`
+          }
+          <div style="font-size:7px;color:var(--dim3);margin-top:4px;font-style:italic">${permData.reason}</div>
+        </div>
+      </div>`;
+    });
+    h+=`</div>`;
+    
+    // Picks 4-10 — compact list (collapsible)
+    if(top10.length>3){
+      h+=`<details style="margin-bottom:8px"><summary style="font-size:9px;color:var(--dim2);cursor:pointer;padding:4px;font-weight:700">▾ Show ${top10.length-3} more picks (#4-${top10.length})</summary>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px">`;
+      top10.slice(3).forEach((pick,i)=>{
+        const tier=convictionTier(pick.score);
+        h+=`<div style="background:#0a0a15;border:1px solid ${tier.color}66;border-radius:6px;padding:4px 8px;display:flex;flex-direction:column;align-items:center;min-width:60px">
+          <div style="font-family:monospace;font-size:13px;font-weight:800;color:${tier.color};letter-spacing:1px">${pick.num}</div>
+          <div style="font-size:8px;color:${tier.color};font-weight:700">${pick.score}</div>
+        </div>`;
+      });
+      h+=`</div></details>`;
+    }
+    
+    // Disclaimer (important for honest framing)
+    h+=`<div style="background:#1a0f00;border:1px dashed #f59e0b66;border-radius:6px;padding:8px;font-size:8px;color:#fbbf24;line-height:1.5">
+      ⚠️ <b>Honest note:</b> Score reflects engine agreement, NOT win probability. Engines share data sources, so high agreement is correlated, not independent. Use as <i>directional guide</i> — don't bet more just because score is high. Stick to your normal bet size.
+    </div>`;
+    
+    h+=`</div>`;
   }
   
   // Render active engine
