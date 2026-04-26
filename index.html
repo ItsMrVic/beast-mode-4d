@@ -2831,19 +2831,29 @@ function computeBrainstormChart(){
   if(!lastHotHandResults)return null;
   const out={hasMagnum:false,hasPool:false};
   
+  // Helper: posFreq is {digit: [pos0, pos1, pos2, pos3]} — sum across positions for each digit
+  // hotHandAnalyze only populates posFreq for primary+secondary digits, so other digits stay 0
+  const buildFreqArray=(posFreqObj)=>{
+    const freq=new Array(10).fill(0);
+    if(posFreqObj&&typeof posFreqObj==='object'){
+      Object.entries(posFreqObj).forEach(([digit,posCounts])=>{
+        const idx=parseInt(digit);
+        if(!isNaN(idx)&&idx>=0&&idx<=9&&Array.isArray(posCounts)){
+          freq[idx]=posCounts.reduce((a,b)=>a+(b||0),0);
+        }
+      });
+    }
+    return freq;
+  };
+  
   // MAGNUM lane
   if(lastHotHandResults.magnum){
     const m=lastHotHandResults.magnum;
-    // Build frequency array from posFreq (sum across positions)
-    const freq=new Array(10).fill(0);
-    if(m.posFreq){
-      m.posFreq.forEach(posObj=>{
-        for(let d=0;d<10;d++)freq[d]+=(posObj[d]||0);
-      });
-    } else {
-      // Fallback: use primary+secondary counts
-      m.primary?.forEach(p=>freq[parseInt(p.digit)]+=p.count);
-      m.secondary?.forEach(p=>freq[parseInt(p.digit)]+=p.count);
+    let freq=buildFreqArray(m.posFreq);
+    // If posFreq was empty/missing, fall back to primary+secondary count totals
+    if(freq.every(v=>v===0)){
+      m.primary?.forEach(p=>{const i=parseInt(p.digit);if(!isNaN(i))freq[i]+=p.count||0;});
+      m.secondary?.forEach(p=>{const i=parseInt(p.digit);if(!isNaN(i))freq[i]+=p.count||0;});
     }
     out.magnum={
       primary:m.primary?.map(p=>p.digit)||[],
@@ -2857,14 +2867,10 @@ function computeBrainstormChart(){
   // TOTO+DAMACAI POOL lane
   if(lastHotHandResults.totoDmc){
     const t=lastHotHandResults.totoDmc;
-    const freq=new Array(10).fill(0);
-    if(t.posFreq){
-      t.posFreq.forEach(posObj=>{
-        for(let d=0;d<10;d++)freq[d]+=(posObj[d]||0);
-      });
-    } else {
-      t.primary?.forEach(p=>freq[parseInt(p.digit)]+=p.count);
-      t.secondary?.forEach(p=>freq[parseInt(p.digit)]+=p.count);
+    let freq=buildFreqArray(t.posFreq);
+    if(freq.every(v=>v===0)){
+      t.primary?.forEach(p=>{const i=parseInt(p.digit);if(!isNaN(i))freq[i]+=p.count||0;});
+      t.secondary?.forEach(p=>{const i=parseInt(p.digit);if(!isNaN(i))freq[i]+=p.count||0;});
     }
     out.pool={
       primary:t.primary?.map(p=>p.digit)||[],
