@@ -9,19 +9,191 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v4.10</title>
+<title>Beast Mode 4D v4.11</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-:root{--bg:#0a0a1a;--bg2:#12122a;--bg3:#1a1a2e;--border:#2a2a4a;--text:#fff;--dim:#888;--dim2:#555;--dim3:#333;--mag:#D4A017;--toto:#DC2626;--dam:#2563EB;--fire:linear-gradient(135deg,#ff4444,#ff8800);--green:#22c55e;--amber:#f59e0b}
+
+/* ============================================================ */
+/* THEME SYSTEM — v4.11                                          */
+/* 6 themes: dark (default) + 5 fortune themes                  */
+/* All themes use CSS variables for backgrounds + text          */
+/* Tier/operator colors stay constant for instant recognition   */
+/* ============================================================ */
+
+:root,
+body[data-theme="dark"]{
+  --bg:#0a0a1a; --bg2:#12122a; --bg3:#1a1a2e; --bg4:#0a0a15;
+  --border:#2a2a4a;
+  --text:#fff; --text2:#e0e0f0;
+  --dim:#888; --dim2:#aaa; --dim3:#777;
+  --mag:#D4A017; --toto:#DC2626; --dam:#2563EB;
+  --fire:linear-gradient(135deg,#ff4444,#ff8800);
+  --green:#22c55e; --amber:#f59e0b;
+  --shadow:0 4px 12px rgba(0,0,0,0.3);
+  --header-grad:linear-gradient(180deg,rgba(255,68,68,0.1) 0%,transparent 100%);
+}
+
+/* 🔴 IMPERIAL RED & GOLD (大红大金) — most iconic Chinese fortune palette */
+body[data-theme="red"]{
+  --bg:#FFF8E7; --bg2:#FFEFD5; --bg3:#FFFFFF; --bg4:#FAF0DC;
+  --border:#E8C892;
+  --text:#2D2A26; --text2:#3D3A36;
+  --dim:#5C544A; --dim2:#3D3A36; --dim3:#7A6E5A;
+  --mag:#B8860B; --toto:#C8102E; --dam:#1E4FA8;
+  --fire:linear-gradient(135deg,#C8102E,#D4AF37);
+  --green:#1E7E3F; --amber:#B8860B;
+  --shadow:0 4px 12px rgba(200,16,46,0.15);
+  --header-grad:linear-gradient(180deg,rgba(200,16,46,0.12) 0%,rgba(212,175,55,0.06) 100%);
+}
+
+/* 💛 PROSPERITY GOLD (黄金富贵) — pure gold ingot wealth vibe */
+body[data-theme="gold"]{
+  --bg:#FAF3E3; --bg2:#F5E6C8; --bg3:#FFFFFF; --bg4:#F5EBD0;
+  --border:#D4B66A;
+  --text:#3D2C18; --text2:#4A3520;
+  --dim:#6B5430; --dim2:#4A3520; --dim3:#8A6E3F;
+  --mag:#A8860B; --toto:#C8102E; --dam:#1E4FA8;
+  --fire:linear-gradient(135deg,#C9A03A,#3A7D5A);
+  --green:#2D6F3F; --amber:#A8860B;
+  --shadow:0 4px 12px rgba(201,160,58,0.18);
+  --header-grad:linear-gradient(180deg,rgba(201,160,58,0.18) 0%,rgba(58,125,90,0.06) 100%);
+}
+
+/* 💚 JADE GARDEN (翡翠玉园) — quiet wealth, longevity, scholarly */
+body[data-theme="jade"]{
+  --bg:#F5F1E8; --bg2:#E8E5D4; --bg3:#FFFFFF; --bg4:#EFEBDC;
+  --border:#A8B89C;
+  --text:#1F2D24; --text2:#2D3D2E;
+  --dim:#4A5C44; --dim2:#2D3D2E; --dim3:#6B7A60;
+  --mag:#A8860B; --toto:#C8102E; --dam:#1E4FA8;
+  --fire:linear-gradient(135deg,#2D7D5E,#C9A227);
+  --green:#1F6F4E; --amber:#A8860B;
+  --shadow:0 4px 12px rgba(45,125,94,0.15);
+  --header-grad:linear-gradient(180deg,rgba(45,125,94,0.14) 0%,rgba(201,162,39,0.06) 100%);
+}
+
+/* 🌸 LUCKY PEACH (桃花运) — soft fortune, romance, harmony */
+body[data-theme="peach"]{
+  --bg:#FFF4EC; --bg2:#FFE4D6; --bg3:#FFFFFF; --bg4:#FFEBE0;
+  --border:#F2C7B0;
+  --text:#4A3528; --text2:#5C4530;
+  --dim:#7A5A45; --dim2:#5C4530; --dim3:#A57C5A;
+  --mag:#B8860B; --toto:#C8102E; --dam:#1E4FA8;
+  --fire:linear-gradient(135deg,#E8758C,#D4AF37);
+  --green:#2D6F3F; --amber:#B8860B;
+  --shadow:0 4px 12px rgba(232,117,140,0.15);
+  --header-grad:linear-gradient(180deg,rgba(232,117,140,0.14) 0%,rgba(212,175,55,0.06) 100%);
+}
+
+/* 🟣 ROYAL PLUM & GOLD (紫金贵气) — refined imperial luxury */
+body[data-theme="plum"]{
+  --bg:#FBF4E6; --bg2:#F0E5D4; --bg3:#FFFFFF; --bg4:#F5EBDC;
+  --border:#C4A8B8;
+  --text:#2E1F2A; --text2:#3D2A35;
+  --dim:#5C4055; --dim2:#3D2A35; --dim3:#7A5C70;
+  --mag:#B8860B; --toto:#C8102E; --dam:#1E4FA8;
+  --fire:linear-gradient(135deg,#7B2D5E,#D4AF37);
+  --green:#1F6F4E; --amber:#B8860B;
+  --shadow:0 4px 12px rgba(123,45,94,0.15);
+  --header-grad:linear-gradient(180deg,rgba(123,45,94,0.14) 0%,rgba(212,175,55,0.06) 100%);
+}
+
+/* ============================================================ */
+/* LIGHT THEME OVERRIDES — fix inline-styled colors for legibility */
+/* These rules use higher specificity to override inline styles  */
+/* in light themes, where white text on white bg is unreadable.  */
+/* ============================================================ */
+
+/* For light themes: force inline white text to use --text variable */
+body[data-theme="red"] [style*="color:#fff"],
+body[data-theme="gold"] [style*="color:#fff"],
+body[data-theme="jade"] [style*="color:#fff"],
+body[data-theme="peach"] [style*="color:#fff"],
+body[data-theme="plum"] [style*="color:#fff"]{
+  color:var(--text)!important;
+}
+
+/* Inline dark backgrounds → light bg in light themes */
+body[data-theme="red"] [style*="background:#0a0a15"],
+body[data-theme="gold"] [style*="background:#0a0a15"],
+body[data-theme="jade"] [style*="background:#0a0a15"],
+body[data-theme="peach"] [style*="background:#0a0a15"],
+body[data-theme="plum"] [style*="background:#0a0a15"],
+body[data-theme="red"] [style*="background:#1a1a3a"],
+body[data-theme="gold"] [style*="background:#1a1a3a"],
+body[data-theme="jade"] [style*="background:#1a1a3a"],
+body[data-theme="peach"] [style*="background:#1a1a3a"],
+body[data-theme="plum"] [style*="background:#1a1a3a"],
+body[data-theme="red"] [style*="background:#1a1a2e"],
+body[data-theme="gold"] [style*="background:#1a1a2e"],
+body[data-theme="jade"] [style*="background:#1a1a2e"],
+body[data-theme="peach"] [style*="background:#1a1a2e"],
+body[data-theme="plum"] [style*="background:#1a1a2e"]{
+  background:var(--bg4)!important;
+  border-color:var(--border)!important;
+}
+
+/* Card-with-button selectors that nested under inline dark bg */
+body[data-theme="red"] [style*="background:#070710"],
+body[data-theme="gold"] [style*="background:#070710"],
+body[data-theme="jade"] [style*="background:#070710"],
+body[data-theme="peach"] [style*="background:#070710"],
+body[data-theme="plum"] [style*="background:#070710"],
+body[data-theme="red"] [style*="background:#0d0d1a"],
+body[data-theme="gold"] [style*="background:#0d0d1a"],
+body[data-theme="jade"] [style*="background:#0d0d1a"],
+body[data-theme="peach"] [style*="background:#0d0d1a"],
+body[data-theme="plum"] [style*="background:#0d0d1a"],
+body[data-theme="red"] [style*="background:#0a0a20"],
+body[data-theme="gold"] [style*="background:#0a0a20"],
+body[data-theme="jade"] [style*="background:#0a0a20"],
+body[data-theme="peach"] [style*="background:#0a0a20"],
+body[data-theme="plum"] [style*="background:#0a0a20"]{
+  background:var(--bg2)!important;
+}
+
+/* Force #888 grey text to render darker on light themes (legibility) */
+body[data-theme="red"] [style*="color:#888"],
+body[data-theme="gold"] [style*="color:#888"],
+body[data-theme="jade"] [style*="color:#888"],
+body[data-theme="peach"] [style*="color:#888"],
+body[data-theme="plum"] [style*="color:#888"],
+body[data-theme="red"] [style*="color:#aaa"],
+body[data-theme="gold"] [style*="color:#aaa"],
+body[data-theme="jade"] [style*="color:#aaa"],
+body[data-theme="peach"] [style*="color:#aaa"],
+body[data-theme="plum"] [style*="color:#aaa"],
+body[data-theme="red"] [style*="color:#ccc"],
+body[data-theme="gold"] [style*="color:#ccc"],
+body[data-theme="jade"] [style*="color:#ccc"],
+body[data-theme="peach"] [style*="color:#ccc"],
+body[data-theme="plum"] [style*="color:#ccc"]{
+  color:var(--dim)!important;
+}
+
+/* Boost dim2/dim3 readability — these were too faint in dark theme too */
+body[data-theme="red"] [style*="color:var(--dim2)"],
+body[data-theme="gold"] [style*="color:var(--dim2)"],
+body[data-theme="jade"] [style*="color:var(--dim2)"],
+body[data-theme="peach"] [style*="color:var(--dim2)"],
+body[data-theme="plum"] [style*="color:var(--dim2)"],
+body[data-theme="red"] [style*="color:var(--dim3)"],
+body[data-theme="gold"] [style*="color:var(--dim3)"],
+body[data-theme="jade"] [style*="color:var(--dim3)"],
+body[data-theme="peach"] [style*="color:var(--dim3)"],
+body[data-theme="plum"] [style*="color:var(--dim3)"]{
+  font-weight:500;
+}
+
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Outfit',system-ui,sans-serif;overflow-x:hidden}
 .mono{font-family:'JetBrains Mono','Fira Code',monospace}
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#333;border-radius:4px}
 
 /* Header */
-.header{padding:env(safe-area-inset-top,20px) 20px 12px;background:linear-gradient(180deg,rgba(255,68,68,0.1) 0%,transparent 100%);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.header{padding:env(safe-area-inset-top,20px) 20px 12px;background:var(--header-grad);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
 .header h1{font-size:20px;font-weight:900;letter-spacing:-0.5px;background:var(--fire);-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:inline}
-.header .ver{font-size:9px;color:var(--dim3);background:#1a1a2e;padding:2px 6px;border-radius:4px;margin-left:6px;vertical-align:middle}
+.header .ver{font-size:9px;color:var(--dim3);background:var(--bg2);padding:2px 6px;border-radius:4px;margin-left:6px;vertical-align:middle}
 .header .sub{font-size:9px;color:var(--dim3);letter-spacing:2px;text-transform:uppercase;margin-top:2px}
 
 /* Bottom Nav */
@@ -67,7 +239,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
 .optab .ct{font-size:7px;color:var(--dim3);font-weight:400}
 
 /* Draw items */
-.draw-item{display:flex;align-items:center;gap:6px;padding:7px 10px;background:var(--bg3);border-radius:8px;border:1px solid #1f1f3a;margin-bottom:3px;font-size:11px}
+.draw-item{display:flex;align-items:center;gap:6px;padding:7px 10px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);margin-bottom:3px;font-size:11px}
 .draw-item .dt{color:var(--dim2);font-size:9px;width:68px;flex-shrink:0}
 .draw-item .dy{color:var(--dim3);font-size:8px;width:22px;flex-shrink:0}
 .draw-item .nums{display:flex;gap:8px}
@@ -221,7 +393,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v4.10</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v4.11</span>
       <div class="sub">AI-Powered Sniper Prediction Engine + DeepSeek AI</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
@@ -4139,7 +4311,34 @@ function renderData(){
   const totalDraws=operators.reduce((a,o)=>a+o.draws.length,0);
   const totalNums=operators.reduce((a,o)=>a+o.draws.reduce((b,d)=>b+d.top3.length+(d.special?.length||0)+(d.consolation?.length||0),0),0);
   
-  let h=`<div class="section-title">💾 Data Management</div>`;
+  // 🎨 THEME SELECTOR (v4.11)
+  const currentTheme = getTheme();
+  let h = `<div class="section-title">🎨 Theme</div>
+  <div class="card" style="padding:14px">
+    <div style="font-size:11px;color:var(--dim);margin-bottom:8px;line-height:1.5">Choose a color theme that matches your vibe — fortune palettes for prosperity, or stay on the original dark theme.</div>
+    <select id="themeSelect" onchange="setTheme(this.value)" style="width:100%;font-size:13px;font-weight:600;padding:10px 12px">
+      ${THEMES.map(t=>`<option value="${t.id}"${t.id===currentTheme?' selected':''}>${t.name}</option>`).join('')}
+    </select>
+    <div style="font-size:9px;color:var(--dim);margin-top:8px;line-height:1.5">${THEMES.find(t=>t.id===currentTheme)?.desc || ''}</div>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-top:10px">
+      ${THEMES.map(t=>{
+        const swatch = {
+          dark:'#0a0a1a', red:'#FFF8E7', gold:'#FAF3E3',
+          jade:'#F5F1E8', peach:'#FFF4EC', plum:'#FBF4E6'
+        }[t.id];
+        const accent = {
+          dark:'#ff4444', red:'#C8102E', gold:'#C9A03A',
+          jade:'#2D7D5E', peach:'#E8758C', plum:'#7B2D5E'
+        }[t.id];
+        return `<button onclick="setTheme('${t.id}')" style="padding:0;border:2px solid ${t.id===currentTheme?accent:'var(--border)'};border-radius:8px;background:${swatch};height:40px;cursor:pointer;position:relative;overflow:hidden" title="${t.name}">
+          <div style="position:absolute;bottom:0;left:0;right:0;height:14px;background:${accent}"></div>
+          ${t.id===currentTheme?`<div style="position:absolute;top:2px;right:2px;font-size:10px;color:${accent};font-weight:900">✓</div>`:''}
+        </button>`;
+      }).join('')}
+    </div>
+  </div>`;
+  
+  h+=`<div class="section-title">💾 Data Management</div>`;
   h+=`<div class="card">
     <div style="font-size:13px;font-weight:700;margin-bottom:8px">📦 Database Stats</div>
     <div style="font-size:11px;color:var(--dim)">Total draws: <b style="color:var(--text)">${totalDraws}</b></div>
@@ -5561,7 +5760,41 @@ setTimeout(()=>{if(localStorage.getItem('b4d_notify'))scheduleNextDrawNotificati
 
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').then(()=>{}).catch(()=>{});}
 
+// ============================================================
+// 🎨 THEME SYSTEM (v4.11)
+// 6 themes: dark (default), red, gold, jade, peach, plum
+// Stored in localStorage 'b4d_theme'
+// Applied via data-theme attribute on body
+// ============================================================
+const THEMES = [
+  {id:'dark',  name:'🌑 Dark Mode',         desc:'Original — high contrast'},
+  {id:'red',   name:'🔴 Imperial Red & Gold', desc:'大红大金 — most iconic fortune'},
+  {id:'gold',  name:'💛 Prosperity Gold',    desc:'黄金富贵 — pure wealth vibe'},
+  {id:'jade',  name:'💚 Jade Garden',        desc:'翡翠玉园 — quiet wealth & longevity'},
+  {id:'peach', name:'🌸 Lucky Peach',        desc:'桃花运 — soft fortune & harmony'},
+  {id:'plum',  name:'🟣 Royal Plum & Gold',  desc:'紫金贵气 — refined imperial luxury'}
+];
+
+function getTheme(){
+  return localStorage.getItem('b4d_theme') || 'dark';
+}
+
+function setTheme(themeId){
+  if(!THEMES.find(t=>t.id===themeId)) themeId = 'dark';
+  localStorage.setItem('b4d_theme', themeId);
+  document.body.setAttribute('data-theme', themeId);
+  // Update select element if visible
+  const sel = document.getElementById('themeSelect');
+  if(sel) sel.value = themeId;
+  toast('🎨 Theme: ' + (THEMES.find(t=>t.id===themeId)?.name || themeId));
+}
+
+function applyThemeOnLoad(){
+  document.body.setAttribute('data-theme', getTheme());
+}
+
 // Init
+applyThemeOnLoad();
 deduplicateAll(); // Auto-scan for duplicates on startup
 render();
 </script>
