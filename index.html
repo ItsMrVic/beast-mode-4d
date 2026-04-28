@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v4.11</title>
+<title>Beast Mode 4D v4.12</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -275,7 +275,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
 .hist-date{font-size:12px;font-weight:700}
 .hist-target{font-size:10px;color:var(--dim2)}
 .hist-nums{display:flex;flex-wrap:wrap;gap:4px}
-.hist-num{font-family:'JetBrains Mono',monospace;font-size:12px;padding:3px 8px;border-radius:6px;background:#1a1a2e;border:1px solid #2a2a3a;font-weight:700;letter-spacing:2px}
+.hist-num{font-family:'JetBrains Mono',monospace;font-size:12px;padding:3px 8px;border-radius:6px;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-weight:700;letter-spacing:2px}
 .hist-num.hit{background:#22c55e20;border-color:#22c55e;color:#22c55e}
 .hist-num.perm-hit{background:#f5920020;border-color:#f59200;color:#f59200}
 .hist-num.miss{opacity:0.5}
@@ -386,6 +386,27 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
 .alert-box .ai .anum{font-family:'JetBrains Mono',monospace;font-weight:700;letter-spacing:2px;color:#fff}
 .alert-box .arrow{color:#8b5cf6;font-weight:700}
 </style>
+<script>
+// 🎨 Apply saved theme INSTANTLY before body renders (so splash transition matches)
+(function(){
+  try {
+    var savedTheme = localStorage.getItem('b4d_theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    // Also update meta theme-color so OS chrome (status bar etc.) matches
+    var bgColors = {
+      dark:'#0a0a1a', red:'#FFF8E7', gold:'#FAF3E3',
+      jade:'#F5F1E8', peach:'#FFF4EC', plum:'#FBF4E6'
+    };
+    var bgColor = bgColors[savedTheme] || '#0a0a1a';
+    var meta = document.createElement('meta');
+    meta.name = 'theme-color';
+    meta.content = bgColor;
+    document.head.appendChild(meta);
+    // Also apply background to html immediately to avoid white-flash
+    document.documentElement.style.backgroundColor = bgColor;
+  } catch(e) {}
+})();
+</script>
 </head>
 <body>
 
@@ -393,7 +414,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v4.11</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v4.12</span>
       <div class="sub">AI-Powered Sniper Prediction Engine + DeepSeek AI</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
@@ -1863,7 +1884,7 @@ function renderHistory(){
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
             <div style="display:flex;align-items:center;gap:6px">
               ${isSniper?`<span style="font-size:10px;color:#ff6633;font-weight:800">🎯 SNIPER</span>`:isOracleSniper?`<span style="font-size:10px;color:#ff3366;font-weight:800">🎯 ORACLE SNIPER</span>`:isOracle?`<span style="font-size:10px;color:#c084fc;font-weight:800">🔮 ORACLE</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isDodge?`<span style="font-size:10px;color:#ef4444;font-weight:800">🎰 DODGE</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isCrossOp?`<span style="font-size:10px;color:#f59e0b;font-weight:800">🔀 CROSS-OP</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isHotHand?`<span style="font-size:10px;color:#fb923c;font-weight:800">🔥 HOT HAND</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>${entry.hotHandMeta?.lane?`<span style="font-size:7px;background:#fb923c22;color:#fb923c;padding:1px 4px;border-radius:3px">${entry.hotHandMeta.lane}</span>`:''}`:isFusion?`<span style="font-size:10px;color:#eab308;font-weight:800">💎 FUSION</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:`<span style="font-size:10px;font-weight:700;color:${opColor}">${entry.operator}</span>`}
-              <span style="font-size:8px;background:#1a1a2e;color:var(--dim2);padding:2px 6px;border-radius:3px">${entry.targetDay}</span>
+              <span style="font-size:8px;background:var(--bg2);color:var(--dim2);padding:2px 6px;border-radius:3px">${entry.targetDay}</span>
               ${entry.generatedAt?`<span style="font-size:7px;color:var(--dim3);font-style:italic" title="${entry.generatedAt}">🕐 ${(()=>{const d=new Date(entry.generatedAt);return d.toLocaleDateString('en-MY',{month:'short',day:'numeric'})+' '+d.toLocaleTimeString('en-MY',{hour:'2-digit',minute:'2-digit',hour12:true});})()}</span>`:''}
             </div>
             ${hasWin?`<div style="display:flex;align-items:center;gap:6px"><span style="font-size:9px;color:var(--green);font-weight:700">🏆 WIN</span><label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:9px;color:#ef4444" onclick="event.stopPropagation()"><input type="checkbox" ${entry.__delSel?'checked':''} onchange="toggleDeleteSelection('${entry.id}')" style="cursor:pointer;accent-color:#ef4444">🗑️</label></div>`:entry.checked?`<div style="display:flex;align-items:center;gap:6px"><span style="font-size:9px;color:var(--dim3)">✅ No hit</span><label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:9px;color:#ef4444" onclick="event.stopPropagation()"><input type="checkbox" ${entry.__delSel?'checked':''} onchange="toggleDeleteSelection('${entry.id}')" style="cursor:pointer;accent-color:#ef4444">🗑️</label></div>`:`<div style="display:flex;align-items:center;gap:6px"><span style="font-size:9px;color:#a78bfa">⏳ Pending</span><label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:9px;color:#ef4444" onclick="event.stopPropagation()"><input type="checkbox" ${entry.__delSel?'checked':''} onchange="toggleDeleteSelection('${entry.id}')" style="cursor:pointer;accent-color:#ef4444">🗑️</label></div>`}
@@ -2045,7 +2066,7 @@ function renderLive(){
           h+=`<div style="margin-bottom:8px">
             <div style="font-size:8px;color:var(--dim3);text-transform:uppercase;margin-bottom:4px;font-weight:700">Special</div>
             <div style="display:flex;flex-wrap:wrap;gap:4px">
-              ${r.special.map(n=>`<span style="font-family:monospace;font-size:12px;color:var(--dim);background:#1a1a2e;padding:3px 6px;border-radius:4px;letter-spacing:1px">${n}</span>`).join('')}
+              ${r.special.map(n=>`<span style="font-family:monospace;font-size:12px;color:var(--text);background:var(--bg2);padding:3px 6px;border-radius:4px;letter-spacing:1px">${n}</span>`).join('')}
             </div>
           </div>`;
         }
@@ -2055,7 +2076,7 @@ function renderLive(){
           h+=`<div>
             <div style="font-size:8px;color:var(--dim3);text-transform:uppercase;margin-bottom:4px;font-weight:700">Consolation</div>
             <div style="display:flex;flex-wrap:wrap;gap:4px">
-              ${r.consolation.map(n=>`<span style="font-family:monospace;font-size:12px;color:#bbb;background:#1a1a2e;padding:3px 6px;border-radius:4px;letter-spacing:1px">${n}</span>`).join('')}
+              ${r.consolation.map(n=>`<span style="font-family:monospace;font-size:12px;color:var(--text);background:var(--bg2);padding:3px 6px;border-radius:4px;letter-spacing:1px">${n}</span>`).join('')}
             </div>
           </div>`;
         }
@@ -3497,9 +3518,9 @@ function renderHotHandBody(){
   </div>`;
   
   // Window selector — 3/6/9/12 draws (6 = Grok's proven default that won 5794, 9631, 4671, 2167, 1276)
-  h+=`<div style="display:flex;gap:6px;margin-bottom:12px;align-items:center;flex-wrap:wrap">
-    <div style="font-size:9px;color:var(--dim2);margin-right:4px">WINDOW:</div>
-    ${[3,6,9,12].map(n=>`<button onclick="localStorage.setItem('b4d_hhWindow','${n}');render()" style="padding:6px 12px;border:1px solid ${n===windowSize?'#fb923c':'#1a1a3a'};background:${n===windowSize?'#fb923c22':'#0a0a15'};color:${n===windowSize?'#fb923c':'var(--dim2)'};border-radius:6px;font-size:10px;font-weight:700;cursor:pointer">${n} draws</button>`).join('')}
+  h+=`<div style="display:flex;gap:4px;margin-bottom:12px;align-items:center">
+    <div style="font-size:9px;color:var(--dim2);margin-right:4px;flex-shrink:0">WINDOW:</div>
+    ${[3,6,9,12].map(n=>`<button onclick="localStorage.setItem('b4d_hhWindow','${n}');render()" style="flex:1;padding:6px 4px;border:1px solid ${n===windowSize?'#fb923c':'var(--border)'};background:${n===windowSize?'#fb923c22':'var(--bg4)'};color:${n===windowSize?'#fb923c':'var(--dim)'};border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">${n} draws</button>`).join('')}
   </div>`;
   
   // SCAN button
@@ -5779,18 +5800,29 @@ function getTheme(){
   return localStorage.getItem('b4d_theme') || 'dark';
 }
 
+function applyThemeOnLoad(){
+  const theme = getTheme();
+  document.body.setAttribute('data-theme', theme);
+  document.documentElement.setAttribute('data-theme', theme);
+}
+
 function setTheme(themeId){
   if(!THEMES.find(t=>t.id===themeId)) themeId = 'dark';
   localStorage.setItem('b4d_theme', themeId);
   document.body.setAttribute('data-theme', themeId);
+  document.documentElement.setAttribute('data-theme', themeId);
+  // Update body background instantly
+  const bgColors = {
+    dark:'#0a0a1a', red:'#FFF8E7', gold:'#FAF3E3',
+    jade:'#F5F1E8', peach:'#FFF4EC', plum:'#FBF4E6'
+  };
+  document.documentElement.style.backgroundColor = bgColors[themeId] || '#0a0a1a';
   // Update select element if visible
   const sel = document.getElementById('themeSelect');
   if(sel) sel.value = themeId;
+  // Re-render so swatch active state updates immediately
+  if(activeNav==='Data') render();
   toast('🎨 Theme: ' + (THEMES.find(t=>t.id===themeId)?.name || themeId));
-}
-
-function applyThemeOnLoad(){
-  document.body.setAttribute('data-theme', getTheme());
 }
 
 // Init
