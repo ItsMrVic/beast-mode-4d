@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v4.9</title>
+<title>Beast Mode 4D v4.10</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -221,7 +221,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v4.9</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v4.10</span>
       <div class="sub">AI-Powered Sniper Prediction Engine + DeepSeek AI</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
@@ -3324,10 +3324,10 @@ function renderHotHandBody(){
     <div style="font-size:9px;color:var(--dim);line-height:1.5">Grok's proven method that won <b style="color:#fbbf24">RM7K on 5794</b> and <b style="color:#fbbf24">RM1,750 on 9631</b>. Analyzes the last <b style="color:#fb923c">${windowSize} draws</b> using only <b style="color:#fb923c">top 3 prizes</b>. Two lanes: <b style="color:#fb923c">MAGNUM solo</b> + <b style="color:#fb923c">TOTO+DAMACAI pooled</b>.</div>
   </div>`;
   
-  // Window selector — 4/6/8 draws (6 = Grok's proven default that won 5794, 9631, 4671, 2167, 1276)
-  h+=`<div style="display:flex;gap:6px;margin-bottom:12px;align-items:center">
+  // Window selector — 3/6/9/12 draws (6 = Grok's proven default that won 5794, 9631, 4671, 2167, 1276)
+  h+=`<div style="display:flex;gap:6px;margin-bottom:12px;align-items:center;flex-wrap:wrap">
     <div style="font-size:9px;color:var(--dim2);margin-right:4px">WINDOW:</div>
-    ${[4,6,8].map(n=>`<button onclick="localStorage.setItem('b4d_hhWindow','${n}');render()" style="padding:6px 12px;border:1px solid ${n===windowSize?'#fb923c':'#1a1a3a'};background:${n===windowSize?'#fb923c22':'#0a0a15'};color:${n===windowSize?'#fb923c':'var(--dim2)'};border-radius:6px;font-size:10px;font-weight:700;cursor:pointer">${n} draws</button>`).join('')}
+    ${[3,6,9,12].map(n=>`<button onclick="localStorage.setItem('b4d_hhWindow','${n}');render()" style="padding:6px 12px;border:1px solid ${n===windowSize?'#fb923c':'#1a1a3a'};background:${n===windowSize?'#fb923c22':'#0a0a15'};color:${n===windowSize?'#fb923c':'var(--dim2)'};border-radius:6px;font-size:10px;font-weight:700;cursor:pointer">${n} draws</button>`).join('')}
   </div>`;
   
   // SCAN button
