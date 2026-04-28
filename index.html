@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v4.8</title>
+<title>Beast Mode 4D v4.9</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -221,7 +221,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v4.8</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v4.9</span>
       <div class="sub">AI-Powered Sniper Prediction Engine + DeepSeek AI</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
@@ -234,6 +234,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
 <div class="page" id="pgLive"></div>
 <div class="page" id="pgOracle"></div>
 <div class="page" id="pgDashboard"></div>
+<div class="page" id="pgPnl"></div>
 <div class="page" id="pgData"></div>
 
 <!-- Bottom Nav -->
@@ -243,6 +244,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <button onclick="navTo('Live')"><span class="ico">📡</span>Live</button>
   <button onclick="navTo('Oracle')"><span class="ico">🔮</span>Oracle</button>
   <button onclick="navTo('Dashboard')"><span class="ico">📊</span>Dashboard</button>
+  <button onclick="navTo('Pnl')"><span class="ico">💰</span>P&L</button>
   <button onclick="navTo('Data')"><span class="ico">💾</span>Data</button>
 </div>
 
@@ -1155,7 +1157,7 @@ function navTo(page){
   activeNav=page;
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('pg'+page).classList.add('active');
-  document.querySelectorAll('.bnav button').forEach((b,i)=>{b.classList.toggle('active',['Predict','History','Live','Oracle','Dashboard','Data'][i]===page)});
+  document.querySelectorAll('.bnav button').forEach((b,i)=>{b.classList.toggle('active',['Predict','History','Live','Oracle','Dashboard','Pnl','Data'][i]===page)});
   render();
 }
 
@@ -1202,6 +1204,7 @@ function render(){
   else if(activeNav==='Live')renderLive();
   else if(activeNav==='Oracle')renderEngines();
   else if(activeNav==='Dashboard')renderDashboard();
+  else if(activeNav==='Pnl')renderPnl();
   else if(activeNav==='Data')renderData();
   // Learning badge
   const lrn=stats.totalChecks;
@@ -3667,6 +3670,468 @@ function renderDashboard(){
   }
   
   pg.innerHTML=h;
+}
+
+// ============================================================
+// 💰 P&L TRACKER (v4.9)
+// 
+// Honest accounting of stake vs. winnings per draw.
+// Hard cap at RM80/draw enforces user-committed budget.
+// Per-tier breakdown shows which engines actually profit.
+//
+// Data shape (localStorage 'b4d_pnl'):
+// [
+//   {
+//     date: '2026-04-29', day: 'Wed',
+//     perOp: {
+//       MAGNUM: { spent: 25, won: 0, tierSpent: { ORACLE: 10, DODGE: 15 }, tierWon: {} },
+//       TOTO:   { spent: 25, won: 1200, tierSpent: { ORACLE: 25 }, tierWon: { ORACLE: 1200 } },
+//       DAMACAI:{ spent: 30, won: 0,    tierSpent: { HOTHAND: 30 }, tierWon: {} }
+//     },
+//     totalSpent: 80, totalWon: 1200, net: 1120,
+//     notes: ''
+//   }
+// ]
+// 
+// IMPORTANT: 
+// - Tier breakdown is OPTIONAL — user can leave tier fields blank if they
+//   don't want to track that level of detail.
+// - Hard cap is enforced ON SAVE, not while typing.
+// - Budget is USER-COMMITTED (40-80 RM/draw).
+// ============================================================
+const PNL_BUDGET_MIN = 40;
+const PNL_BUDGET_MAX = 80;
+const PNL_TIERS = ['ORACLE','DODGE','HOTHAND','FUSION','SNIPER','ORACLE_SNIPER','PREDICT','OTHER'];
+
+function getPnlData(){
+  try {
+    const raw = localStorage.getItem('b4d_pnl');
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+
+function savePnlData(arr){
+  try {
+    localStorage.setItem('b4d_pnl', JSON.stringify(arr));
+  } catch(e) {
+    toast('⚠️ Failed to save P&L data');
+  }
+}
+
+function todayDateStr(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function pnlDayOfWeek(dateStr){
+  try {
+    const d = new Date(dateStr+'T12:00:00');
+    return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()];
+  } catch(e) { return ''; }
+}
+
+function pnlIsDrawDay(dateStr){
+  const dow = pnlDayOfWeek(dateStr);
+  return ['Wed','Sat','Sun'].includes(dow);
+}
+
+// Compute weekly stats (rolling 7 days from today backward)
+function computePnlStats(){
+  const data = getPnlData();
+  const today = new Date();
+  
+  // This week: Mon-Sun of current week
+  const dayIdx = today.getDay(); // 0=Sun, 1=Mon...
+  const mondayOffset = dayIdx === 0 ? -6 : 1 - dayIdx;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() + mondayOffset);
+  monday.setHours(0,0,0,0);
+  
+  // This month
+  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+  
+  const week=[], month=[], all=[];
+  data.forEach(e=>{
+    const d = new Date(e.date+'T12:00:00');
+    if(d >= monday) week.push(e);
+    if(d >= monthStart) month.push(e);
+    all.push(e);
+  });
+  
+  const sumGroup=(arr)=>{
+    const totalSpent = arr.reduce((s,e)=>s+(e.totalSpent||0),0);
+    const totalWon = arr.reduce((s,e)=>s+(e.totalWon||0),0);
+    const winningDraws = arr.filter(e=>(e.totalWon||0)>(e.totalSpent||0)).length;
+    const breakEvenDraws = arr.filter(e=>{const n=(e.totalWon||0)-(e.totalSpent||0); return n===0;}).length;
+    const losingDraws = arr.filter(e=>(e.totalWon||0)<(e.totalSpent||0)).length;
+    return {
+      count: arr.length,
+      totalSpent, totalWon,
+      net: totalWon - totalSpent,
+      winningDraws, breakEvenDraws, losingDraws,
+      hitRate: arr.length>0 ? Math.round((winningDraws/arr.length)*100) : 0
+    };
+  };
+  
+  return {
+    week: sumGroup(week),
+    month: sumGroup(month),
+    all: sumGroup(all),
+    bestDraw: all.length>0 ? all.reduce((b,e)=>{const n=(e.totalWon||0)-(e.totalSpent||0); return n>(b._n||-Infinity)?{...e,_n:n}:b;},{_n:-Infinity}) : null,
+    worstDraw: all.length>0 ? all.reduce((b,e)=>{const n=(e.totalWon||0)-(e.totalSpent||0); return n<(b._n||Infinity)?{...e,_n:n}:b;},{_n:Infinity}) : null
+  };
+}
+
+// Per-tier P&L aggregation across all entries
+function computePerTierPnl(){
+  const data = getPnlData();
+  const tierStats = {};
+  PNL_TIERS.forEach(t=>{tierStats[t]={spent:0,won:0,entries:0};});
+  
+  data.forEach(entry=>{
+    Object.values(entry.perOp||{}).forEach(opData=>{
+      Object.entries(opData.tierSpent||{}).forEach(([tier,amt])=>{
+        if(tierStats[tier]){
+          tierStats[tier].spent += amt;
+          tierStats[tier].entries++;
+        }
+      });
+      Object.entries(opData.tierWon||{}).forEach(([tier,amt])=>{
+        if(tierStats[tier]) tierStats[tier].won += amt;
+      });
+    });
+  });
+  
+  return tierStats;
+}
+
+function pnlSaveEntry(){
+  const date = document.getElementById('pnlDate').value || todayDateStr();
+  const notes = document.getElementById('pnlNotes')?.value || '';
+  
+  // Read per-op spent/won
+  const perOp = {};
+  let totalSpent = 0, totalWon = 0;
+  ['MAGNUM','TOTO','DAMACAI'].forEach(op=>{
+    const spent = parseFloat(document.getElementById('pnl_'+op+'_spent')?.value || 0) || 0;
+    const won = parseFloat(document.getElementById('pnl_'+op+'_won')?.value || 0) || 0;
+    
+    // Read per-tier breakdown (optional)
+    const tierSpent={}, tierWon={};
+    PNL_TIERS.forEach(tier=>{
+      const ts = parseFloat(document.getElementById('pnl_'+op+'_'+tier+'_spent')?.value || 0) || 0;
+      const tw = parseFloat(document.getElementById('pnl_'+op+'_'+tier+'_won')?.value || 0) || 0;
+      if(ts>0) tierSpent[tier]=ts;
+      if(tw>0) tierWon[tier]=tw;
+    });
+    
+    perOp[op] = {spent, won, tierSpent, tierWon};
+    totalSpent += spent;
+    totalWon += won;
+  });
+  
+  // HARD CAP enforcement at save time
+  if(totalSpent > PNL_BUDGET_MAX){
+    if(!confirm(`⚠️ HARD CAP EXCEEDED\n\nYou committed to RM${PNL_BUDGET_MAX} max per draw.\nThis entry shows RM${totalSpent.toFixed(2)} spent (over by RM${(totalSpent-PNL_BUDGET_MAX).toFixed(2)}).\n\nSaving this will:\n- Be recorded as a budget breach\n- NOT be blocked (you're an adult)\n- Show as ⚠️ in your history\n\nClick OK to save anyway, or Cancel to fix the entry.`)){
+      return;
+    }
+  }
+  
+  // Validate at least something is logged
+  if(totalSpent === 0 && totalWon === 0){
+    toast('⚠️ Enter at least one spent or won amount');
+    return;
+  }
+  
+  const entry = {
+    date, day: pnlDayOfWeek(date),
+    perOp, totalSpent, totalWon,
+    net: totalWon - totalSpent,
+    notes,
+    overBudget: totalSpent > PNL_BUDGET_MAX,
+    savedAt: new Date().toISOString()
+  };
+  
+  // Check for existing entry on same date — replace or add
+  const data = getPnlData();
+  const existingIdx = data.findIndex(e=>e.date===date);
+  if(existingIdx >= 0){
+    if(!confirm(`Entry already exists for ${date}. Replace it?`)){return;}
+    data[existingIdx] = entry;
+  } else {
+    data.push(entry);
+  }
+  data.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  savePnlData(data);
+  
+  // Clear form
+  ['MAGNUM','TOTO','DAMACAI'].forEach(op=>{
+    const sEl = document.getElementById('pnl_'+op+'_spent');
+    const wEl = document.getElementById('pnl_'+op+'_won');
+    if(sEl) sEl.value = '';
+    if(wEl) wEl.value = '';
+    PNL_TIERS.forEach(tier=>{
+      const ts = document.getElementById('pnl_'+op+'_'+tier+'_spent');
+      const tw = document.getElementById('pnl_'+op+'_'+tier+'_won');
+      if(ts) ts.value = '';
+      if(tw) tw.value = '';
+    });
+  });
+  
+  if(entry.net > 0){
+    toast(`✅ Saved · Net +RM${entry.net.toFixed(2)}`);
+  } else if(entry.net < 0){
+    toast(`📝 Saved · Net -RM${Math.abs(entry.net).toFixed(2)}`);
+  } else {
+    toast(`📝 Saved · Break-even`);
+  }
+  
+  render();
+}
+
+function pnlDeleteEntry(date){
+  if(!confirm(`Delete P&L entry for ${date}?`)) return;
+  const data = getPnlData().filter(e=>e.date!==date);
+  savePnlData(data);
+  toast('🗑️ Deleted');
+  render();
+}
+
+function pnlEditEntry(date){
+  const data = getPnlData();
+  const entry = data.find(e=>e.date===date);
+  if(!entry) return;
+  
+  // Set the date input to that date so save will replace it
+  const dateEl = document.getElementById('pnlDate');
+  if(dateEl) dateEl.value = date;
+  
+  ['MAGNUM','TOTO','DAMACAI'].forEach(op=>{
+    const opData = entry.perOp?.[op] || {};
+    const sEl = document.getElementById('pnl_'+op+'_spent');
+    const wEl = document.getElementById('pnl_'+op+'_won');
+    if(sEl) sEl.value = opData.spent || '';
+    if(wEl) wEl.value = opData.won || '';
+    PNL_TIERS.forEach(tier=>{
+      const ts = document.getElementById('pnl_'+op+'_'+tier+'_spent');
+      const tw = document.getElementById('pnl_'+op+'_'+tier+'_won');
+      if(ts) ts.value = opData.tierSpent?.[tier] || '';
+      if(tw) tw.value = opData.tierWon?.[tier] || '';
+    });
+  });
+  
+  const notesEl = document.getElementById('pnlNotes');
+  if(notesEl) notesEl.value = entry.notes || '';
+  
+  // Scroll to top
+  document.getElementById('pgPnl')?.scrollIntoView({behavior:'smooth',block:'start'});
+  toast('✏️ Editing — change values and Save to update');
+}
+
+function renderPnl(){
+  const pg = document.getElementById('pgPnl');
+  const stats = computePnlStats();
+  const tierStats = computePerTierPnl();
+  const data = getPnlData();
+  const today = todayDateStr();
+  const dow = pnlDayOfWeek(today);
+  const isDraw = pnlIsDrawDay(today);
+  
+  // Tier color map
+  const tierColors = {
+    ORACLE:'#c084fc', DODGE:'#ef4444', HOTHAND:'#fb923c',
+    FUSION:'#eab308', SNIPER:'#ff6633', ORACLE_SNIPER:'#ff3366',
+    PREDICT:'#3b82f6', OTHER:'#6b7280'
+  };
+  const opColors = {MAGNUM:'#D4A017', TOTO:'#DC2626', DAMACAI:'#2563EB'};
+  
+  let h = '';
+  
+  // ============== HEADER ==============
+  h += `<div style="padding:12px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <div style="font-size:28px">💰</div>
+      <div style="flex:1">
+        <h2 style="margin:0;font-size:18px;font-weight:900;color:#22c55e;letter-spacing:1px">P&L TRACKER</h2>
+        <div style="font-size:9px;color:var(--dim2);margin-top:2px">Honest accounting · Budget RM${PNL_BUDGET_MIN}-${PNL_BUDGET_MAX} per draw · Hard cap enforced</div>
+      </div>
+    </div>`;
+  
+  // ============== TODAY'S ENTRY FORM (if draw day) ==============
+  if(isDraw){
+    h += `<div style="background:linear-gradient(135deg,rgba(34,197,94,0.12),rgba(168,85,247,0.05));border:2px solid rgba(34,197,94,0.4);border-radius:12px;padding:12px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span style="font-size:18px">📝</span>
+        <span style="font-size:13px;font-weight:800;color:#22c55e">LOG TODAY'S DRAW · ${dow} ${today}</span>
+      </div>
+      
+      <div style="margin-bottom:10px">
+        <label style="font-size:9px;color:var(--dim);font-weight:700;display:block;margin-bottom:4px">DATE</label>
+        <input type="date" id="pnlDate" value="${today}" style="width:100%;padding:6px 8px;background:#0a0a15;border:1px solid #333366;border-radius:6px;color:#fff;font-size:12px">
+      </div>`;
+    
+    // Per-op fields
+    ['MAGNUM','TOTO','DAMACAI'].forEach(op=>{
+      const color = opColors[op];
+      h += `<div style="background:#0a0a15;border-left:3px solid ${color};border-radius:6px;padding:10px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+          <span style="font-size:11px;font-weight:800;color:${color};letter-spacing:1px">${op}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <div>
+            <label style="font-size:8px;color:var(--dim2);display:block;margin-bottom:2px">SPENT (RM)</label>
+            <input type="number" step="0.01" min="0" id="pnl_${op}_spent" placeholder="0.00" style="width:100%;padding:6px;background:#1a1a3a;border:1px solid #333366;border-radius:4px;color:#fff;font-size:12px">
+          </div>
+          <div>
+            <label style="font-size:8px;color:var(--dim2);display:block;margin-bottom:2px">WON (RM)</label>
+            <input type="number" step="0.01" min="0" id="pnl_${op}_won" placeholder="0.00" style="width:100%;padding:6px;background:#1a1a3a;border:1px solid #333366;border-radius:4px;color:#fff;font-size:12px">
+          </div>
+        </div>
+        
+        <details style="margin-top:8px">
+          <summary style="font-size:9px;color:var(--dim2);cursor:pointer;font-weight:700">▾ Per-tier breakdown (optional)</summary>
+          <div style="margin-top:6px;padding:6px;background:#070710;border-radius:4px">
+            <div style="font-size:7px;color:var(--dim3);margin-bottom:6px;line-height:1.4">Optional: split your spend/won across tiers to see which engine profits. Leave blank if you don't track this level of detail.</div>`;
+      PNL_TIERS.forEach(tier=>{
+        const tColor = tierColors[tier];
+        h += `<div style="display:grid;grid-template-columns:60px 1fr 1fr;gap:4px;margin-bottom:3px;align-items:center">
+          <span style="font-size:8px;color:${tColor};font-weight:700">${tier}</span>
+          <input type="number" step="0.01" min="0" id="pnl_${op}_${tier}_spent" placeholder="spent" style="padding:3px 5px;background:#1a1a3a;border:1px solid ${tColor}33;border-radius:3px;color:#fff;font-size:10px">
+          <input type="number" step="0.01" min="0" id="pnl_${op}_${tier}_won" placeholder="won" style="padding:3px 5px;background:#1a1a3a;border:1px solid ${tColor}33;border-radius:3px;color:#fff;font-size:10px">
+        </div>`;
+      });
+      h += `</div></details></div>`;
+    });
+    
+    h += `<div style="margin:8px 0">
+      <label style="font-size:8px;color:var(--dim2);display:block;margin-bottom:2px">NOTES (optional)</label>
+      <input type="text" id="pnlNotes" placeholder="e.g. 5715 5751 TOP3 win" style="width:100%;padding:6px;background:#1a1a3a;border:1px solid #333366;border-radius:4px;color:#fff;font-size:11px">
+    </div>
+    
+    <button onclick="pnlSaveEntry()" style="width:100%;padding:12px;background:linear-gradient(135deg,#22c55e,#16a34a);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:900;letter-spacing:2px;cursor:pointer;margin-top:8px">💾 SAVE ENTRY</button>
+    
+    <div style="font-size:8px;color:#fbbf24;margin-top:8px;padding:6px;background:#1a0f00;border:1px dashed #f59e0b66;border-radius:4px;line-height:1.4">
+      ⚠️ <b>Hard cap RM${PNL_BUDGET_MAX}/draw.</b> If total spent exceeds this, you'll get a confirmation prompt before saving (your committed limit).
+    </div>
+    </div>`;
+  } else {
+    h += `<div style="background:#1a1a3a;border:1px dashed #333366;border-radius:8px;padding:12px;margin-bottom:14px;text-align:center">
+      <div style="font-size:11px;color:var(--dim);margin-bottom:4px">No draw today (${dow}). Draws on Wed, Sat, Sun.</div>
+      <div style="font-size:9px;color:var(--dim3)">Use this time to review past entries below.</div>
+    </div>`;
+  }
+  
+  // ============== STATS PANELS ==============
+  const renderStatPanel = (title,s,iconClr) => {
+    const netColor = s.net > 0 ? '#22c55e' : s.net < 0 ? '#ef4444' : '#fbbf24';
+    const netSign = s.net > 0 ? '+' : '';
+    return `<div style="background:#0a0a15;border:1px solid #333366;border-radius:10px;padding:10px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+        <span style="font-size:14px">${iconClr}</span>
+        <span style="font-size:11px;font-weight:800;color:var(--dim);letter-spacing:1px">${title}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:10px">
+        <div><span style="color:var(--dim2)">Draws:</span> <b style="color:#fff">${s.count}</b></div>
+        <div><span style="color:var(--dim2)">Hit rate:</span> <b style="color:#fff">${s.hitRate}%</b></div>
+        <div><span style="color:var(--dim2)">Spent:</span> <b style="color:#ef4444">RM ${s.totalSpent.toFixed(2)}</b></div>
+        <div><span style="color:var(--dim2)">Won:</span> <b style="color:#22c55e">RM ${s.totalWon.toFixed(2)}</b></div>
+      </div>
+      <div style="margin-top:8px;padding:6px;background:${netColor}11;border:1px solid ${netColor};border-radius:6px;text-align:center">
+        <span style="font-size:9px;color:${netColor};font-weight:700">NET:</span>
+        <span style="font-size:18px;font-weight:900;color:${netColor};margin-left:6px">${netSign}RM ${Math.abs(s.net).toFixed(2)}</span>
+      </div>
+      <div style="display:flex;gap:4px;margin-top:6px;font-size:8px">
+        <span style="flex:1;text-align:center;padding:3px;background:#22c55e22;color:#22c55e;border-radius:3px">🟢 ${s.winningDraws}W</span>
+        <span style="flex:1;text-align:center;padding:3px;background:#fbbf2422;color:#fbbf24;border-radius:3px">🟡 ${s.breakEvenDraws}E</span>
+        <span style="flex:1;text-align:center;padding:3px;background:#ef444422;color:#ef4444;border-radius:3px">🔴 ${s.losingDraws}L</span>
+      </div>
+    </div>`;
+  };
+  
+  h += `<h3 style="font-size:11px;color:var(--dim);margin:14px 0 8px 0;letter-spacing:1px">📊 SUMMARY</h3>`;
+  h += renderStatPanel('THIS WEEK', stats.week, '📅');
+  h += renderStatPanel('THIS MONTH', stats.month, '📆');
+  h += renderStatPanel('ALL TIME', stats.all, '🏆');
+  
+  // ============== PER-TIER P&L ==============
+  const tiersWithData = Object.entries(tierStats).filter(([t,s])=>s.spent>0||s.won>0);
+  if(tiersWithData.length>0){
+    h += `<h3 style="font-size:11px;color:var(--dim);margin:14px 0 8px 0;letter-spacing:1px">🎯 PER-TIER P&L (which engine actually profits)</h3>
+      <div style="background:#0a0a15;border:1px solid #333366;border-radius:10px;padding:10px;margin-bottom:8px">`;
+    
+    // Sort by net desc
+    tiersWithData.sort((a,b)=>(b[1].won-b[1].spent)-(a[1].won-a[1].spent));
+    tiersWithData.forEach(([tier,s])=>{
+      const net = s.won - s.spent;
+      const netColor = net > 0 ? '#22c55e' : net < 0 ? '#ef4444' : '#fbbf24';
+      const tColor = tierColors[tier] || '#888';
+      const roi = s.spent > 0 ? Math.round((net/s.spent)*100) : 0;
+      h += `<div style="display:grid;grid-template-columns:90px 1fr 1fr 80px;gap:6px;padding:6px 4px;border-bottom:1px solid #1a1a3a;font-size:9px;align-items:center">
+        <span style="color:${tColor};font-weight:800">${tier}</span>
+        <span style="color:#ef4444">-RM ${s.spent.toFixed(0)}</span>
+        <span style="color:#22c55e">+RM ${s.won.toFixed(0)}</span>
+        <span style="color:${netColor};font-weight:700;text-align:right">${net>=0?'+':''}RM ${net.toFixed(0)} <span style="font-size:7px;opacity:0.7">(${roi>=0?'+':''}${roi}%)</span></span>
+      </div>`;
+    });
+    h += `<div style="font-size:7px;color:var(--dim3);margin-top:6px;font-style:italic;line-height:1.4">Per-tier ROI shown only for entries where you logged tier breakdown. Need 30+ data points per tier for statistical confidence.</div></div>`;
+  }
+  
+  // ============== PAST ENTRIES ==============
+  if(data.length>0){
+    h += `<h3 style="font-size:11px;color:var(--dim);margin:14px 0 8px 0;letter-spacing:1px">📜 RECENT ENTRIES (${data.length} total)</h3>`;
+    data.slice(0,30).forEach(entry=>{
+      const net = entry.net || 0;
+      const netColor = net > 0 ? '#22c55e' : net < 0 ? '#ef4444' : '#fbbf24';
+      const netSign = net > 0 ? '+' : '';
+      const overBudgetBadge = entry.overBudget ? '<span style="background:#ef4444;color:#fff;font-size:7px;padding:1px 4px;border-radius:3px;margin-left:4px">⚠️ OVER CAP</span>' : '';
+      
+      h += `<div style="background:#0a0a15;border-left:3px solid ${netColor};border-radius:6px;padding:8px;margin-bottom:6px">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+          <span style="font-size:10px;font-weight:700;color:#fff">${entry.date}</span>
+          <span style="font-size:9px;color:var(--dim2)">(${entry.day})</span>
+          ${overBudgetBadge}
+          <span style="margin-left:auto;font-size:14px;font-weight:900;color:${netColor}">${netSign}RM ${Math.abs(net).toFixed(2)}</span>
+        </div>
+        <div style="display:flex;gap:8px;font-size:8px;color:var(--dim);margin-bottom:4px">
+          <span>Spent: <b style="color:#ef4444">RM ${(entry.totalSpent||0).toFixed(2)}</b></span>
+          <span>Won: <b style="color:#22c55e">RM ${(entry.totalWon||0).toFixed(2)}</b></span>
+        </div>
+        <div style="display:flex;gap:4px;font-size:8px;flex-wrap:wrap">
+          ${Object.entries(entry.perOp||{}).filter(([op,d])=>d.spent||d.won).map(([op,d])=>{
+            const opNet = (d.won||0)-(d.spent||0);
+            const opColor = opNet>0?'#22c55e':opNet<0?'#ef4444':'#888';
+            return `<span style="background:#1a1a3a;padding:2px 5px;border-radius:3px;border-left:2px solid ${opColors[op]};color:${opColor}">${op}: ${opNet>=0?'+':''}${opNet.toFixed(0)}</span>`;
+          }).join('')}
+        </div>
+        ${entry.notes ? `<div style="font-size:8px;color:var(--dim2);font-style:italic;margin-top:4px">📝 ${entry.notes}</div>`:''}
+        <div style="display:flex;gap:4px;margin-top:6px">
+          <button onclick="pnlEditEntry('${entry.date}')" style="flex:1;font-size:8px;padding:4px;background:#1a1a3a;border:1px solid #333366;border-radius:3px;color:#888;cursor:pointer">✏️ Edit</button>
+          <button onclick="pnlDeleteEntry('${entry.date}')" style="flex:1;font-size:8px;padding:4px;background:#1a1a3a;border:1px solid #441111;border-radius:3px;color:#884444;cursor:pointer">🗑️ Delete</button>
+        </div>
+      </div>`;
+    });
+    if(data.length>30){
+      h += `<div style="font-size:8px;color:var(--dim3);text-align:center;margin-top:8px">Showing recent 30 of ${data.length} entries</div>`;
+    }
+  } else {
+    h += `<div style="background:#0a0a15;border:1px dashed #333366;border-radius:10px;padding:20px;text-align:center;margin-top:14px">
+      <div style="font-size:24px;margin-bottom:8px">📊</div>
+      <div style="font-size:11px;color:var(--dim);margin-bottom:4px">No entries yet</div>
+      <div style="font-size:8px;color:var(--dim3)">Log your first draw above to start tracking real ROI</div>
+    </div>`;
+  }
+  
+  // ============== HONEST FOOTER ==============
+  h += `<div style="background:#1a0f00;border:1px dashed #f59e0b66;border-radius:8px;padding:10px;margin-top:14px;font-size:8px;color:#fbbf24;line-height:1.6">
+    🛡️ <b>Honest reality check:</b><br>
+    This tracker shows REAL numbers, not potential.<br>
+    Variance is normal. 4 losing weeks in a row WILL happen even if engine works.<br>
+    Discipline = same bet size after wins as after losses.<br>
+    If month shows 🔴 RED for 4+ weeks straight, take a break and reassess.
+  </div>`;
+  
+  h += `</div>`; // close padding wrapper
+  pg.innerHTML = h;
 }
 
 function renderData(){
