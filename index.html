@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v4.13</title>
+<title>Beast Mode 4D v4.12</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -414,7 +414,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v4.13</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v4.12</span>
       <div class="sub">AI-Powered Sniper Prediction Engine + DeepSeek AI</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
@@ -424,7 +424,6 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
 <!-- Pages -->
 <div class="page active" id="pgPredict"></div>
 <div class="page" id="pgHistory"></div>
-<div class="page" id="pgConfluence"></div>
 <div class="page" id="pgLive"></div>
 <div class="page" id="pgOracle"></div>
 <div class="page" id="pgDashboard"></div>
@@ -435,10 +434,9 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
 <div class="bnav">
   <button class="active" onclick="navTo('Predict')"><span class="ico">🎯</span>Predict</button>
   <button onclick="navTo('History')"><span class="ico">📜</span>History</button>
-  <button onclick="navTo('Confluence')"><span class="ico">🧲</span>Conflu</button>
   <button onclick="navTo('Live')"><span class="ico">📡</span>Live</button>
   <button onclick="navTo('Oracle')"><span class="ico">🔮</span>Oracle</button>
-  <button onclick="navTo('Dashboard')"><span class="ico">📊</span>Dash</button>
+  <button onclick="navTo('Dashboard')"><span class="ico">📊</span>Dashboard</button>
   <button onclick="navTo('Pnl')"><span class="ico">💰</span>P&L</button>
   <button onclick="navTo('Data')"><span class="ico">💾</span>Data</button>
 </div>
@@ -1352,7 +1350,7 @@ function navTo(page){
   activeNav=page;
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('pg'+page).classList.add('active');
-  document.querySelectorAll('.bnav button').forEach((b,i)=>{b.classList.toggle('active',['Predict','History','Confluence','Live','Oracle','Dashboard','Pnl','Data'][i]===page)});
+  document.querySelectorAll('.bnav button').forEach((b,i)=>{b.classList.toggle('active',['Predict','History','Live','Oracle','Dashboard','Pnl','Data'][i]===page)});
   render();
 }
 
@@ -1396,7 +1394,6 @@ let selectedDay=localStorage.getItem('b4d_targetDay')||'Sat';
 function render(){
   if(activeNav==='Predict')renderPredict();
   else if(activeNav==='History')renderHistory();
-  else if(activeNav==='Confluence')renderConfluence();
   else if(activeNav==='Live')renderLive();
   else if(activeNav==='Oracle')renderEngines();
   else if(activeNav==='Dashboard')renderDashboard();
@@ -1719,196 +1716,6 @@ function renderPredict(){
   }
   
   pg.innerHTML=h;
-}
-
-// ============================================================
-// CONFLUENCE DETECTOR (v4.13)
-// Surfaces numbers picked across multiple generations.
-// PRIMARY signal = distinct modes converging (independent agreement)
-// SECONDARY signal = total occurrence count
-// ============================================================
-function detectConfluence(opts){
-  opts=opts||{};
-  const windowHours=opts.windowHours||24;
-  const crossMode=!!opts.crossMode;
-  const includeCrossop=opts.includeCrossop!==false; // default true
-  const cutoff=Date.now()-windowHours*3600*1000;
-  
-  // Filter window + valid entries
-  const inWindow=history.filter(e=>{
-    if(!e.generatedAt||!e.predictions||!e.predictions.length)return false;
-    return new Date(e.generatedAt).getTime()>=cutoff;
-  });
-  
-  // Group by lottery operator (subOperator). ORACLE_SNIPER has no subOp -> skip from per-op view
-  const byOp={MAGNUM:[],TOTO:[],DAMACAI:[]};
-  inWindow.forEach(e=>{
-    if(!e.subOperator)return;
-    if(!byOp[e.subOperator])byOp[e.subOperator]=[];
-    if(!includeCrossop&&e.operator==='CROSSOP')return;
-    byOp[e.subOperator].push(e);
-  });
-  
-  const result={};
-  Object.keys(byOp).forEach(op=>{
-    const opEntries=byOp[op];
-    if(crossMode){
-      const counts=countConfluence(opEntries);
-      if(counts.length)result[op]={__combined:counts};
-    }else{
-      const byMode={};
-      opEntries.forEach(e=>{(byMode[e.operator]=byMode[e.operator]||[]).push(e);});
-      const grouped={};
-      Object.keys(byMode).forEach(mode=>{
-        const counts=countConfluence(byMode[mode]);
-        if(counts.length)grouped[mode]=counts;
-      });
-      if(Object.keys(grouped).length)result[op]=grouped;
-    }
-  });
-  return result;
-}
-
-function countConfluence(entries){
-  const map={};
-  entries.forEach(e=>{
-    e.predictions.forEach(num=>{
-      if(!map[num])map[num]={count:0,occ:[],modes:new Set()};
-      map[num].count++;
-      map[num].occ.push({mode:e.operator,sub:e.subOperator,ts:e.generatedAt,id:e.id});
-      map[num].modes.add(e.operator);
-    });
-  });
-  return Object.keys(map)
-    .filter(n=>map[n].count>=2)
-    .map(n=>({number:n,count:map[n].count,modes:[...map[n].modes],occ:map[n].occ}))
-    // Sort: distinct modes desc, then total count desc, then number asc
-    .sort((a,b)=>(b.modes.length-a.modes.length)||(b.count-a.count)||a.number.localeCompare(b.number));
-}
-
-// Heat tier based on DISTINCT MODES converging (primary signal)
-function confluenceTier(modeCount,totalCount){
-  if(modeCount>=3)return 4; // legendary — 3+ different engines agree
-  if(modeCount===2)return 3; // hot — 2 engines agree
-  if(totalCount>=5)return 2; // warm — same engine repeated heavily
-  return 1; // mild — 2-4 hits from one mode
-}
-
-const CONF_MODE_COLORS={ORACLE:'#c084fc',DODGE:'#ef4444',CROSSOP:'#f59e0b',HOTHAND:'#fb923c',FUSION:'#eab308',ORACLE_SNIPER:'#ff3366',SNIPER:'#ff6633'};
-const CONF_OP_COLORS={MAGNUM:'var(--mag)',TOTO:'var(--toto)',DAMACAI:'var(--dam)'};
-
-function renderConfluence(){
-  const pg=document.getElementById('pgConfluence');
-  const win=parseInt(localStorage.getItem('b4d_confWindow')||'24',10);
-  const crossMode=localStorage.getItem('b4d_confCross')==='1';
-  const hideCrossop=localStorage.getItem('b4d_confNoCO')==='1';
-  
-  let h=`<div class="section-title">🧲 Confluence Detector <span style="font-size:9px;color:var(--dim2);font-weight:500">· numbers picked across multiple generations</span></div>`;
-  
-  // Controls card
-  h+=`<div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:10px;margin-bottom:12px">
-    <div style="font-size:9px;color:var(--dim2);font-weight:700;letter-spacing:0.5px;margin-bottom:6px">⏱ TIME WINDOW</div>
-    <div style="display:flex;gap:4px;margin-bottom:10px">
-      ${[12,24,48,72].map(hr=>`<button onclick="localStorage.setItem('b4d_confWindow','${hr}');render()" style="flex:1;padding:7px 4px;border-radius:7px;font-size:11px;font-weight:700;font-family:inherit;cursor:pointer;border:1px solid var(--border);background:${win===hr?'var(--toto)':'var(--bg2)'};color:${win===hr?'#fff':'var(--text)'}">${hr}h</button>`).join('')}
-    </div>
-    <div style="font-size:9px;color:var(--dim2);font-weight:700;letter-spacing:0.5px;margin-bottom:6px">🔍 ANALYSIS MODE</div>
-    <div style="display:flex;gap:4px;margin-bottom:8px">
-      <button onclick="localStorage.setItem('b4d_confCross','0');render()" style="flex:1;padding:8px;border-radius:7px;font-size:11px;font-weight:700;font-family:inherit;cursor:pointer;border:1px solid var(--border);background:${!crossMode?'var(--toto)':'var(--bg2)'};color:${!crossMode?'#fff':'var(--text)'}">Same Mode</button>
-      <button onclick="localStorage.setItem('b4d_confCross','1');render()" style="flex:1;padding:8px;border-radius:7px;font-size:11px;font-weight:700;font-family:inherit;cursor:pointer;border:1px solid var(--border);background:${crossMode?'var(--toto)':'var(--bg2)'};color:${crossMode?'#fff':'var(--text)'}">Cross-Mode</button>
-    </div>
-    <label style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--dim);cursor:pointer">
-      <input type="checkbox" ${hideCrossop?'checked':''} onchange="localStorage.setItem('b4d_confNoCO',this.checked?'1':'0');render()" style="width:auto;margin:0">
-      Exclude CROSSOP (it's tautologically confluent — same picks across all 3 ops by design)
-    </label>
-  </div>`;
-  
-  // Run detection
-  const data=detectConfluence({windowHours:win,crossMode,includeCrossop:!hideCrossop});
-  
-  // Top-level stats
-  let totalNums=0,maxModes=0,maxCount=0,opCount=0;
-  Object.keys(data).forEach(op=>{
-    let opTotal=0;
-    Object.values(data[op]).forEach(arr=>{
-      opTotal+=arr.length;
-      arr.forEach(it=>{if(it.modes.length>maxModes)maxModes=it.modes.length;if(it.count>maxCount)maxCount=it.count;});
-    });
-    if(opTotal>0){opCount++;totalNums+=opTotal;}
-  });
-  
-  h+=`<div style="display:flex;gap:6px;margin-bottom:14px">
-    <div class="stat-card" style="flex:1;padding:10px"><div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--text)">${totalNums}</div><div style="font-size:8px;color:var(--dim2);font-weight:700;letter-spacing:0.5px;margin-top:2px">REPEATS FOUND</div></div>
-    <div class="stat-card" style="flex:1;padding:10px"><div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:${maxModes>=2?'var(--green)':'var(--text)'}">${maxModes||'—'}</div><div style="font-size:8px;color:var(--dim2);font-weight:700;letter-spacing:0.5px;margin-top:2px">MAX DISTINCT MODES</div></div>
-    <div class="stat-card" style="flex:1;padding:10px"><div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--amber)">${maxCount||'—'}${maxCount?'×':''}</div><div style="font-size:8px;color:var(--dim2);font-weight:700;letter-spacing:0.5px;margin-top:2px">HOTTEST COUNT</div></div>
-  </div>`;
-  
-  if(totalNums===0){
-    h+=`<div style="text-align:center;padding:40px 0;color:var(--dim3)">
-      <div style="font-size:40px;margin-bottom:10px">🧲</div>
-      <div style="font-size:13px;color:var(--dim2);font-weight:600">No confluence detected</div>
-      <div style="font-size:10px;margin-top:6px;max-width:260px;margin-left:auto;margin-right:auto;line-height:1.5">No numbers repeated across generations in the last ${win}h. Generate more entries or widen the window.</div>
-    </div>`;
-    pg.innerHTML=h;return;
-  }
-  
-  // Render per-operator
-  ['MAGNUM','TOTO','DAMACAI'].forEach(op=>{
-    if(!data[op])return;
-    const groups=data[op];
-    let opTotal=0;Object.values(groups).forEach(arr=>opTotal+=arr.length);
-    if(!opTotal)return;
-    
-    h+=`<div style="margin-bottom:18px">
-      <div style="display:flex;align-items:center;gap:8px;padding:0 4px 8px;border-bottom:1px solid var(--border);margin-bottom:10px">
-        <div style="width:10px;height:10px;border-radius:50%;background:${CONF_OP_COLORS[op]}"></div>
-        <div style="font-weight:800;font-size:14px;letter-spacing:1px;color:${CONF_OP_COLORS[op]};flex:1">${op}</div>
-        <div style="font-size:9px;color:var(--dim2);font-weight:700;background:var(--bg2);padding:3px 8px;border-radius:6px">${opTotal} number${opTotal!==1?'s':''}</div>
-      </div>`;
-    
-    if(crossMode){
-      h+=(groups.__combined||[]).map(it=>renderConfluenceCard(it)).join('');
-    }else{
-      ['DODGE','ORACLE','HOTHAND','FUSION','CROSSOP'].forEach(mode=>{
-        const items=groups[mode];if(!items||!items.length)return;
-        h+=`<div style="margin-bottom:10px">
-          <div style="margin:0 4px 6px"><span style="display:inline-block;font-size:9px;font-weight:800;padding:3px 8px;border-radius:5px;background:${CONF_MODE_COLORS[mode]}22;color:${CONF_MODE_COLORS[mode]};letter-spacing:0.5px">${mode}</span></div>
-          ${items.map(it=>renderConfluenceCard(it)).join('')}
-        </div>`;
-      });
-    }
-    h+=`</div>`;
-  });
-  
-  // Footer note
-  h+=`<div style="margin-top:14px;padding:10px;background:var(--bg3);border:1px dashed var(--border);border-radius:10px;font-size:9.5px;color:var(--dim2);line-height:1.6">
-    <b style="color:var(--text)">💡 Reading the heat:</b> ⚡ <b>3+ modes</b> = strongest signal (different engines independently agree). 🔥 <b>2 modes</b> = hot. 🟠 <b>5+ same-mode</b> = warm. ⚪ <b>2-4 same-mode</b> = mild noise.
-  </div>`;
-  
-  pg.innerHTML=h;
-}
-
-function renderConfluenceCard(it){
-  const tier=confluenceTier(it.modes.length,it.count);
-  const tierColor=tier===4?'#a855f7':tier===3?'#ef4444':tier===2?'#f59e0b':'var(--dim2)';
-  const tierBg=tier===4?'rgba(168,85,247,0.08)':tier===3?'rgba(239,68,68,0.06)':tier===2?'rgba(245,158,11,0.05)':'transparent';
-  const flame=tier===4?'⚡':tier===3?'🔥':tier===2?'🟠':'⚪';
-  const times=it.occ.slice(0,4).map(o=>{
-    const d=new Date(o.ts);
-    return d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false});
-  }).join(' · ')+(it.occ.length>4?` · +${it.occ.length-4}`:'');
-  
-  return `<div style="background:var(--bg3);border:1px solid var(--border);border-left:4px solid ${tierColor};border-radius:10px;padding:11px 12px;margin-bottom:6px;background-image:linear-gradient(180deg,${tierBg} 0%,transparent 100%)">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
-      <div style="font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;letter-spacing:2px;color:var(--text);flex:1">${it.number}</div>
-      <div style="display:inline-flex;align-items:center;gap:4px;background:${tierColor};color:#fff;padding:4px 9px;border-radius:999px;font-weight:800;font-size:11px;letter-spacing:0.5px">
-        <span style="font-size:10px">${flame}</span>${it.modes.length}m · ${it.count}×
-      </div>
-    </div>
-    <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center">
-      ${it.modes.map(m=>`<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:5px;background:${(CONF_MODE_COLORS[m]||'#666')}22;color:${CONF_MODE_COLORS[m]||'#666'};letter-spacing:0.4px">${m}</span>`).join('')}
-      <span style="font-size:9px;color:var(--dim2);font-family:'JetBrains Mono',monospace;margin-left:auto">${times}</span>
-    </div>
-  </div>`;
 }
 
 function renderHistory(){
