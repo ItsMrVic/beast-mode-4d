@@ -1748,6 +1748,8 @@ function renderHistory(){
     <div style="display:flex;gap:4px;margin-bottom:6px">
       <select onchange="localStorage.setItem('b4d_histFilter',this.value);render()" style="flex:1;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:5px 7px;font-size:10px;font-family:inherit">
         <option value="all"${histFilter==='all'?' selected':''}>🎯 All Operators</option>
+        <option value="VIP_CROSS"${histFilter==='VIP_CROSS'?' selected':''}>👑 VIP Buy — Cross-Mode (2+ engines)</option>
+        <option value="VIP_SUPER"${histFilter==='VIP_SUPER'?' selected':''}>💎 SUPER VIP Buy — 3+ engines agree</option>
         <option value="REPEATS_ALL"${histFilter==='REPEATS_ALL'?' selected':''}>🧲 Repeats — Oracle + Dodge + HotHand</option>
         <option value="REPEATS_ORACLE"${histFilter==='REPEATS_ORACLE'?' selected':''}>🧲 Repeats — Oracle Only</option>
         <option value="REPEATS_DODGE"${histFilter==='REPEATS_DODGE'?' selected':''}>🧲 Repeats — Dodge Only</option>
@@ -1853,13 +1855,157 @@ function renderHistory(){
   }
   // ===== END REPEAT DETECTION =====
   
-  if(histFilter!=='all'&&!histFilter.startsWith('REPEATS_'))filtered=filtered.filter(e=>e.operator===histFilter);
+  // ===== VIP CROSS-MODE DETECTION (v4.13) =====
+  // Detect digit-sets (permutation-agnostic) that appear in 2+ engines within 24h.
+  // Same digits in any order = same VIP signal (e.g. 9204 from Dodge + 9240 from Oracle).
+  // 2+ engines = 👑 VIP, 3+ engines = 💎 SUPER VIP
+  // PER-OPERATOR: MAGNUM, TOTO, DAMACAI are separate result spaces — analyzed independently.
+  let vipBanner='';
+  let vipKeysByOpAndNum={MAGNUM:new Map(),TOTO:new Map(),DAMACAI:new Map()};
+  if(histFilter==='VIP_CROSS'||histFilter==='VIP_SUPER'){
+    const vipLookbackHrs=24;
+    const vipCutoff=Date.now()-vipLookbackHrs*3600*1000;
+    const vipPool=['ORACLE','DODGE','HOTHAND','FUSION']; // engines that count toward VIP signal
+    const minModes=histFilter==='VIP_SUPER'?3:2;
+    const targetOps=['MAGNUM','TOTO','DAMACAI'];
+    
+    // Per-operator digit-set maps — separate result spaces analyzed independently
+    const setsByOp={};
+    targetOps.forEach(op=>{setsByOp[op]=new Map();});
+    
+    history.forEach(e=>{
+      if(!e.subOperator||!targetOps.includes(e.subOperator))return;
+      if(!vipPool.includes(e.operator))return;
+      if(!e.generatedAt||new Date(e.generatedAt).getTime()<vipCutoff)return;
+      if(!e.predictions)return;
+      const opMap=setsByOp[e.subOperator];
+      e.predictions.forEach(n=>{
+        const key=n.split('').sort().join('');
+        if(!opMap.has(key))opMap.set(key,{variants:new Set(),modes:new Set(),occ:[]});
+        const d=opMap.get(key);
+        d.variants.add(n);
+        d.modes.add(e.operator);
+        d.occ.push({num:n,mode:e.operator,sub:e.subOperator,ts:e.generatedAt});
+      });
+    });
+    
+    // Per-operator VIP sets and lookup maps
+    // VIP RULE (Tiered):
+    //   👑 VIP = Oracle + Dodge required (the proven Vic pattern, e.g. 9240/9204)
+    //   💎 SUPER VIP = Oracle + Dodge + at least one of {HotHand, Fusion}
+    // Pure HotHand+Fusion agreement (no Oracle or Dodge) does NOT qualify.
+    const vipSetsByOp={};
+    targetOps.forEach(op=>{
+      const sets=[...setsByOp[op].entries()]
+        .filter(([k,d])=>d.modes.has('ORACLE')&&d.modes.has('DODGE'))
+        .map(([k,d])=>{
+          const hasBonus=d.modes.has('HOTHAND')||d.modes.has('FUSION');
+          return {
+            digitKey:k,
+            variants:[...d.variants].sort(),
+            modes:[...d.modes],
+            occ:d.occ,
+            tier:hasBonus?'SUPER':'VIP',
+            op:op
+          };
+        })
+        .filter(s=>histFilter==='VIP_SUPER'?s.tier==='SUPER':true)
+        .sort((a,b)=>(b.modes.length-a.modes.length)||(b.occ.length-a.occ.length));
+      vipSetsByOp[op]=sets;
+      // Build per-op lookup: number → vip info (for in-card highlight)
+      sets.forEach(s=>{
+        s.variants.forEach(num=>{
+          vipKeysByOpAndNum[op].set(num,{tier:s.tier,modes:s.modes,variants:s.variants,count:s.occ.length,digitKey:s.digitKey});
+        });
+      });
+    });
+    
+    // Filter entries: keep only those whose operator has a VIP variant for this entry
+    filtered=filtered.filter(e=>{
+      if(!vipPool.includes(e.operator))return false;
+      if(!e.subOperator||!targetOps.includes(e.subOperator))return false;
+      if(!e.generatedAt||new Date(e.generatedAt).getTime()<vipCutoff)return false;
+      if(!e.predictions)return false;
+      const opLookup=vipKeysByOpAndNum[e.subOperator];
+      return e.predictions.some(n=>opLookup.has(n));
+    });
+    
+    // Build banner — three sections, one per operator
+    const modeC={ORACLE:'#c084fc',DODGE:'#ef4444',HOTHAND:'#fb923c',FUSION:'#eab308'};
+    const opColors={MAGNUM:'#D4A017',TOTO:'#DC2626',DAMACAI:'#2563EB'};
+    
+    function vipCard(s){
+      const isSuper=s.tier==='SUPER';
+      const accent=isSuper?'#ec4899':'#a855f7';
+      const icon=isSuper?'💎':'👑';
+      const label=isSuper?'SUPER VIP':'VIP';
+      const variants=s.variants.map(v=>`<span style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:1.5px;background:${accent}33;color:${accent};padding:3px 7px;border-radius:5px;border:1px solid ${accent}66">${v}</span>`).join(' ');
+      const modeChips=s.modes.sort().map(m=>`<span style="font-size:8px;font-weight:800;padding:2px 6px;border-radius:4px;background:${modeC[m]||'#666'}33;color:${modeC[m]||'#aaa'};letter-spacing:0.4px">${m}</span>`).join(' ');
+      return `<div style="background:linear-gradient(135deg,${accent}11,transparent);border:1px solid ${accent}44;border-left:3px solid ${accent};border-radius:8px;padding:8px 10px;margin-bottom:6px">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap">
+          <span style="font-size:13px">${icon}</span>
+          <span style="font-size:9px;font-weight:800;color:${accent};letter-spacing:0.5px">${label}</span>
+          <span style="font-size:8px;color:var(--dim2);font-family:'JetBrains Mono',monospace">{${s.digitKey.split('').join(',')}}</span>
+          <span style="font-size:8px;background:${accent};color:#fff;padding:1px 5px;border-radius:4px;font-weight:800;margin-left:auto">${s.modes.length} ENGINES · ×${s.occ.length}</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-bottom:5px">${variants}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center">${modeChips}</div>
+      </div>`;
+    }
+    
+    let totalCount=0;
+    let bannerInner='';
+    targetOps.forEach(op=>{
+      const sets=vipSetsByOp[op];
+      const superSets=sets.filter(s=>s.tier==='SUPER');
+      const vipOnly=sets.filter(s=>s.tier==='VIP');
+      const opTotal=histFilter==='VIP_SUPER'?superSets.length:sets.length;
+      if(opTotal===0)return;
+      totalCount+=opTotal;
+      
+      bannerInner+=`<div style="margin-bottom:14px">
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 0 8px;border-bottom:1px solid var(--border);margin-bottom:8px">
+          <div style="width:8px;height:8px;border-radius:50%;background:${opColors[op]}"></div>
+          <div style="font-size:11px;font-weight:800;color:${opColors[op]};letter-spacing:1px">${op}</div>
+          <div style="font-size:9px;color:var(--dim2);margin-left:auto">${opTotal} signal${opTotal!==1?'s':''}</div>
+        </div>`;
+      
+      if(superSets.length){
+        bannerInner+=`<div style="font-size:9px;font-weight:800;color:#ec4899;letter-spacing:0.6px;margin-bottom:5px">💎 SUPER VIP · 3+ engines (${superSets.length})</div>`;
+        bannerInner+=superSets.map(vipCard).join('');
+      }
+      if(vipOnly.length&&histFilter==='VIP_CROSS'){
+        bannerInner+=`<div style="font-size:9px;font-weight:800;color:#a855f7;letter-spacing:0.6px;margin:${superSets.length?'8px':'0'} 0 5px">👑 VIP · 2 engines (${vipOnly.length})</div>`;
+        bannerInner+=vipOnly.map(vipCard).join('');
+      }
+      bannerInner+=`</div>`;
+    });
+    
+    if(totalCount===0){
+      bannerInner=`<div style="font-size:11px;color:var(--dim2);text-align:center;padding:14px">No ${histFilter==='VIP_SUPER'?'SUPER VIP':'VIP'} signals across MAGNUM, TOTO, or DAMACAI in the last ${vipLookbackHrs}h.${histFilter==='VIP_SUPER'?' Try the regular VIP filter for 2-engine agreements.':''}</div>`;
+    }
+    vipBanner=`<div style="background:var(--bg3);border:1px solid var(--border);border-left:4px solid ${histFilter==='VIP_SUPER'?'#ec4899':'#a855f7'};border-radius:10px;padding:10px 12px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
+        <span style="font-size:14px">${histFilter==='VIP_SUPER'?'💎':'👑'}</span>
+        <span style="font-size:11px;font-weight:800;letter-spacing:0.5px;color:var(--text)">${histFilter==='VIP_SUPER'?'SUPER VIP':'VIP'} BUY SIGNALS</span>
+        <span style="font-size:9px;color:var(--dim2);margin-left:auto">last ${vipLookbackHrs}h · per-operator · permutation-aware</span>
+      </div>
+      <div style="font-size:9px;color:var(--dim2);line-height:1.5;margin-bottom:10px;padding:6px 8px;background:var(--bg2);border-radius:6px;border:1px dashed var(--border)">
+        Same 4 digits (any order) generated for the <b style="color:var(--text)">same lottery operator</b> by both <b style="color:#c084fc">Oracle</b> AND <b style="color:#ef4444">Dodge</b>. ${histFilter==='VIP_SUPER'?'Plus <b style="color:#ec4899">HotHand or Fusion</b> on top = SUPER VIP.':'Adding <b style="color:#ec4899">HotHand or Fusion</b> = upgraded to SUPER VIP 💎.'} Each operator analyzed separately because MAGNUM, TOTO, DAMACAI have separate result spaces.
+      </div>
+      ${bannerInner}
+    </div>`;
+  }
+  // ===== END VIP DETECTION =====
+  
+  if(histFilter!=='all'&&!histFilter.startsWith('REPEATS_')&&histFilter!=='VIP_CROSS'&&histFilter!=='VIP_SUPER')filtered=filtered.filter(e=>e.operator===histFilter);
   if(histStatus==='wins')filtered=filtered.filter(e=>e.checked&&(e.hits?.length>0||e.permHits>0));
   else if(histStatus==='checked')filtered=filtered.filter(e=>e.checked);
   else if(histStatus==='pending')filtered=filtered.filter(e=>!e.checked);
   
   // Inject banner before the entries
   if(repeatBanner)h+=repeatBanner;
+  if(vipBanner)h+=vipBanner;
   
   if(filtered.length===0){
     h+=`<div style="text-align:center;padding:30px 0;color:var(--dim3);font-size:11px">No entries match your filters</div>`;
@@ -1970,6 +2116,16 @@ function renderHistory(){
             const isHit=entry.checked&&entry.hits?.includes(n);
             const isPermWin=entry.checked&&permWinNums.has(n);
             const cls=entry.checked?(isHit?'hit':isPermWin?'perm-hit':'miss'):'';
+            // v4.13: VIP badge — per-operator lookup. A number is VIP for THIS entry
+            // only if it's VIP for the entry's own subOperator (MAGNUM/TOTO/DAMACAI).
+            const opLookup=entry.subOperator&&vipKeysByOpAndNum[entry.subOperator];
+            const vipInfo=opLookup?opLookup.get(n):null;
+            if(vipInfo){
+              const isSuper=vipInfo.tier==='SUPER';
+              const accent=isSuper?'#ec4899':'#a855f7';
+              const icon=isSuper?'💎':'👑';
+              return`<span class="hist-num ${cls}" style="background:linear-gradient(135deg,${accent}33,${accent}11);border:2px solid ${accent};color:${accent};box-shadow:0 0 10px ${accent}66;position:relative" title="${isSuper?'SUPER VIP':'VIP'} for ${entry.subOperator} · digit-set {${vipInfo.digitKey}} agreed by ${vipInfo.modes.join('+')}">${n}<span style="position:absolute;top:-8px;right:-8px;background:${accent};color:#fff;font-size:9px;font-weight:800;padding:1px 4px;border-radius:8px;font-family:inherit;letter-spacing:0;line-height:1.2">${icon}${vipInfo.modes.length}</span></span>`;
+            }
             // v4.13: highlight repeated numbers when a REPEATS_* filter is active
             const repeatCount=histFilter.startsWith('REPEATS_')&&repeatNumsByMode[entry.operator]?repeatNumsByMode[entry.operator].get(n):null;
             if(repeatCount&&repeatCount>=2){
