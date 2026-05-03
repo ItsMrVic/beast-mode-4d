@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beast Mode 4D — Confluence Detector</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@500;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* THEME VARS — wire these to your existing 6-theme system */
+  --bg-app: #fef9f0;
+  --bg-card: #fffdf7;
+  --bg-card-alt: #fef6e7;
+  --border-soft: #f0e4cc;
+  --border-card: #e8dcc0;
+  --text-primary: #2a1f0f;
+  --text-secondary: #6b5b3e;
+  --text-muted: #9b8a6a;
+
+  /* Operator colors (match your existing palette) */
+  --op-toto: #dc2626;
+  --op-magnum: #d97706;
+  --op-damacai: #1d4ed8;
+
+  /* Heat scale — semantic, theme-independent */
+  --heat-warm: #f59e0b;     /* 2× */
+  --heat-hot: #ea580c;       /* 3× */
+  --heat-blazing: #dc2626;   /* 4× */
+  --heat-legendary: #7c3aed; /* 5×+ */
+
+  /* Mode colors */
+  --mode-dodge: #b91c1c;
+  --mode-oracle: #7c3aed;
+  --mode-predict: #059669;
+  --mode-sniper: #0891b2;
+  --mode-fusion: #ea580c;
+  --mode-hothand: #db2777;
+
+  --shadow-card: 0 1px 3px rgba(64, 40, 10, 0.06), 0 4px 12px rgba(64, 40, 10, 0.04);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Manrope', system-ui, sans-serif;
+  background: var(--bg-app);
+  color: var(--text-primary);
+  min-height: 100vh;
+  padding: 16px 12px 90px;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.container { max-width: 480px; margin: 0 auto; }
+
+/* HEADER */
+.tab-header { margin-bottom: 16px; padding: 10px 4px 6px; }
+.tab-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 32px;
+  letter-spacing: 1.5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.tab-title .icon { font-size: 26px; }
+.tab-subtitle {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+/* STATS */
+.stats-banner { display: flex; gap: 8px; margin-bottom: 16px; }
+.stat-pill {
+  flex: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 12px;
+  padding: 10px 6px;
+  text-align: center;
+}
+.stat-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 22px;
+  font-weight: 700;
+  display: block;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.stat-label {
+  font-size: 9px;
+  color: var(--text-muted);
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+/* TOGGLE */
+.mode-toggle {
+  display: flex;
+  background: var(--bg-card-alt);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 3px;
+  margin-bottom: 18px;
+}
+.mode-toggle button {
+  flex: 1;
+  padding: 9px 10px;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 9px;
+  transition: all 0.2s ease;
+  letter-spacing: 0.3px;
+}
+.mode-toggle button.active {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-card);
+}
+
+/* OPERATOR SECTION */
+.op-section { margin-bottom: 22px; animation: slideUp 0.4s ease backwards; }
+.op-section:nth-child(1) { animation-delay: 0.05s; }
+.op-section:nth-child(2) { animation-delay: 0.12s; }
+.op-section:nth-child(3) { animation-delay: 0.19s; }
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.op-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 6px 10px;
+  border-bottom: 1px solid var(--border-soft);
+  margin-bottom: 12px;
+}
+.op-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.op-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+  letter-spacing: 1.5px;
+  flex: 1;
+}
+.op-count {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  font-weight: 700;
+  background: var(--bg-card-alt);
+  padding: 3px 8px;
+  border-radius: 8px;
+}
+
+/* MODE GROUP */
+.mode-group { margin-bottom: 14px; }
+.mode-group-label { padding: 0 4px; margin-bottom: 6px; }
+
+/* CONFLUENCE CARD */
+.conf-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 14px;
+  padding: 13px 14px 11px;
+  margin-bottom: 8px;
+  box-shadow: var(--shadow-card);
+  position: relative;
+  overflow: hidden;
+}
+.conf-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: var(--heat-color, var(--heat-warm));
+}
+.conf-card[data-heat="2"] { --heat-color: var(--heat-warm); }
+.conf-card[data-heat="3"] { --heat-color: var(--heat-hot); }
+.conf-card[data-heat="4"] { --heat-color: var(--heat-blazing);
+  background: linear-gradient(180deg, var(--bg-card) 0%, #fff5f0 100%); }
+.conf-card[data-heat="5"] { --heat-color: var(--heat-legendary);
+  background: linear-gradient(180deg, var(--bg-card) 0%, #f9f5ff 100%); }
+
+.conf-top { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.conf-number {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  flex: 1;
+}
+.heat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 13px;
+  color: white;
+  background: var(--heat-color);
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+}
+.heat-badge .flame { font-size: 10px; }
+
+.conf-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+}
+.mode-chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--chip-bg);
+  color: var(--chip-fg);
+  letter-spacing: 0.4px;
+}
+.mode-chip[data-mode="DODGE"] { --chip-bg: #fef2f2; --chip-fg: var(--mode-dodge); }
+.mode-chip[data-mode="ORACLE"] { --chip-bg: #f5f3ff; --chip-fg: var(--mode-oracle); }
+.mode-chip[data-mode="PREDICT"] { --chip-bg: #ecfdf5; --chip-fg: var(--mode-predict); }
+.mode-chip[data-mode="SNIPER"] { --chip-bg: #ecfeff; --chip-fg: var(--mode-sniper); }
+.mode-chip[data-mode="FUSION"] { --chip-bg: #fff7ed; --chip-fg: var(--mode-fusion); }
+.mode-chip[data-mode="HOTHAND"] { --chip-bg: #fdf2f8; --chip-fg: var(--mode-hothand); }
+
+.timestamp-list {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-left: auto;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* EMPTY STATE */
+.empty-state { text-align: center; padding: 50px 20px; color: var(--text-muted); }
+.empty-state .empty-icon { font-size: 44px; opacity: 0.4; margin-bottom: 12px; }
+.empty-state h3 { font-size: 15px; color: var(--text-secondary); margin-bottom: 6px; font-weight: 700; }
+.empty-state p { font-size: 12px; line-height: 1.6; max-width: 280px; margin: 0 auto; }
+
+/* MOCK NAV */
+.nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: rgba(255,253,247,0.96);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--border-soft);
+  display: flex;
+  justify-content: space-around;
+  padding: 8px 4px;
+  z-index: 100;
+}
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 4px;
+  font-size: 9px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.nav-item.active { color: var(--op-toto); }
+.nav-item .nav-icon { font-size: 17px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="tab-header">
+    <div class="tab-title">
+      <span class="icon">🧲</span>
+      <span>CONFLUENCE</span>
+    </div>
+    <div class="tab-subtitle" id="subtitle">Numbers surfacing across multiple generations · Last 24 hours</div>
+  </div>
+
+  <div class="stats-banner" id="stats"></div>
+
+  <div class="mode-toggle">
+    <button class="active" data-mode="same">Same Mode</button>
+    <button data-mode="cross">Cross-Mode</button>
+  </div>
+
+  <div id="results"></div>
+</div>
+
+<nav class="nav">
+  <div class="nav-item"><span class="nav-icon">🎯</span><span>Predict</span></div>
+  <div class="nav-item"><span class="nav-icon">📜</span><span>History</span></div>
+  <div class="nav-item"><span class="nav-icon">📡</span><span>Live</span></div>
+  <div class="nav-item"><span class="nav-icon">🔮</span><span>Oracle</span></div>
+  <div class="nav-item active"><span class="nav-icon">🧲</span><span>Confluence</span></div>
+  <div class="nav-item"><span class="nav-icon">📊</span><span>Dash</span></div>
+  <div class="nav-item"><span class="nav-icon">💰</span><span>P&L</span></div>
+</nav>
+
+<script>
+/* ============================================================
+   BEAST MODE 4D — CONFLUENCE DETECTOR v1.0
+   Detects numbers appearing across multiple generations
+   Window: last 24h | Per-operator | Same-mode + Cross-mode toggle
+   ============================================================ */
+
+const HOUR = 3600 * 1000;
+
+// ============== MOCK DATA — REPLACE WITH localStorage READ ==============
+// Real entries from your screenshot (Sun 2 May 2026)
+const mockEntries = [
+  { id:'1', operator:'TOTO', mode:'DODGE', numbers:['0284','3884','3204','3287','0280','9880'], timestamp:'2026-05-02T22:54:00+08:00' },
+  { id:'2', operator:'TOTO', mode:'DODGE', numbers:['0244','9844','9204','9247','5744','0844'], timestamp:'2026-05-02T22:56:00+08:00' },
+  { id:'3', operator:'TOTO', mode:'DODGE', numbers:['0714','3814','3704','3717','0711','9811'], timestamp:'2026-05-02T23:08:00+08:00' },
+  { id:'4', operator:'TOTO', mode:'DODGE', numbers:['0244','9844','9204','9247','0715','2815'], timestamp:'2026-05-02T23:12:00+08:00' },
+  { id:'5', operator:'TOTO', mode:'DODGE', numbers:['0244','9844','9204','9247','0215','9815'], timestamp:'2026-05-02T23:17:00+08:00' },
+  { id:'6', operator:'TOTO', mode:'DODGE', numbers:['5744','0844','0704','0747','5715','5747'], timestamp:'2026-05-02T23:19:00+08:00' },
+  // Cross-mode entries (Oracle, Predict)
+  { id:'7', operator:'TOTO', mode:'ORACLE',  numbers:['0244','7283','9247','5168','3402','8819'], timestamp:'2026-05-03T01:15:00+08:00' },
+  { id:'8', operator:'TOTO', mode:'PREDICT', numbers:['0244','3717','5744','2018','6391','9844'], timestamp:'2026-05-03T03:42:00+08:00' },
+  // MAGNUM
+  { id:'9',  operator:'MAGNUM', mode:'DODGE',  numbers:['4148','5721','6892','3047','8814','2096'], timestamp:'2026-05-02T21:30:00+08:00' },
+  { id:'10', operator:'MAGNUM', mode:'DODGE',  numbers:['4148','5721','5921','5096','8814','3402'], timestamp:'2026-05-02T22:00:00+08:00' },
+  { id:'11', operator:'MAGNUM', mode:'ORACLE', numbers:['4148','9912','5096','7281','6634','5824'], timestamp:'2026-05-03T00:10:00+08:00' },
+  // DAMACAI
+  { id:'12', operator:'DAMACAI', mode:'DODGE',   numbers:['7193','2658','8042','5391','9117','4762'], timestamp:'2026-05-02T20:00:00+08:00' },
+  { id:'13', operator:'DAMACAI', mode:'PREDICT', numbers:['7193','5391','3284','6019','2750','8814'], timestamp:'2026-05-03T02:00:00+08:00' },
+];
+// Use a fixed "now" matching the screenshot for consistent demo output
+const nowTs = new Date('2026-05-03T06:40:00+08:00').getTime();
+
+// ============== DETECTOR LOGIC ==============
+function detectConfluence(entries, opts = {}) {
+  const { windowHours = 24, crossMode = false, now = Date.now() } = opts;
+  const cutoff = now - (windowHours * HOUR);
+  const inWindow = entries.filter(e => new Date(e.timestamp).getTime() >= cutoff);
+
+  // Group by operator (always per-op — different result spaces)
+  const byOp = {};
+  for (const e of inWindow) (byOp[e.operator] = byOp[e.operator] || []).push(e);
+
+  const result = {};
+  for (const [op, opEntries] of Object.entries(byOp)) {
+    if (crossMode) {
+      const counts = countNumbers(opEntries);
+      if (counts.length) result[op] = { __combined: counts };
+    } else {
+      const byMode = {};
+      for (const e of opEntries) (byMode[e.mode] = byMode[e.mode] || []).push(e);
+      const opGroups = {};
+      for (const [mode, modeEntries] of Object.entries(byMode)) {
+        const counts = countNumbers(modeEntries);
+        if (counts.length) opGroups[mode] = counts;
+      }
+      if (Object.keys(opGroups).length) result[op] = opGroups;
+    }
+  }
+  return result;
+}
+
+function countNumbers(entries) {
+  const counts = new Map();
+  for (const e of entries) {
+    for (const num of e.numbers) {
+      if (!counts.has(num)) counts.set(num, { count: 0, occurrences: [] });
+      const r = counts.get(num);
+      r.count++;
+      r.occurrences.push({ mode: e.mode, timestamp: e.timestamp, entryId: e.id });
+    }
+  }
+  return [...counts.entries()]
+    .filter(([_, d]) => d.count >= 2)
+    .map(([num, d]) => ({ number: num, ...d }))
+    .sort((a, b) => b.count - a.count || a.number.localeCompare(b.number));
+}
+
+// ============== RENDERING ==============
+const OP_COLORS = { TOTO: 'var(--op-toto)', MAGNUM: 'var(--op-magnum)', DAMACAI: 'var(--op-damacai)' };
+const OP_ORDER = ['TOTO', 'MAGNUM', 'DAMACAI'];
+
+const heatTier = c => c >= 5 ? 5 : c >= 4 ? 4 : c >= 3 ? 3 : 2;
+const fmtTime = ts => new Date(ts).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit', hour12:false });
+
+function renderCard(item) {
+  const tier = heatTier(item.count);
+  const modes = [...new Set(item.occurrences.map(o => o.mode))];
+  const times = item.occurrences.map(o => fmtTime(o.timestamp)).join(' · ');
+  const flame = '🔥'.repeat(Math.min(tier, 3));
+  return `
+    <div class="conf-card" data-heat="${tier}">
+      <div class="conf-top">
+        <div class="conf-number">${item.number}</div>
+        <div class="heat-badge"><span class="flame">${flame}</span>${item.count}×</div>
+      </div>
+      <div class="conf-meta">
+        ${modes.map(m => `<span class="mode-chip" data-mode="${m}">${m}</span>`).join('')}
+        <span class="timestamp-list">${times}</span>
+      </div>
+    </div>`;
+}
+
+function renderResults(crossMode) {
+  const data = detectConfluence(mockEntries, { crossMode, now: nowTs, windowHours: 24 });
+  const container = document.getElementById('results');
+
+  let totalNumbers = 0, maxHeat = 0, opCount = 0;
+  let html = '';
+
+  for (const op of OP_ORDER) {
+    if (!data[op]) continue;
+    const groups = data[op];
+    const opTotal = Object.values(groups).reduce((s, arr) => s + arr.length, 0);
+    if (!opTotal) continue;
+    opCount++;
+    totalNumbers += opTotal;
+    Object.values(groups).forEach(arr => arr.forEach(it => { if (it.count > maxHeat) maxHeat = it.count; }));
+
+    html += `
+      <div class="op-section">
+        <div class="op-header">
+          <div class="op-dot" style="background:${OP_COLORS[op]}"></div>
+          <div class="op-name">${op}</div>
+          <div class="op-count">${opTotal} number${opTotal !== 1 ? 's' : ''}</div>
+        </div>`;
+
+    if (crossMode) {
+      html += (groups.__combined || []).map(renderCard).join('');
+    } else {
+      for (const [mode, items] of Object.entries(groups)) {
+        if (!items.length) continue;
+        html += `
+          <div class="mode-group">
+            <div class="mode-group-label">
+              <span class="mode-chip" data-mode="${mode}">${mode}</span>
+            </div>
+            ${items.map(renderCard).join('')}
+          </div>`;
+      }
+    }
+    html += `</div>`;
+  }
+
+  if (!html) {
+    html = `
+      <div class="empty-state">
+        <div class="empty-icon">🧲</div>
+        <h3>No confluence detected</h3>
+        <p>No numbers have repeated across generations in the last 24 hours. Generate more entries and check back.</p>
+      </div>`;
+  }
+
+  container.innerHTML = html;
+  document.getElementById('stats').innerHTML = `
+    <div class="stat-pill"><span class="stat-value">${totalNumbers}</span><span class="stat-label">Repeats</span></div>
+    <div class="stat-pill"><span class="stat-value">${maxHeat || '—'}${maxHeat ? '×' : ''}</span><span class="stat-label">Hottest</span></div>
+    <div class="stat-pill"><span class="stat-value">${opCount}</span><span class="stat-label">Ops</span></div>`;
+}
+
+// ============== INIT ==============
+renderResults(false);
+document.querySelectorAll('.mode-toggle button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-toggle button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderResults(btn.dataset.mode === 'cross');
+  });
+});
+
+// Expose for integration / testing
+window.BeastConfluence = { detectConfluence, countNumbers };
+</script>
+</body>
+</html>
