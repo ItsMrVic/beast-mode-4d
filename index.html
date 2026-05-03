@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v4.12</title>
+<title>Beast Mode 4D v4.13</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -414,7 +414,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v4.12</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v4.13</span>
       <div class="sub">AI-Powered Sniper Prediction Engine + DeepSeek AI</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
@@ -1748,6 +1748,10 @@ function renderHistory(){
     <div style="display:flex;gap:4px;margin-bottom:6px">
       <select onchange="localStorage.setItem('b4d_histFilter',this.value);render()" style="flex:1;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:5px 7px;font-size:10px;font-family:inherit">
         <option value="all"${histFilter==='all'?' selected':''}>🎯 All Operators</option>
+        <option value="REPEATS_ALL"${histFilter==='REPEATS_ALL'?' selected':''}>🧲 Repeats — Oracle + Dodge + HotHand</option>
+        <option value="REPEATS_ORACLE"${histFilter==='REPEATS_ORACLE'?' selected':''}>🧲 Repeats — Oracle Only</option>
+        <option value="REPEATS_DODGE"${histFilter==='REPEATS_DODGE'?' selected':''}>🧲 Repeats — Dodge Only</option>
+        <option value="REPEATS_HOTHAND"${histFilter==='REPEATS_HOTHAND'?' selected':''}>🧲 Repeats — HotHand Only</option>
         <option value="SNIPER"${histFilter==='SNIPER'?' selected':''}>🎯 Sniper Mode Only</option>
         <option value="ORACLE_SNIPER"${histFilter==='ORACLE_SNIPER'?' selected':''}>🎯 Oracle Sniper Only</option>
         <option value="ORACLE"${histFilter==='ORACLE'?' selected':''}>🔮 Oracle Mode Only</option>
@@ -1780,10 +1784,82 @@ function renderHistory(){
   
   // Filter entries
   let filtered=history.slice();
-  if(histFilter!=='all')filtered=filtered.filter(e=>e.operator===histFilter);
+  
+  // ===== REPEAT DETECTION (v4.13) =====
+  // When a REPEATS_* filter is active, find numbers that appeared 2+ times
+  // within the chosen mode(s) over the lookback window, then show only entries
+  // containing at least one such repeat. Numbers get highlighted in the render.
+  let repeatBanner='';
+  let repeatNumsByMode={}; // { ORACLE: Map<num,count>, DODGE: Map, HOTHAND: Map }
+  let repeatNumsAll=new Map(); // union for "All" mode
+  if(histFilter.startsWith('REPEATS_')){
+    const lookbackHrs=24; // Vic's preference: only show repeats generated in the past day
+    const cutoff=Date.now()-lookbackHrs*3600*1000;
+    const targetModes=histFilter==='REPEATS_ALL'?['ORACLE','DODGE','HOTHAND']:[histFilter.replace('REPEATS_','')];
+    
+    // Build per-mode count maps
+    targetModes.forEach(mode=>{
+      const counts=new Map();
+      history.forEach(e=>{
+        if(e.operator!==mode)return;
+        if(!e.generatedAt||new Date(e.generatedAt).getTime()<cutoff)return;
+        if(!e.predictions)return;
+        e.predictions.forEach(n=>{
+          counts.set(n,(counts.get(n)||0)+1);
+        });
+      });
+      // Keep only numbers with count >= 2
+      const repeats=new Map([...counts].filter(([n,c])=>c>=2));
+      repeatNumsByMode[mode]=repeats;
+      repeats.forEach((c,n)=>{repeatNumsAll.set(n,(repeatNumsAll.get(n)||0)+c);});
+    });
+    
+    // Filter: keep only entries from target modes, in window, containing a repeat
+    filtered=filtered.filter(e=>{
+      if(!targetModes.includes(e.operator))return false;
+      if(!e.generatedAt||new Date(e.generatedAt).getTime()<cutoff)return false;
+      if(!e.predictions)return false;
+      const repeats=repeatNumsByMode[e.operator];
+      if(!repeats||repeats.size===0)return false;
+      return e.predictions.some(n=>repeats.has(n));
+    });
+    
+    // Build banner showing repeated numbers grouped by mode
+    const modeColors={ORACLE:'#c084fc',DODGE:'#ef4444',HOTHAND:'#fb923c'};
+    const modeIcons={ORACLE:'🔮',DODGE:'🎰',HOTHAND:'🔥'};
+    let bannerSections='';
+    targetModes.forEach(mode=>{
+      const repeats=repeatNumsByMode[mode];
+      if(!repeats||repeats.size===0)return;
+      // Sort by count desc, then num asc
+      const sorted=[...repeats].sort((a,b)=>(b[1]-a[1])||a[0].localeCompare(b[0]));
+      const chips=sorted.map(([n,c])=>`<span style="display:inline-flex;align-items:center;gap:3px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;background:${modeColors[mode]}22;color:${modeColors[mode]};border:1px solid ${modeColors[mode]}55;letter-spacing:1.5px">${n}<span style="font-size:9px;font-family:inherit;background:${modeColors[mode]};color:#fff;padding:1px 5px;border-radius:8px;letter-spacing:0">×${c}</span></span>`).join(' ');
+      bannerSections+=`<div style="margin-bottom:8px">
+        <div style="font-size:9px;font-weight:800;color:${modeColors[mode]};letter-spacing:0.5px;margin-bottom:5px">${modeIcons[mode]} ${mode} · ${sorted.length} repeated number${sorted.length!==1?'s':''}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px">${chips}</div>
+      </div>`;
+    });
+    if(!bannerSections){
+      bannerSections=`<div style="font-size:11px;color:var(--dim2);text-align:center;padding:8px">No repeats found in ${targetModes.join(', ')} within the last ${lookbackHrs}h</div>`;
+    }
+    repeatBanner=`<div style="background:var(--bg3);border:1px solid var(--border);border-left:4px solid #f59e0b;border-radius:10px;padding:10px 12px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+        <span style="font-size:14px">🧲</span>
+        <span style="font-size:11px;font-weight:800;letter-spacing:0.5px;color:var(--text)">REPEATED NUMBERS</span>
+        <span style="font-size:9px;color:var(--dim2);margin-left:auto">last ${lookbackHrs}h</span>
+      </div>
+      ${bannerSections}
+    </div>`;
+  }
+  // ===== END REPEAT DETECTION =====
+  
+  if(histFilter!=='all'&&!histFilter.startsWith('REPEATS_'))filtered=filtered.filter(e=>e.operator===histFilter);
   if(histStatus==='wins')filtered=filtered.filter(e=>e.checked&&(e.hits?.length>0||e.permHits>0));
   else if(histStatus==='checked')filtered=filtered.filter(e=>e.checked);
   else if(histStatus==='pending')filtered=filtered.filter(e=>!e.checked);
+  
+  // Inject banner before the entries
+  if(repeatBanner)h+=repeatBanner;
   
   if(filtered.length===0){
     h+=`<div style="text-align:center;padding:30px 0;color:var(--dim3);font-size:11px">No entries match your filters</div>`;
@@ -1894,6 +1970,11 @@ function renderHistory(){
             const isHit=entry.checked&&entry.hits?.includes(n);
             const isPermWin=entry.checked&&permWinNums.has(n);
             const cls=entry.checked?(isHit?'hit':isPermWin?'perm-hit':'miss'):'';
+            // v4.13: highlight repeated numbers when a REPEATS_* filter is active
+            const repeatCount=histFilter.startsWith('REPEATS_')&&repeatNumsByMode[entry.operator]?repeatNumsByMode[entry.operator].get(n):null;
+            if(repeatCount&&repeatCount>=2){
+              return`<span class="hist-num ${cls}" style="background:linear-gradient(135deg,rgba(245,158,11,0.18),rgba(245,158,11,0.08));border:2px solid #f59e0b;color:#f59e0b;box-shadow:0 0 8px rgba(245,158,11,0.3);position:relative">${n}<span style="position:absolute;top:-7px;right:-7px;background:#f59e0b;color:#fff;font-size:8px;font-weight:800;padding:1px 5px;border-radius:8px;font-family:inherit;letter-spacing:0">×${repeatCount}</span></span>`;
+            }
             return`<span class="hist-num ${cls}">${n}</span>`;
           }).join('')}</div>
           
