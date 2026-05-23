@@ -4024,31 +4024,76 @@ function computeFusionPicks(){
   return fusion;
 }
 
+// ============================================================
+// AUTHORITATIVE HIT-STATS RECOMPUTE (v4.13)
+// Derives dashboard hit tiers from history every render, correct regardless
+// of which engine produced the entry. Classifies straight hits (entry.hits)
+// and perm wins (entry.permWinDetails) by prize tier vs the correct operator.
+// ============================================================
+function recomputeHitStats(){
+  const r={top3Straight:0,top3Perm:0,top3Total:0,specialStraight:0,specialPerm:0,specialTotal:0,consolationStraight:0,consolationPerm:0,consolationTotal:0,straightTotal:0,permTotal:0};
+  const drawIndex={};
+  operators.forEach(op=>{drawIndex[op.name]={};op.draws.forEach(d=>{drawIndex[op.name][d.date]={t3:d.top3||[],sp:d.special||[],cn:d.consolation||[]};});});
+  history.forEach(e=>{
+    if(!e.checked)return;
+    const date=e.date,eng=e.operator,sub=e.subOperator;
+    let targets=[];
+    if(eng==='SNIPER'||eng==='ORACLE_SNIPER')targets=['MAGNUM','TOTO','DAMACAI'];
+    else if(sub&&drawIndex[sub])targets=[sub];
+    else if(drawIndex[eng])targets=[eng];
+    else return;
+    let t3=[],sp=[],cn=[];
+    targets.forEach(t=>{const d=drawIndex[t]&&drawIndex[t][date];if(d){t3=t3.concat(d.t3);sp=sp.concat(d.sp);cn=cn.concat(d.cn);}});
+    if(!t3.length&&!sp.length&&!cn.length)return;
+    (Array.isArray(e.hits)?e.hits:[]).forEach(n=>{
+      if(t3.includes(n)){r.top3Straight++;r.straightTotal++;}
+      else if(sp.includes(n)){r.specialStraight++;r.straightTotal++;}
+      else if(cn.includes(n)){r.consolationStraight++;r.straightTotal++;}
+    });
+    (Array.isArray(e.permWinDetails)?e.permWinDetails:[]).forEach(pd=>{
+      r.permTotal++;
+      if(pd.prize==='TOP3')r.top3Perm++;
+      else if(pd.prize==='SPECIAL')r.specialPerm++;
+      else if(pd.prize==='CONSOLATION')r.consolationPerm++;
+    });
+  });
+  r.top3Total=r.top3Straight+r.top3Perm;r.specialTotal=r.specialStraight+r.specialPerm;r.consolationTotal=r.consolationStraight+r.consolationPerm;
+  return r;
+}
+
 function renderDashboard(){
   const pg=document.getElementById('pgDashboard');
   const totalNums=operators.reduce((a,o)=>a+o.draws.length,0);
   
   let h=`<div class="section-title">📊 Performance Dashboard</div>`;
-  const permWins=stats.permWins||0;
-  const totalWins=stats.anyHits+permWins;
-  // Win rate = % of checks that had at least one hit (straight or perm)
-  // Count from history how many checks had any win
-  const winsFromChecks=(stats.anyHits||0)+(stats.drawsWithPermWin||0);
-  // Cap at 100% — can't have more draws with wins than total draws
-  const winRate=stats.totalChecks>0?Math.min(100,Math.round((winsFromChecks/stats.totalChecks)*100)):0;
+  // v4.13 FIX: recompute hit tiers from history (recomputeHitStats). Old stats.top3Hits
+  // only counted operator===opName entries, missing engine hits; permWins double-counted.
+  const liveStats=recomputeHitStats();
+  let drawsAnyWin=0;
+  history.forEach(e=>{
+    if(!e.checked)return;
+    const sw=Array.isArray(e.hits)?e.hits.length:0;
+    const pw=Array.isArray(e.permWinDetails)?e.permWinDetails.length:0;
+    if(sw>0||pw>0)drawsAnyWin++;
+  });
+  const winRate=stats.totalChecks>0?Math.min(100,Math.round((drawsAnyWin/Math.max(stats.totalChecks,1))*100)):0;
+  let straightDraws=0;history.forEach(e=>{if(e.checked&&Array.isArray(e.hits)&&e.hits.length>0)straightDraws++;});
   
   h+=`<div class="stat-grid">
     <div class="stat-card"><div class="num" style="color:var(--green)">${winRate}%</div><div class="lbl">Win Rate</div></div>
     <div class="stat-card"><div class="num">${stats.totalChecks}</div><div class="lbl">Draws Checked</div></div>
-    <div class="stat-card"><div class="num" style="color:#ffcc00">${stats.top3Hits}</div><div class="lbl">Top 3 Hits</div></div>
-    <div class="stat-card"><div class="num" style="color:var(--amber)">${stats.specialHits}</div><div class="lbl">Special Hits</div></div>
-    <div class="stat-card"><div class="num">${stats.consolationHits}</div><div class="lbl">Consolation Hits</div></div>
-    <div class="stat-card"><div class="num" style="color:var(--green)">${stats.anyHits}</div><div class="lbl">Straight Wins</div></div>
-    <div class="stat-card"><div class="num" style="color:#f59200">${permWins}</div><div class="lbl">Perm Wins</div></div>
-    <div class="stat-card"><div class="num" style="color:#a78bfa">${totalWins}</div><div class="lbl">Total All Wins</div></div>
+    <div class="stat-card"><div class="num" style="color:#ffcc00">${liveStats.top3Total}</div><div class="lbl">Top 3 Hits</div></div>
+    <div class="stat-card"><div class="num" style="color:var(--amber)">${liveStats.specialTotal}</div><div class="lbl">Special Hits</div></div>
+    <div class="stat-card"><div class="num">${liveStats.consolationTotal}</div><div class="lbl">Consolation Hits</div></div>
+    <div class="stat-card"><div class="num" style="color:var(--green)">${straightDraws}</div><div class="lbl">Straight Wins</div></div>
+    <div class="stat-card"><div class="num" style="color:#f59200">${liveStats.permTotal}</div><div class="lbl">Perm Wins</div></div>
+    <div class="stat-card"><div class="num" style="color:#a78bfa">${liveStats.straightTotal+liveStats.permTotal}</div><div class="lbl">Total All Wins</div></div>
     <div class="stat-card"><div class="num">${history.length}</div><div class="lbl">Predictions Made</div></div>
     <div class="stat-card"><div class="num">${totalNums}</div><div class="lbl">Draws in Database</div></div>
   </div>`;
+  if(liveStats.top3Total>0||liveStats.permTotal>0){
+    h+=`<div style="font-size:9px;color:var(--dim2);margin:-4px 4px 12px;padding:6px 8px;background:var(--bg3);border-radius:6px;border-left:2px solid #ffcc00">🎯 <b style="color:#ffcc00">Top 3:</b> ${liveStats.top3Straight} straight + ${liveStats.top3Perm} perm = ${liveStats.top3Total}. Special ${liveStats.specialStraight}+${liveStats.specialPerm}, Consol ${liveStats.consolationStraight}+${liveStats.consolationPerm} (straight+perm).</div>`;
+  }
   
   // BACKTEST ENGINE
   h+=`<div class="section-title">🔬 Backtest Engine</div>
@@ -4668,6 +4713,7 @@ function renderData(){
   
   h+=`<div class="section-title" style="color:var(--toto)">⚠️ Danger Zone</div>
   <button class="btn btn-outline" onclick="var r=deduplicateAll();if(!r)toast('✅ No duplicates found')" style="width:100%;margin-bottom:8px;border-color:#333366;color:#8888cc">🧹 Scan & Remove Duplicates</button>
+  <button class="btn btn-outline" onclick="if(confirm('Rebuild stat counters from your actual prediction records?\n\nThis wipes the old inflated Perm Wins / Total Wins and replaces them with correct figures. Safe to re-run anytime.'))resetStatsCounters()" style="width:100%;margin-bottom:8px;border-color:#7c3aed;color:#a78bfa">🔧 Rebuild Stat Counters (fix inflated wins)</button>
   <button class="btn btn-outline" onclick="if(confirm('Reset module weights to default?')){moduleWeights=JSON.parse(JSON.stringify(DEFAULT_WEIGHTS));save(KEYS.weights,moduleWeights);toast('Weights reset');render()}" style="width:100%;margin-bottom:8px;border-color:#441111;color:#884444">🔄 Reset Module Weights</button>
   <button class="btn btn-outline" onclick="if(confirm('Delete ALL data including draws, predictions, and stats? This cannot be undone.')){localStorage.clear();location.reload()}" style="width:100%;border-color:#441111;color:#884444">🗑️ Factory Reset</button>`;
   
@@ -4959,6 +5005,29 @@ function deduplicateAll(){
   });
   if(removed>0){saveAll();toast(`🧹 Removed ${removed} duplicate(s)`);render();}
   return removed;
+}
+
+// ============================================================
+// RESET / REBUILD STAT COUNTERS (v4.13)
+// Wipes old inflated stored counters, rebuilds from authoritative per-entry
+// records so stats.* matches the live dashboard recompute everywhere.
+// ============================================================
+function resetStatsCounters(){
+  const live=recomputeHitStats();
+  let anyHits=0,drawsWithPermWin=0;
+  history.forEach(e=>{
+    if(!e.checked)return;
+    const straight=Array.isArray(e.hits)?e.hits.length:0;
+    const perm=Array.isArray(e.permWinDetails)?e.permWinDetails.length:0;
+    if(straight>0)anyHits++;else if(perm>0)drawsWithPermWin++;
+  });
+  const oldPerm=stats.permWins||0,oldTotal=(stats.anyHits||0)+oldPerm;
+  stats.top3Hits=live.top3Total;stats.specialHits=live.specialTotal;stats.consolationHits=live.consolationTotal;
+  stats.anyHits=anyHits;stats.permWins=live.permTotal;stats.drawsWithPermWin=drawsWithPermWin;
+  saveAll();
+  const newTotal=anyHits+live.permTotal;
+  alert(`✅ STAT COUNTERS REBUILT\n${'='.repeat(34)}\n\n  Top 3 Hits:    ${live.top3Total}  (${live.top3Straight} straight + ${live.top3Perm} perm)\n  Special Hits:  ${live.specialTotal}  (${live.specialStraight}+${live.specialPerm})\n  Consol. Hits:  ${live.consolationTotal}  (${live.consolationStraight}+${live.consolationPerm})\n  Straight Wins: ${anyHits}\n  Perm Wins:     ${live.permTotal}   (was ${oldPerm})\n  Total Wins:    ${newTotal}   (was ${oldTotal})\n\nStored counters now match the dashboard.`);
+  render();
 }
 
 function saveDraw(){
@@ -5594,9 +5663,11 @@ async function askBeastAI(){
     });
   }
   
-  // Performance stats
-  const permWins=stats.permWins||0;
-  const totalWins=stats.anyHits+permWins;
+  // Performance stats — authoritative recompute, not stale counters
+  const _live=recomputeHitStats();
+  const permWins=_live.permTotal;
+  let _ah=0;history.forEach(e=>{if(e.checked&&Array.isArray(e.hits)&&e.hits.length>0)_ah++;});
+  const totalWins=_ah+permWins;
   
   // Recent draws
   let recentDraws='';
@@ -5613,7 +5684,7 @@ CURRENT APP DATA:
 - Target day: ${dayFull}
 - Budget: RM${budget}
 - Database: ${operators.map(o=>`${o.name}: ${o.draws.length} draws`).join(', ')}
-- Performance: ${stats.totalChecks} checks, ${stats.anyHits} straight wins, ${permWins} perm wins, ${totalWins} total wins
+- Performance: ${stats.totalChecks} checks, ${_ah} straight wins, ${permWins} perm wins, ${totalWins} total wins
 - Win rate: ${stats.totalChecks>0?Math.round(totalWins/stats.totalChecks*100):0}%
 ${predContext?`\nCURRENT PREDICTIONS:${predContext}`:''}
 ${recentDraws?`\nRECENT DRAWS:${recentDraws}`:''}
@@ -5714,6 +5785,9 @@ async function askBeastAI(){
   const tDay=selectedDay||'Sat';
   const dayNames={Sat:'Saturday',Sun:'Sunday',Wed:'Wednesday',Tue:'Tuesday'};
   
+  // v4.13: authoritative recompute
+  const _ls=recomputeHitStats();let _ah2=0;history.forEach(e=>{if(e.checked&&Array.isArray(e.hits)&&e.hits.length>0)_ah2++;});
+  const _pw2=_ls.permTotal,_tw2=_ah2+_pw2;
   let context=`You are Beast AI, an intelligent 4D lottery advisor inside the Beast Mode 4D prediction app. You speak like Jarvis - professional, confident, and helpful. You analyze Malaysian 4D lottery data (Magnum, Sports Toto, Damacai).
 
 CURRENT APP STATE:
@@ -5721,8 +5795,8 @@ CURRENT APP STATE:
 - User budget: RM${budget}
 - Database: ${operators.map(o=>`${o.name}: ${o.draws.length} draws`).join(', ')}
 - Total predictions made: ${history.length}
-- Performance: ${stats.totalChecks} checks, ${stats.anyHits} straight wins, ${stats.permWins||0} perm wins
-- Win rate: ${stats.totalChecks>0?Math.round((stats.anyHits+(stats.permWins||0))/stats.totalChecks*100):0}%\n`;
+- Performance: ${stats.totalChecks} checks, ${_ah2} straight wins, ${_pw2} perm wins
+- Win rate: ${stats.totalChecks>0?Math.round(_tw2/stats.totalChecks*100):0}%\n`;
   
   // Add latest predictions if available
   if(lastResults){
