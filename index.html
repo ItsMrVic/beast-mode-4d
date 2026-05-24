@@ -602,7 +602,7 @@ let addOpIdx=0;
 // ============================================================
 // DATA STORE (localStorage)
 // ============================================================
-const KEYS={ops:'b4d_ops',hist:'b4d_hist',weights:'b4d_weights',stats:'b4d_stats',toggles:'b4d_toggles',togglesPerOp:'b4d_togglesPerOp'};
+const KEYS={ops:'b4d_ops',hist:'b4d_hist',weights:'b4d_weights',stats:'b4d_stats',toggles:'b4d_toggles',togglesPerOp:'b4d_togglesPerOp',winsLog:'b4d_winsLog'};
 
 const DEFAULT_OPS=[
 {name:"MAGNUM",color:"#D4A017",draws:[
@@ -669,6 +669,8 @@ let moduleWeights=load(KEYS.weights,DEFAULT_WEIGHTS);
 let moduleToggles=load(KEYS.toggles,DEFAULT_TOGGLES);
 let moduleTogglesPerOp=load(KEYS.togglesPerOp,{});
 let stats=load(KEYS.stats,{totalPredictions:0,totalChecks:0,top3Hits:0,specialHits:0,consolationHits:0,anyHits:0,checksLog:[]});
+// v4.13: permanent wins log — survives clearCheckedHistory so wins are never lost
+let winsLog=load(KEYS.winsLog,[]);
 
 // Per-operator toggles helpers
 function getToggles(opName){
@@ -696,7 +698,7 @@ function withSeed(seed,fn){
   try{return fn();}finally{Math.random=orig;}
 }
 
-function saveAll(){save(KEYS.ops,operators);save(KEYS.hist,history);save(KEYS.weights,moduleWeights);save(KEYS.stats,stats);save(KEYS.toggles,moduleToggles);save(KEYS.togglesPerOp,moduleTogglesPerOp);}
+function saveAll(){save(KEYS.ops,operators);save(KEYS.hist,history);save(KEYS.weights,moduleWeights);save(KEYS.stats,stats);save(KEYS.toggles,moduleToggles);save(KEYS.togglesPerOp,moduleTogglesPerOp);save(KEYS.winsLog,winsLog);}
 
 // ============================================================
 // ANALYSIS ENGINE (14 modules + elimination + streak)
@@ -1392,6 +1394,9 @@ let lastResults=null;
 let selectedDay=localStorage.getItem('b4d_targetDay')||'Sat';
 
 function render(){
+  // v4.13: continuously harvest wins into the permanent log so a later
+  // "Clear Checked History" can never erase a win from the stats.
+  try{harvestWins();}catch(e){}
   if(activeNav==='Predict')renderPredict();
   else if(activeNav==='History')renderHistory();
   else if(activeNav==='Live')renderLive();
@@ -2187,10 +2192,11 @@ function collapseAllHistory(){
 function clearCheckedHistory(){
   const checkedCount=history.filter(e=>e.checked).length;
   if(checkedCount===0){toast('No checked entries to clear');return;}
-  if(!confirm(`Delete ${checkedCount} checked history entries?\n\n• Pending entries will be kept\n• Stats & win counts are preserved\n• Cannot be undone`))return;
+  if(!confirm(`Delete ${checkedCount} checked history entries?\n\n• Pending entries will be kept\n• Wins are saved permanently to the Wins Log first\n• Cannot be undone`))return;
+  const harvested=harvestWins(); // capture every win permanently BEFORE deleting
   history=history.filter(e=>!e.checked);
   saveAll();render();
-  toast(`🗑️ ${checkedCount} checked entries removed`);
+  toast(`🗑️ ${checkedCount} cleared · ${harvested} win(s) saved to permanent log`);
 }
 
 // ============================================================
@@ -4025,6 +4031,50 @@ function computeFusionPicks(){
 }
 
 // ============================================================
+// PERMANENT WINS LOG (v4.13)
+// Harvests every win from history into a permanent log keyed by a unique
+// signature, so wins survive clearCheckedHistory and history rotation.
+// Each win record: {date, engine, op, num, prize, kind:'straight'|'perm', predicted}
+// ============================================================
+function harvestWins(){
+  const drawIndex={};
+  operators.forEach(op=>{drawIndex[op.name]={};op.draws.forEach(d=>{drawIndex[op.name][d.date]={t3:d.top3||[],sp:d.special||[],cn:d.consolation||[]};});});
+  const existing=new Set(winsLog.map(w=>w.sig));
+  let added=0;
+  history.forEach(e=>{
+    if(!e.checked)return;
+    const date=e.date,eng=e.operator,sub=e.subOperator;
+    let targets=[];
+    if(eng==='SNIPER'||eng==='ORACLE_SNIPER')targets=['MAGNUM','TOTO','DAMACAI'];
+    else if(sub&&drawIndex[sub])targets=[sub];
+    else if(drawIndex[eng])targets=[eng];
+    else return;
+    targets.forEach(t=>{
+      const d=drawIndex[t]&&drawIndex[t][date];
+      if(!d)return;
+      const tierOf=n=>d.t3.includes(n)?'TOP3':d.sp.includes(n)?'SPECIAL':d.cn.includes(n)?'CONSOLATION':null;
+      // Signature is keyed on the PRIZE EVENT (date|operator|number|prize) — NOT the engine —
+      // so the same actual prize is counted once even if multiple engines predicted it.
+      // Engines that caught it are recorded in the `engines` array for per-engine analysis.
+      const logWin=(num,prize,kind,predicted)=>{
+        const sig=`${date}|${t}|${num}|${prize}`;
+        const existingWin=winsLog.find(w=>w.sig===sig);
+        if(existingWin){
+          if(!existingWin.engines.includes(eng))existingWin.engines.push(eng);
+          if(kind==='straight')existingWin.kind='straight'; // straight beats perm for display
+          return;
+        }
+        if(!existing.has(sig)){existing.add(sig);winsLog.push({sig,date,op:t,num,prize,kind,engines:[eng],predicted});added++;}
+      };
+      (Array.isArray(e.hits)?e.hits:[]).forEach(n=>{const tr=tierOf(n);if(tr)logWin(n,tr,'straight',n);});
+      (Array.isArray(e.permWinDetails)?e.permWinDetails:[]).forEach(pd=>logWin(pd.won,pd.prize,'perm',pd.predicted));
+    });
+  });
+  if(added>0)save(KEYS.winsLog,winsLog);
+  return added;
+}
+
+// ============================================================
 // AUTHORITATIVE HIT-STATS RECOMPUTE (v4.13)
 // Derives dashboard hit tiers from history every render, correct regardless
 // of which engine produced the entry. Classifies straight hits (entry.hits)
@@ -4058,7 +4108,66 @@ function recomputeHitStats(){
     });
   });
   r.top3Total=r.top3Straight+r.top3Perm;r.specialTotal=r.specialStraight+r.specialPerm;r.consolationTotal=r.consolationStraight+r.consolationPerm;
-  return r;
+  
+  // v4.13: merge in permanent wins-log entries whose prize event isn't already
+  // counted from live history. Signature = date|op|num|prize (engine-independent),
+  // so a prize caught by multiple engines counts once. Matches harvestWins().
+  const counted=new Set();
+  history.forEach(e=>{
+    if(!e.checked)return;
+    const date=e.date,eng=e.operator,sub=e.subOperator;
+    let targets=[];
+    if(eng==='SNIPER'||eng==='ORACLE_SNIPER')targets=['MAGNUM','TOTO','DAMACAI'];
+    else if(sub&&drawIndex[sub])targets=[sub];
+    else if(drawIndex[eng])targets=[eng];
+    targets.forEach(t=>{
+      const d=drawIndex[t]&&drawIndex[t][date];if(!d)return;
+      (Array.isArray(e.hits)?e.hits:[]).forEach(n=>{
+        const tier=d.t3.includes(n)?'TOP3':d.sp.includes(n)?'SPECIAL':d.cn.includes(n)?'CONSOLATION':null;
+        if(tier)counted.add(`${date}|${t}|${n}|${tier}`);
+      });
+      (Array.isArray(e.permWinDetails)?e.permWinDetails:[]).forEach(pd=>counted.add(`${date}|${t}|${pd.won}|${pd.prize}`));
+    });
+  });
+  // But live history above may double-count a prize caught by multiple engines.
+  // Rebuild straight/perm tier totals purely from a deduped union of live+log prize events.
+  const prizeEvents=new Map(); // sig -> {prize, kind}
+  history.forEach(e=>{
+    if(!e.checked)return;
+    const date=e.date,eng=e.operator,sub=e.subOperator;
+    let targets=[];
+    if(eng==='SNIPER'||eng==='ORACLE_SNIPER')targets=['MAGNUM','TOTO','DAMACAI'];
+    else if(sub&&drawIndex[sub])targets=[sub];
+    else if(drawIndex[eng])targets=[eng];
+    targets.forEach(t=>{
+      const d=drawIndex[t]&&drawIndex[t][date];if(!d)return;
+      (Array.isArray(e.hits)?e.hits:[]).forEach(n=>{
+        const tier=d.t3.includes(n)?'TOP3':d.sp.includes(n)?'SPECIAL':d.cn.includes(n)?'CONSOLATION':null;
+        if(!tier)return;
+        const sig=`${date}|${t}|${n}|${tier}`;
+        prizeEvents.set(sig,{prize:tier,kind:'straight'}); // straight wins precedence
+      });
+      (Array.isArray(e.permWinDetails)?e.permWinDetails:[]).forEach(pd=>{
+        const sig=`${date}|${t}|${pd.won}|${pd.prize}`;
+        if(!prizeEvents.has(sig))prizeEvents.set(sig,{prize:pd.prize,kind:'perm'});
+      });
+    });
+  });
+  // Add log-only prize events
+  (Array.isArray(winsLog)?winsLog:[]).forEach(w=>{
+    if(!prizeEvents.has(w.sig))prizeEvents.set(w.sig,{prize:w.prize,kind:w.kind});
+  });
+  // Final tally from deduped prize events
+  const f={top3Straight:0,top3Perm:0,specialStraight:0,specialPerm:0,consolationStraight:0,consolationPerm:0,straightTotal:0,permTotal:0};
+  prizeEvents.forEach(v=>{
+    const isStraight=v.kind==='straight';
+    if(isStraight)f.straightTotal++;else f.permTotal++;
+    if(v.prize==='TOP3'){isStraight?f.top3Straight++:f.top3Perm++;}
+    else if(v.prize==='SPECIAL'){isStraight?f.specialStraight++:f.specialPerm++;}
+    else if(v.prize==='CONSOLATION'){isStraight?f.consolationStraight++:f.consolationPerm++;}
+  });
+  f.top3Total=f.top3Straight+f.top3Perm;f.specialTotal=f.specialStraight+f.specialPerm;f.consolationTotal=f.consolationStraight+f.consolationPerm;
+  return f;
 }
 
 function renderDashboard(){
@@ -5502,7 +5611,7 @@ function checkResults(){
 }
 
 function exportData(){
-  const data={version:'2.0',exported:new Date().toISOString(),operators,history,moduleWeights,stats};
+  const data={version:'2.1',exported:new Date().toISOString(),operators,history,moduleWeights,stats,winsLog};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;a.download=`beast4d-backup-${new Date().toISOString().slice(0,10)}.json`;
@@ -5527,6 +5636,11 @@ function importData(event){
       if(!data.operators){alert('Invalid file format. Expected backup or operator data file.');return;}
       if(!confirm('Replace ALL current data with this backup?'))return;
       operators=data.operators;history=data.history||[];moduleWeights=data.moduleWeights||DEFAULT_WEIGHTS;stats=data.stats||stats;
+      // v4.13: restore permanent wins log, then harvest any wins from the
+      // imported history that aren't already logged (covers older backups
+      // exported before the wins log existed).
+      winsLog=Array.isArray(data.winsLog)?data.winsLog:[];
+      try{harvestWins();}catch(e){}
       saveAll();render();toast('Data imported successfully!');
     }catch(err){alert('Error reading file: '+err.message);}
   };
