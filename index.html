@@ -1449,9 +1449,9 @@ function renderPredict(){
       <div style="font-size:32px;filter:drop-shadow(0 0 8px ${drawZodiac.color}80)">${drawZodiac.emoji}</div>
       <div style="flex:1">
         <div style="font-size:9px;color:var(--dim2);text-transform:uppercase;letter-spacing:0.5px">${drawInfo.type==='special'?'⭐ Special Draw':'Next Draw'}</div>
-        <div style="font-size:12px;font-weight:700;color:#fff">${drawInfo.dayName}</div>
+        <div style="font-size:12px;font-weight:700;color:${drawInfo.isToday?'#ef4444':'#fff'}">${drawInfo.isToday?'🔴 ':''}${drawInfo.displayLabel}</div>
         <div style="font-size:9px;color:${drawZodiac.color};font-weight:700;margin-top:1px">${drawZodiac.cn} ${drawZodiac.en} Day</div>
-        <div style="font-size:10px;color:${drawInfo.type==='special'?'#c084fc':'#a78bfa'};font-weight:600;margin-top:2px">⏰ ${drawInfo.countdown}</div>
+        <div style="font-size:10px;color:${drawInfo.type==='special'?'#c084fc':'#a78bfa'};font-weight:600;margin-top:2px">⏰ ${drawInfo.drawTimeStr} · ${drawInfo.countdown}</div>
       </div>
       <button onclick="${notifyOn?'disableNotifications()':'enableNotifications()'}" style="background:${notifyOn?'#1a3a1a':'#1a1a3a'};border:1px solid ${notifyOn?'#22c55e':'#6366f1'};color:${notifyOn?'#22c55e':'#a78bfa'};font-size:10px;padding:6px 10px;border-radius:6px;font-family:inherit;cursor:pointer;font-weight:600">${notifyOn?'🔔 ON':'🔕 Enable'}</button>
     </div>`;
@@ -3626,6 +3626,124 @@ function computePerTierStats(){
   });
   return stats;
 }
+// ============================================================
+// DEEP LEARN ENGINE (v4.13) — EXPERIMENTAL / FOR TESTING
+// ------------------------------------------------------------
+// Learns from ALL available draws of an operator and the way past TOP-3
+// winners were actually composed, then scores candidate numbers on how well
+// they match the historical "fingerprint" of winners. Outputs Top 5 candidates
+// for the top-3 prizes.
+//
+// HONEST NOTE (shown in the UI too): 4D draws are independent random events,
+// so this CANNOT predict future winners better than chance. It is a structured
+// way to TEST that claim against real results. Track its Top 5 over many draws
+// and compare hit-rate to 5 random numbers — that is the real experiment.
+// ============================================================
+function deepLearnAnalyze(opName){
+  const op=operators.find(o=>o.name===opName);
+  if(!op||!op.draws||op.draws.length<5)return null;
+  const draws=op.draws; // newest first
+  const N=draws.length;
+
+  // --- Learn from how PAST TOP-3 WINNERS were composed ---
+  // 1) Positional digit frequency (pos 0..3) across all historical top-3 winners
+  const posFreq=[{},{},{},{}];
+  // 2) Digit overall frequency
+  const digitFreq={};
+  // 3) Sum-of-digits distribution of winners
+  const sumFreq={};
+  // 4) Odd-count distribution (how many odd digits a winner tends to have)
+  const oddFreq={};
+  // 5) Adjacent digit-pair affinity (pos i, pos i+1)
+  const pairFreq={};
+  let winnerCount=0;
+
+  draws.forEach(dr=>{
+    (dr.top3||[]).forEach(num=>{
+      if(!/^\d{4}$/.test(num))return;
+      winnerCount++;
+      const d=num.split('').map(Number);
+      let sum=0,odd=0;
+      d.forEach((dig,pos)=>{
+        posFreq[pos][dig]=(posFreq[pos][dig]||0)+1;
+        digitFreq[dig]=(digitFreq[dig]||0)+1;
+        sum+=dig; if(dig%2===1)odd++;
+        if(pos<3){const pk=dig+'-'+d[pos+1];pairFreq[pk]=(pairFreq[pk]||0)+1;}
+      });
+      sumFreq[sum]=(sumFreq[sum]||0)+1;
+      oddFreq[odd]=(oddFreq[odd]||0)+1;
+    });
+  });
+  if(winnerCount===0)return null;
+
+  // Normalize helpers
+  const posProb=posFreq.map(pf=>{const t=Object.values(pf).reduce((a,b)=>a+b,0)||1;const o={};for(let d=0;d<10;d++)o[d]=(pf[d]||0)/t;return o;});
+  const sumTot=Object.values(sumFreq).reduce((a,b)=>a+b,0)||1;
+  const oddTot=Object.values(oddFreq).reduce((a,b)=>a+b,0)||1;
+  const pairTot=Object.values(pairFreq).reduce((a,b)=>a+b,0)||1;
+
+  // Recent-momentum: digits appearing in last 6 draws' top-3 get a small boost
+  const recentDigit={};
+  draws.slice(0,6).forEach((dr,idx)=>{
+    const w=6-idx;
+    (dr.top3||[]).forEach(num=>{if(/^\d{4}$/.test(num))num.split('').forEach(c=>{recentDigit[c]=(recentDigit[c]||0)+w;});});
+  });
+  const recTot=Object.values(recentDigit).reduce((a,b)=>a+b,0)||1;
+
+  // --- Score a candidate number on how "winner-like" it is ---
+  function scoreCandidate(num){
+    const d=num.split('').map(Number);
+    let score=0;
+    // positional fit (0..40)
+    d.forEach((dig,pos)=>{score+=posProb[pos][dig]*10;});
+    // sum fit (0..20) — reward sums that historically appear
+    const sum=d.reduce((a,b)=>a+b,0);
+    score+=((sumFreq[sum]||0)/sumTot)*20*( Object.keys(sumFreq).length );
+    // odd-count fit (0..15)
+    const odd=d.filter(x=>x%2===1).length;
+    score+=((oddFreq[odd]||0)/oddTot)*15*( Object.keys(oddFreq).length );
+    // adjacent pair affinity (0..15)
+    let pairScore=0;for(let i=0;i<3;i++){const pk=d[i]+'-'+d[i+1];pairScore+=(pairFreq[pk]||0)/pairTot;}
+    score+=pairScore*15*Object.keys(pairFreq).length/3;
+    // recent momentum (0..10)
+    let rec=0;d.forEach(dig=>{rec+=(recentDigit[dig]||0)/recTot;});
+    score+=rec*10*Object.keys(recentDigit).length/4;
+    return score;
+  }
+
+  // --- Build candidate pool ---
+  // Pool = (a) all historical top-3 winners' digit-sets, every permutation
+  //        (b) plus numbers built from the most-frequent digit per position
+  const candidates=new Set();
+  draws.forEach(dr=>{(dr.top3||[]).forEach(num=>{if(/^\d{4}$/.test(num))getAllPermutations4(num).forEach(p=>candidates.add(p));});});
+  // Top digit per position composition (and 2nd-best variants)
+  const topPerPos=posProb.map(pp=>Object.entries(pp).sort((a,b)=>b[1]-a[1]).slice(0,3).map(e=>e[0]));
+  for(const a of topPerPos[0])for(const b of topPerPos[1])for(const c of topPerPos[2])for(const e of topPerPos[3])candidates.add(a+b+c+e);
+
+  // Score and rank
+  const scored=[...candidates].map(num=>({num,score:scoreCandidate(num)}));
+  scored.sort((a,b)=>b.score-a.score);
+
+  // Normalize the TOP 5 against each other so ranks show differentiation
+  // instead of all clamping to ~100. The tiny raw spread is itself evidence
+  // that no candidate is meaningfully "better" than another.
+  const top5raw=scored.slice(0,5);
+  const hi=top5raw.length?top5raw[0].score:1;
+  const lo=top5raw.length?top5raw[top5raw.length-1].score:0;
+  const span=(hi-lo)||1;
+  const top5=top5raw.map((s,i)=>({num:s.num,score:Math.round(72+((s.score-lo)/span)*28)-i}));
+
+  return{
+    top5,
+    learnedFrom:winnerCount,
+    drawsAnalyzed:N,
+    digitFreq,
+    hotDigits:Object.entries(digitFreq).sort((a,b)=>b[1]-a[1]).slice(0,5).map(e=>e[0]),
+    commonSum:Object.entries(sumFreq).sort((a,b)=>b[1]-a[1])[0]?.[0],
+    commonOdd:Object.entries(oddFreq).sort((a,b)=>b[1]-a[1])[0]?.[0]
+  };
+}
+
 let engineMode=localStorage.getItem('b4d_engineMode')||'oracle';
 
 function setEngineMode(m){
@@ -3638,8 +3756,9 @@ function renderEngines(){
   const pg=document.getElementById('pgOracle');
   const oracleActive=engineMode==='oracle';
   const hotActive=engineMode==='hothand';
+  const deepActive=engineMode==='deeplearn';
   
-  // Mode switcher at top — two prominent buttons
+  // Mode switcher at top
   let h=`<div style="display:flex;gap:6px;margin-bottom:14px;background:#0a0a15;border:1px solid #1a1a3a;border-radius:12px;padding:5px">
     <button onclick="setEngineMode('oracle')" style="flex:1;background:${oracleActive?'linear-gradient(135deg,#8b5cf6,#ec4899)':'transparent'};border:none;color:${oracleActive?'#fff':'var(--dim2)'};padding:12px 8px;border-radius:8px;cursor:pointer;font-family:inherit;transition:all 0.2s">
       <div style="font-size:11px;font-weight:800;letter-spacing:1.2px">🔮 ORACLE</div>
@@ -3649,7 +3768,45 @@ function renderEngines(){
       <div style="font-size:11px;font-weight:800;letter-spacing:1.2px">🔥 HOT HAND</div>
       <div style="font-size:8px;margin-top:2px;opacity:0.85">Short-term streak</div>
     </button>
+    <button onclick="setEngineMode('deeplearn')" style="flex:1;background:${deepActive?'linear-gradient(135deg,#06b6d4,#3b82f6)':'transparent'};border:none;color:${deepActive?'#fff':'var(--dim2)'};padding:12px 8px;border-radius:8px;cursor:pointer;font-family:inherit;transition:all 0.2s">
+      <div style="font-size:11px;font-weight:800;letter-spacing:1.2px">🧠 DEEP LEARN</div>
+      <div style="font-size:8px;margin-top:2px;opacity:0.85">Top 5 · experimental</div>
+    </button>
   </div>`;
+  
+  // ===== DEEP LEARN render (experimental Top 5 generator) =====
+  if(deepActive){
+    h+=`<div style="background:linear-gradient(135deg,rgba(6,182,212,0.10),rgba(59,130,246,0.05));border:1px solid rgba(6,182,212,0.35);border-radius:12px;padding:12px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        <div style="font-size:22px">🧠</div>
+        <div style="flex:1"><div style="font-size:12px;font-weight:800;color:#06b6d4;letter-spacing:1px">DEEP LEARN — Top 5 for Top 3</div>
+        <div style="font-size:8px;color:var(--dim2);margin-top:2px">Learns each operator's full draw history + winner composition</div></div>
+      </div>
+      <div style="font-size:8px;color:#fbbf24;line-height:1.5;background:#1a1a0a;border:1px dashed #665500;border-radius:6px;padding:6px 8px">⚠️ EXPERIMENTAL. 4D draws are independent random events, so this can't beat chance at predicting winners. It's a structured way to <b>test</b> that. Track these Top 5 vs 5 random numbers over many draws.</div>
+    </div>`;
+    ['MAGNUM','TOTO','DAMACAI'].forEach(opN=>{
+      const res=deepLearnAnalyze(opN);
+      const opColors={MAGNUM:'#D4A017',TOTO:'#DC2626',DAMACAI:'#2563EB'};
+      const c=opColors[opN];
+      h+=`<div style="background:#0a0a15;border:1px solid #1a1a3a;border-left:3px solid ${c};border-radius:10px;padding:12px;margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div style="width:8px;height:8px;border-radius:50%;background:${c}"></div><div style="font-size:12px;font-weight:800;color:${c};letter-spacing:1px">${opN}</div></div>`;
+      if(!res){
+        h+=`<div style="font-size:10px;color:var(--dim2);padding:6px">Not enough draw history yet (need 5+).</div></div>`;return;
+      }
+      h+=`<div style="font-size:8px;color:var(--dim2);margin-bottom:8px">Learned from ${res.learnedFrom} past top-3 winners across ${res.drawsAnalyzed} draws · hot digits: <b style="color:${c}">${res.hotDigits.join(' ')}</b> · common sum: ${res.commonSum}</div>`;
+      h+=`<div style="display:flex;flex-direction:column;gap:6px">`;
+      res.top5.forEach((p,i)=>{
+        h+=`<div style="display:flex;align-items:center;gap:10px;background:#12122a;border-radius:8px;padding:8px 10px">
+          <div style="font-size:11px;font-weight:900;color:${c};min-width:22px">#${i+1}</div>
+          <div style="font-family:monospace;font-size:20px;font-weight:900;color:${c};letter-spacing:3px">${p.num}</div>
+          <div style="flex:1;text-align:right"><div style="font-size:13px;font-weight:900;color:${c}">${p.score}<span style="font-size:8px;opacity:0.7">/100</span></div><div style="font-size:7px;color:var(--dim3)">fit score</div></div>
+        </div>`;
+      });
+      h+=`</div></div>`;
+    });
+    pg.innerHTML=h;return;
+  }
+  
   
   // FUSION indicator banner if any fusion picks exist
   const fusionPicks=computeFusionPicks();
@@ -6198,7 +6355,16 @@ function formatDrawCountdown(){
   
   const fullName={Sat:'Saturday',Sun:'Sunday',Wed:'Wednesday',Tue:'Tuesday (Special)'}[next.dayName]||next.dayName;
   
-  return{countdown:str,dayName:fullName,type:next.type,date:next.date};
+  // v4.13: clarify "next draw later today" vs a future weekday.
+  // Calendar-day comparison (not 24h window) so an afternoon view of a same-day
+  // evening draw reads "TONIGHT" instead of the weekday, which looked like it skipped today.
+  const nowD=new Date();
+  const isToday=next.date.getFullYear()===nowD.getFullYear()&&next.date.getMonth()===nowD.getMonth()&&next.date.getDate()===nowD.getDate();
+  const drawTimeStr=next.date.toLocaleTimeString('en-MY',{hour:'numeric',minute:'2-digit',hour12:true});
+  // Display label: TONIGHT when same calendar day, else the weekday name.
+  const displayLabel=isToday?(next.type==='special'?'TONIGHT (Special)':'TONIGHT'):fullName;
+  
+  return{countdown:str,dayName:fullName,displayLabel,isToday,drawTimeStr,type:next.type,date:next.date};
 }
 
 // Initial schedule on load
