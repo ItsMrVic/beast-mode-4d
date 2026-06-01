@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v4.13</title>
+<title>Beast Mode 4D v4.14</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -414,7 +414,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v4.13</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v4.14</span>
       <div class="sub">AI-Powered Sniper Prediction Engine + DeepSeek AI</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
@@ -2022,7 +2022,7 @@ function renderHistory(){
   filtered.forEach(e=>{if(!byDate[e.date])byDate[e.date]=[];byDate[e.date].push(e);});
   const sortedDates=Object.keys(byDate).sort().reverse();
   
-  const opC={MAGNUM:'#D4A017',TOTO:'#DC2626',DAMACAI:'#2563EB',SNIPER:'#ff6633',ORACLE_SNIPER:'#ff3366',ORACLE:'#c084fc',DODGE:'#ef4444',CROSSOP:'#f59e0b',HOTHAND:'#fb923c',FUSION:'#eab308',DEEPLEARN:'#06b6d4'};
+  const opC={MAGNUM:'#D4A017',TOTO:'#DC2626',DAMACAI:'#2563EB',SNIPER:'#ff6633',ORACLE_SNIPER:'#ff3366',ORACLE:'#c084fc',DODGE:'#ef4444',CROSSOP:'#f59e0b',HOTHAND:'#fb923c',FUSION:'#eab308',DEEPLEARN:'#06b6d4',CONTROL:'#64748b'};
   
   sortedDates.forEach(date=>{
     const entries=byDate[date];
@@ -2101,17 +2101,18 @@ function renderHistory(){
         const isHotHand=entry.operator==='HOTHAND';
         const isFusion=entry.operator==='FUSION';
         const isDeepLearn=entry.operator==='DEEPLEARN';
+        const isControl=entry.operator==='CONTROL';
         const opColor=opC[entry.operator]||'#888';
         const permDetails=entry.permWinDetails||[];
         const permWinNums=new Set(permDetails.map(p=>p.predicted));
         const hasWin=entry.checked&&(entry.hits?.length>0||entry.permHits>0);
-        const borderLeft=isSniper?'border-left:3px solid #ff6633':isOracleSniper?'border-left:3px solid #ff3366':isOracle?'border-left:3px solid #c084fc':isDodge?'border-left:3px solid #ef4444':isCrossOp?'border-left:3px solid #f59e0b':isHotHand?'border-left:3px solid #fb923c':isFusion?'border-left:3px solid #eab308':isDeepLearn?'border-left:3px solid #06b6d4':'';
+        const borderLeft=isSniper?'border-left:3px solid #ff6633':isOracleSniper?'border-left:3px solid #ff3366':isOracle?'border-left:3px solid #c084fc':isDodge?'border-left:3px solid #ef4444':isCrossOp?'border-left:3px solid #f59e0b':isHotHand?'border-left:3px solid #fb923c':isFusion?'border-left:3px solid #eab308':isDeepLearn?'border-left:3px solid #06b6d4':isControl?'border-left:3px solid #64748b':'';
         const fusionExtra=isFusion?';background:linear-gradient(90deg,rgba(234,179,8,0.08),#0a0a15)':'';
         
         h+=`<div class="hist-item" style="margin:6px 0;padding:10px;border-radius:8px;background:#0a0a15;border:1px solid #1a1a3a;${borderLeft}${fusionExtra}${hasWin?';box-shadow:0 0 0 1px rgba(34,197,94,0.2)':''}">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
             <div style="display:flex;align-items:center;gap:6px">
-              ${isSniper?`<span style="font-size:10px;color:#ff6633;font-weight:800">🎯 SNIPER</span>`:isOracleSniper?`<span style="font-size:10px;color:#ff3366;font-weight:800">🎯 ORACLE SNIPER</span>`:isOracle?`<span style="font-size:10px;color:#c084fc;font-weight:800">🔮 ORACLE</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isDodge?`<span style="font-size:10px;color:#ef4444;font-weight:800">🎰 DODGE</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isCrossOp?`<span style="font-size:10px;color:#f59e0b;font-weight:800">🔀 CROSS-OP</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isHotHand?`<span style="font-size:10px;color:#fb923c;font-weight:800">🔥 HOT HAND</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>${entry.hotHandMeta?.lane?`<span style="font-size:7px;background:#fb923c22;color:#fb923c;padding:1px 4px;border-radius:3px">${entry.hotHandMeta.lane}</span>`:''}`:isFusion?`<span style="font-size:10px;color:#eab308;font-weight:800">💎 FUSION</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isDeepLearn?`<span style="font-size:10px;color:#06b6d4;font-weight:800">🧠 DEEP LEARN</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:`<span style="font-size:10px;font-weight:700;color:${opColor}">${entry.operator}</span>`}
+              ${isSniper?`<span style="font-size:10px;color:#ff6633;font-weight:800">🎯 SNIPER</span>`:isOracleSniper?`<span style="font-size:10px;color:#ff3366;font-weight:800">🎯 ORACLE SNIPER</span>`:isOracle?`<span style="font-size:10px;color:#c084fc;font-weight:800">🔮 ORACLE</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isDodge?`<span style="font-size:10px;color:#ef4444;font-weight:800">🎰 DODGE</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isCrossOp?`<span style="font-size:10px;color:#f59e0b;font-weight:800">🔀 CROSS-OP</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isHotHand?`<span style="font-size:10px;color:#fb923c;font-weight:800">🔥 HOT HAND</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>${entry.hotHandMeta?.lane?`<span style="font-size:7px;background:#fb923c22;color:#fb923c;padding:1px 4px;border-radius:3px">${entry.hotHandMeta.lane}</span>`:''}`:isFusion?`<span style="font-size:10px;color:#eab308;font-weight:800">💎 FUSION</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isDeepLearn?`<span style="font-size:10px;color:#06b6d4;font-weight:800">🧠 DEEP LEARN</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isControl?`<span style="font-size:10px;color:#64748b;font-weight:800">🎲 CONTROL</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:`<span style="font-size:10px;font-weight:700;color:${opColor}">${entry.operator}</span>`}
               <span style="font-size:8px;background:var(--bg2);color:var(--dim2);padding:2px 6px;border-radius:3px">${entry.targetDay}</span>
               ${entry.generatedAt?`<span style="font-size:7px;color:var(--dim3);font-style:italic" title="${entry.generatedAt}">🕐 ${(()=>{const d=new Date(entry.generatedAt);return d.toLocaleDateString('en-MY',{month:'short',day:'numeric'})+' '+d.toLocaleTimeString('en-MY',{hour:'2-digit',minute:'2-digit',hour12:true});})()}</span>`:''}
             </div>
@@ -2984,9 +2985,9 @@ function renderOracleBody(){
       // Sum zone info
       h+=`<div style="font-size:8px;color:var(--dim3);margin-bottom:8px">Sum zone: <span style="color:#f59e0b;font-weight:700">${res.sumZone[0]}–${res.sumZone[1]}</span> (P5 filter active)</div>`;
 
-      // Oracle Picks
+      // Oracle Picks (Top 3 — engines rank from full pool, output best 3)
       h+=`<div style="font-size:8px;color:var(--dim3);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">🎡 Oracle Picks</div>`;
-      res.predictions.forEach((p,i)=>{
+      res.predictions.slice(0,3).forEach((p,i)=>{
         const pct=Math.round((p.strength/p.maxStrength)*100);
         const strengthColor=pct>=75?'#22c55e':pct>=50?'#f59e0b':'#888';
         const dayBadge=p.dayCount>=3
@@ -3010,7 +3011,7 @@ function renderOracleBody(){
         h+=`<div style="margin-top:12px;padding:10px;background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.2);border-radius:8px">`;
         h+=`<div style="font-size:8px;color:#ef4444;font-weight:800;margin-bottom:3px;text-transform:uppercase;letter-spacing:0.5px">🎰 Operator Dodge Variants</div>`;
         h+=`<div style="font-size:8px;color:var(--dim3);margin-bottom:8px;line-height:1.4">Operator takes your hot pick → swaps 1 digit with a cold one. Buy these too to counter the swap.</div>`;
-        res.dodgeVariants.forEach((v,i)=>{
+        res.dodgeVariants.slice(0,3).forEach((v,i)=>{
           const digits=v.num.split('');
           const numHtml=digits.map((d,pos)=>
             pos===v.swapPos
@@ -3037,7 +3038,7 @@ function renderOracleBody(){
         h+=`<div style="margin-top:12px;padding:10px;background:rgba(255,165,0,0.05);border:1px solid rgba(255,165,0,0.25);border-radius:8px">`;
         h+=`<div style="font-size:8px;color:#f59e0b;font-weight:800;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px">🔀 Cross-Op Migration (from ${otherNames})</div>`;
         h+=`<div style="font-size:8px;color:var(--dim3);margin-bottom:8px">Migration rate: <span style="color:${res.crossOp.migrationRate>=15?'#22c55e':'#888'}">${res.crossOp.migrationRate}%</span> (${res.crossOp.migCount}/${res.crossOp.totalChecked} digit sets confirmed)</div>`;
-        res.crossOp.candidates.forEach((c,i)=>{
+        res.crossOp.candidates.slice(0,3).forEach((c,i)=>{
           const badge=c.histConfirmed
             ?`<span style="font-size:7px;background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid #22c55e44;border-radius:4px;padding:1px 5px">✓ CONFIRMED</span>`
             :`<span style="font-size:7px;background:rgba(255,165,0,0.1);color:#f59e0b;border:1px solid #f59e0b44;border-radius:4px;padding:1px 5px">FRESH</span>`;
@@ -3120,13 +3121,13 @@ function runOracle(){
           operator:'ORACLE',
           subOperator:opName,
           targetDay:tDay,
-          predictions:res.predictions.map(p=>p.num),
+          predictions:res.predictions.slice(0,3).map(p=>p.num),
           checked:false,
           hits:[],
           permHits:0,
           oracleMeta:{
-            strengths:res.predictions.map(p=>({num:p.num,strength:p.strength,maxStrength:p.maxStrength})),
-            crossOp:res.crossOp?.candidates?.map(c=>c.num)||[]  // kept for backward compat
+            strengths:res.predictions.slice(0,3).map(p=>({num:p.num,strength:p.strength,maxStrength:p.maxStrength})),
+            crossOp:res.crossOp?.candidates?.slice(0,3).map(c=>c.num)||[]  // kept for backward compat
           }
         });
         // TIER 2: Operator Dodge Variants (counter hot→cold digit swap)
@@ -3136,12 +3137,12 @@ function runOracle(){
             operator:'DODGE',
             subOperator:opName,
             targetDay:tDay,
-            predictions:res.dodgeVariants.map(v=>v.num),
+            predictions:res.dodgeVariants.slice(0,3).map(v=>v.num),
             checked:false,
             hits:[],
             permHits:0,
             dodgeMeta:{
-              variants:res.dodgeVariants.map(v=>({
+              variants:res.dodgeVariants.slice(0,3).map(v=>({
                 num:v.num,baseNum:v.baseNum,swapPos:v.swapPos,
                 hotDigit:v.hotDigit,coldDigit:v.coldDigit,sumInZone:v.sumInZone
               }))
@@ -3155,7 +3156,7 @@ function runOracle(){
             operator:'CROSSOP',
             subOperator:opName,
             targetDay:tDay,
-            predictions:res.crossOp.candidates.map(c=>c.num),
+            predictions:res.crossOp.candidates.slice(0,3).map(c=>c.num),
             checked:false,
             hits:[],
             permHits:0,
@@ -3163,7 +3164,7 @@ function runOracle(){
               migrationRate:res.crossOp.migrationRate,
               migCount:res.crossOp.migCount,
               totalChecked:res.crossOp.totalChecked,
-              candidates:res.crossOp.candidates.map(c=>({
+              candidates:res.crossOp.candidates.slice(0,3).map(c=>({
                 num:c.num,fromOp:c.fromOp,confirmed:c.confirmed
               }))
             }
@@ -3745,8 +3746,31 @@ function deepLearnAnalyze(opName){
   };
 }
 
-// Save DEEP LEARN Top 5 (all 3 operators) to history as DEEPLEARN entries.
-// One entry per operator, dated today, so Check Results scores them tonight.
+// Save DEEP LEARN Top 5 (all 3 operators) to history as DEEPLEARN entries,
+// AND save 5 RANDOM control numbers per operator (operator:'CONTROL').
+// This is the experiment: after results, Check Results scores BOTH, so you can
+// compare DEEP LEARN's hit-rate to pure random over many draws — with your own data.
+// Tally the DEEP LEARN vs CONTROL experiment from checked history entries.
+// Returns hit counts for both so the user can see if DEEP LEARN beats random.
+function deepLearnExperimentTally(){
+  let dl={draws:0,straight:0,perm:0,top3:0},ct={draws:0,straight:0,perm:0,top3:0};
+  history.forEach(e=>{
+    if(!e.checked)return;
+    if(e.operator==='DEEPLEARN'){
+      dl.draws++; dl.straight+=(e.hits?.length||0); dl.perm+=(e.permHits||0);
+      (e.permWinDetails||[]).forEach(d=>{if(d.prize==='TOP3')dl.top3++;});
+      (e.hits||[]).forEach(()=>{}); // straight top3 counted via subOp draw below if needed
+    } else if(e.operator==='CONTROL'){
+      ct.draws++; ct.straight+=(e.hits?.length||0); ct.perm+=(e.permHits||0);
+      (e.permWinDetails||[]).forEach(d=>{if(d.prize==='TOP3')ct.top3++;});
+    }
+  });
+  return{dl,ct};
+}
+
+function randomFourDigit(){
+  return Math.floor(Math.random()*10000).toString().padStart(4,'0');
+}
 function saveDeepLearnPicks(tDay){
   const now=new Date().toISOString().slice(0,10);
   let saved=0;
@@ -3772,10 +3796,24 @@ function saveDeepLearnPicks(tDay){
         hotDigits:res.hotDigits
       }
     });
+    // CONTROL: 5 random numbers, same count, for head-to-head comparison
+    const controlNums=[];
+    while(controlNums.length<5){const r=randomFourDigit();if(!controlNums.includes(r))controlNums.push(r);}
+    history.push({
+      date:now,generatedAt:new Date().toISOString(),
+      operator:'CONTROL',
+      subOperator:opN,
+      targetDay:tDay,
+      predictions:controlNums,
+      checked:false,
+      hits:[],
+      permHits:0,
+      controlMeta:{note:'random baseline for DEEP LEARN comparison'}
+    });
     saved++;
   });
   saveAll();
-  if(saved>0)toast('💾 Saved DEEP LEARN Top 5 for '+saved+' operator'+(saved>1?'s':'')+' — check them tonight!');
+  if(saved>0)toast('💾 Saved DEEP LEARN + random control for '+saved+' operator'+(saved>1?'s':'')+' — check them after the draw!');
   else toast('Already saved for today (or no picks yet)');
   render();
 }
@@ -3820,6 +3858,31 @@ function renderEngines(){
       </div>
       <div style="font-size:8px;color:#fbbf24;line-height:1.5;background:#1a1a0a;border:1px dashed #665500;border-radius:6px;padding:6px 8px">⚠️ EXPERIMENTAL. 4D draws are independent random events, so this can't beat chance at predicting winners. It's a structured way to <b>test</b> that. Track these Top 5 vs 5 random numbers over many draws.</div>
     </div>`;
+    // Experiment scoreboard: DEEP LEARN vs random control
+    const tally=deepLearnExperimentTally();
+    if(tally.dl.draws>0||tally.ct.draws>0){
+      const dlHitRate=tally.dl.draws>0?Math.round(((tally.dl.straight+tally.dl.perm)/tally.dl.draws)*100):0;
+      const ctHitRate=tally.ct.draws>0?Math.round(((tally.ct.straight+tally.ct.perm)/tally.ct.draws)*100):0;
+      h+=`<div style="background:#0a0a15;border:1px solid #1a1a3a;border-radius:12px;padding:12px;margin-bottom:12px">
+        <div style="font-size:11px;font-weight:800;color:#e2e8f0;letter-spacing:0.5px;margin-bottom:2px">🔬 The Experiment: DEEP LEARN vs Random</div>
+        <div style="font-size:8px;color:var(--dim3);margin-bottom:10px">Checked draws so far: ${Math.max(tally.dl.draws,tally.ct.draws)} per side. ${Math.max(tally.dl.draws,tally.ct.draws)<20?'Need ~20+ for a meaningful read.':'Enough data to start reading.'}</div>
+        <div style="display:flex;gap:8px">
+          <div style="flex:1;background:rgba(6,182,212,0.08);border:1px solid rgba(6,182,212,0.3);border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:9px;color:#06b6d4;font-weight:800;margin-bottom:4px">🧠 DEEP LEARN</div>
+            <div style="font-size:22px;font-weight:900;color:#06b6d4">${dlHitRate}%</div>
+            <div style="font-size:7px;color:var(--dim3)">hit rate / draw</div>
+            <div style="font-size:8px;color:var(--dim2);margin-top:4px">${tally.dl.straight} straight · ${tally.dl.perm} perm · ${tally.dl.top3} top3</div>
+          </div>
+          <div style="flex:1;background:rgba(100,116,139,0.08);border:1px solid rgba(100,116,139,0.3);border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:9px;color:#94a3b8;font-weight:800;margin-bottom:4px">🎲 RANDOM</div>
+            <div style="font-size:22px;font-weight:900;color:#94a3b8">${ctHitRate}%</div>
+            <div style="font-size:7px;color:var(--dim3)">hit rate / draw</div>
+            <div style="font-size:8px;color:var(--dim2);margin-top:4px">${tally.ct.straight} straight · ${tally.ct.perm} perm · ${tally.ct.top3} top3</div>
+          </div>
+        </div>
+        <div style="font-size:8px;color:var(--dim3);text-align:center;margin-top:8px;line-height:1.4">${Math.max(tally.dl.draws,tally.ct.draws)<20?'Keep logging. The honest test is whether 🧠 clearly and consistently beats 🎲 over many draws.':(dlHitRate>ctHitRate+5?'🧠 ahead so far — keep going, small samples swing a lot.':ctHitRate>dlHitRate+5?'🎲 ahead so far — the expected result if there is no signal.':'Running about even — the textbook result if draws are truly random.')}</div>
+      </div>`;
+    }
     ['MAGNUM','TOTO','DAMACAI'].forEach(opN=>{
       const res=deepLearnAnalyze(opN);
       const opColors={MAGNUM:'#D4A017',TOTO:'#DC2626',DAMACAI:'#2563EB'};
@@ -4090,7 +4153,7 @@ function renderHotHandLane(title,color,result,fusionNums){
     
     <div style="font-size:9px;color:var(--dim3);margin-bottom:6px;letter-spacing:0.5px">🔥 HOT PICKS</div>`;
   
-  result.picks.forEach((p,i)=>{
+  result.picks.slice(0,3).forEach((p,i)=>{
     const isFusion=fusionNums.includes(p.num);
     const starStr='★'.repeat(p.stars)+'☆'.repeat(3-p.stars);
     h+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:${isFusion?'linear-gradient(90deg,rgba(234,179,8,0.18),rgba(250,204,21,0.05))':'#0a0a15'};border:${isFusion?'2px solid #eab308':'1px solid #1a1a3a'};border-radius:8px;margin-bottom:4px">
@@ -4162,9 +4225,9 @@ function runHotHand(){
       if(magnumResult&&magnumResult.picks.length>0){
         history.push({
           date:now,generatedAt:new Date().toISOString(),operator:'HOTHAND',subOperator:'MAGNUM',targetDay:tDay,
-          predictions:magnumResult.picks.map(p=>p.num),
+          predictions:magnumResult.picks.slice(0,3).map(p=>p.num),
           checked:false,hits:[],permHits:0,
-          hotHandMeta:{lane:'MAGNUM',windowSize,drawsAnalyzed:magnumResult.drawsAnalyzed,primary:magnumResult.primary.map(p=>p.digit).join(','),stars:magnumResult.picks.map(p=>({num:p.num,stars:p.stars}))}
+          hotHandMeta:{lane:'MAGNUM',windowSize,drawsAnalyzed:magnumResult.drawsAnalyzed,primary:magnumResult.primary.map(p=>p.digit).join(','),stars:magnumResult.picks.slice(0,3).map(p=>({num:p.num,stars:p.stars}))}
         });
       }
       if(totoDmcResult&&totoDmcResult.picks.length>0){
@@ -4173,9 +4236,9 @@ function runHotHand(){
         ['TOTO','DAMACAI'].forEach(opName=>{
           history.push({
             date:now,generatedAt:new Date().toISOString(),operator:'HOTHAND',subOperator:opName,targetDay:tDay,
-            predictions:totoDmcResult.picks.map(p=>p.num),
+            predictions:totoDmcResult.picks.slice(0,3).map(p=>p.num),
             checked:false,hits:[],permHits:0,
-            hotHandMeta:{lane:'TOTO+DMC',windowSize:windowSize*2,drawsAnalyzed:totoDmcResult.drawsAnalyzed,primary:totoDmcResult.primary.map(p=>p.digit).join(','),stars:totoDmcResult.picks.map(p=>({num:p.num,stars:p.stars}))}
+            hotHandMeta:{lane:'TOTO+DMC',windowSize:windowSize*2,drawsAnalyzed:totoDmcResult.drawsAnalyzed,primary:totoDmcResult.primary.map(p=>p.digit).join(','),stars:totoDmcResult.picks.slice(0,3).map(p=>({num:p.num,stars:p.stars}))}
           });
         });
       }
@@ -4916,6 +4979,119 @@ function renderPnl(){
   pg.innerHTML = h;
 }
 
+// ============================================================
+// BACKTEST ENGINE (v4.13) — EA-grade honest evaluation
+// ------------------------------------------------------------
+// For each historical draw, build predictions from ONLY the draws BEFORE it
+// (no lookahead), check against that draw, tally hits. Run every method PLUS a
+// random baseline. Then split-sample: measure on the newer half and older half
+// separately, so we can see if any "edge" survives out-of-sample — the exact
+// test that separates a real EA edge from an overfit mirage.
+// ============================================================
+
+// DEEP LEARN scoring on an arbitrary sliced history (self-contained, no globals)
+function deepLearnTopN(hist,n){
+  const posFreq=[{},{},{},{}],sumFreq={},oddFreq={},pairFreq={};
+  let wc=0;
+  hist.forEach(dr=>{(dr.top3||[]).forEach(num=>{
+    if(!/^\d{4}$/.test(num))return;wc++;
+    const d=num.split('').map(Number);let s=0,odd=0;
+    d.forEach((dig,pos)=>{posFreq[pos][dig]=(posFreq[pos][dig]||0)+1;s+=dig;if(dig%2)odd++;if(pos<3){const pk=dig+'-'+d[pos+1];pairFreq[pk]=(pairFreq[pk]||0)+1;}});
+    sumFreq[s]=(sumFreq[s]||0)+1;oddFreq[odd]=(oddFreq[odd]||0)+1;
+  });});
+  if(wc<5)return[];
+  const pp=pf=>{const t=Object.values(pf).reduce((a,b)=>a+b,0)||1;const o={};for(let d=0;d<10;d++)o[d]=(pf[d]||0)/t;return o;};
+  const posProb=posFreq.map(pp);
+  const sumTot=Object.values(sumFreq).reduce((a,b)=>a+b,0)||1;
+  const oddTot=Object.values(oddFreq).reduce((a,b)=>a+b,0)||1;
+  const pairTot=Object.values(pairFreq).reduce((a,b)=>a+b,0)||1;
+  const score=num=>{const d=num.split('').map(Number);let sc=0;
+    d.forEach((dig,pos)=>{sc+=posProb[pos][dig]*10;});
+    const s=d.reduce((a,b)=>a+b,0);sc+=((sumFreq[s]||0)/sumTot)*20*Object.keys(sumFreq).length;
+    const odd=d.filter(x=>x%2).length;sc+=((oddFreq[odd]||0)/oddTot)*15*Object.keys(oddFreq).length;
+    let ps=0;for(let i=0;i<3;i++){ps+=(pairFreq[d[i]+'-'+d[i+1]]||0)/pairTot;}sc+=ps*15*Object.keys(pairFreq).length/3;
+    return sc;};
+  const cands=new Set();
+  hist.forEach(dr=>{(dr.top3||[]).forEach(num=>{if(/^\d{4}$/.test(num))getAllPermutations4(num).forEach(p=>cands.add(p));});});
+  const topPerPos=posProb.map(p=>Object.entries(p).sort((a,b)=>b[1]-a[1]).slice(0,3).map(e=>e[0]));
+  for(const a of topPerPos[0])for(const b of topPerPos[1])for(const c of topPerPos[2])for(const e of topPerPos[3])cands.add(a+b+c+e);
+  return[...cands].map(num=>({num,s:score(num)})).sort((a,b)=>b.s-a.s).slice(0,n).map(x=>x.num);
+}
+
+// Score a pick list against one draw's full prize set. Returns {straight,perm,top3,anyHit}
+function scorePicksAgainstDraw(picks,draw){
+  const t3=draw.top3||[];
+  const actual=[...t3,...(draw.special||[]),...(draw.consolation||[])];
+  const actualSet=new Set(actual),t3Set=new Set(t3);
+  let straight=0,perm=0,top3=0;
+  picks.forEach(n=>{
+    if(actualSet.has(n)){straight++;if(t3Set.has(n))top3++;}
+    else{const wp=getPerms(n).find(p=>actualSet.has(p));if(wp){perm++;if(t3Set.has(wp))top3++;}}
+  });
+  return{straight,perm,top3,anyHit:(straight+perm)>0?1:0};
+}
+
+// Run the backtest for one operator over a window of test draws.
+function runBacktest(opName,picksPerMethod,maxTestDraws){
+  const op=operators.find(o=>o.name===opName);
+  if(!op||op.draws.length<30)return null;
+  const draws=op.draws; // newest first
+  const minHist=20;
+  const testable=Math.max(0,draws.length-minHist);
+  const testCount=Math.min(maxTestDraws||60,testable);
+  const methods=['ORACLE','HOTHAND','DEEPLEARN','RANDOM'];
+  const tally={};methods.forEach(m=>tally[m]={straight:0,perm:0,top3:0,anyHit:0,draws:0});
+  let seed=12345;const rnd=()=>{seed=(seed*1103515245+12345)&0x7fffffff;return seed/0x7fffffff;};
+  const randNum=()=>Math.floor(rnd()*10000).toString().padStart(4,'0');
+  const perDraw={ORACLE:[],HOTHAND:[],DEEPLEARN:[],RANDOM:[]};
+
+  for(let i=0;i<testCount;i++){
+    const target=draws[i];
+    const hist=draws.slice(i+1); // ONLY draws before the target — no lookahead
+    if(hist.length<minHist)break;
+    const tDay=target.day;
+
+    let oraclePicks=[];
+    try{const r=oracleAnalyze(hist,tDay);if(r&&r.predictions)oraclePicks=r.predictions.slice(0,picksPerMethod).map(p=>p.num);}catch(e){}
+    let hotPicks=[];
+    try{const r=hotHandAnalyze(hist,6);if(r&&r.picks)hotPicks=r.picks.slice(0,picksPerMethod).map(p=>p.num);}catch(e){}
+    let deepPicks=[];
+    try{deepPicks=deepLearnTopN(hist,picksPerMethod);}catch(e){}
+    const randPicks=[];while(randPicks.length<picksPerMethod){const r=randNum();if(!randPicks.includes(r))randPicks.push(r);}
+
+    const sets={ORACLE:oraclePicks,HOTHAND:hotPicks,DEEPLEARN:deepPicks,RANDOM:randPicks};
+    methods.forEach(m=>{
+      if(sets[m].length===0){perDraw[m].push(null);return;}
+      const sc=scorePicksAgainstDraw(sets[m],target);
+      tally[m].straight+=sc.straight;tally[m].perm+=sc.perm;tally[m].top3+=sc.top3;tally[m].anyHit+=sc.anyHit;tally[m].draws++;
+      perDraw[m].push(sc.anyHit);
+    });
+  }
+
+  function splitRate(arr){
+    const valid=arr.filter(x=>x!==null);
+    const half=Math.floor(valid.length/2);
+    const newer=valid.slice(0,half),older=valid.slice(half);
+    const rate=a=>a.length?Math.round(a.reduce((x,y)=>x+y,0)/a.length*100):0;
+    return{newer:rate(newer),older:rate(older),n:valid.length};
+  }
+  const split={};methods.forEach(m=>{split[m]=splitRate(perDraw[m]);});
+
+  return{opName,testCount,picksPerMethod,methods,tally,split};
+}
+
+function runBacktestUI(){
+  const opSel=document.getElementById('btOp2');
+  const opName=opSel?opSel.value:'MAGNUM';
+  const btn=document.getElementById('btRunBtn');
+  if(btn){btn.textContent='⏳ Running…';btn.disabled=true;}
+  setTimeout(()=>{
+    const res=runBacktest(opName,3,80);
+    window._lastBacktest=res;
+    render();
+  },50);
+}
+
 function renderData(){
   const pg=document.getElementById('pgData');
   const totalDraws=operators.reduce((a,o)=>a+o.draws.length,0);
@@ -4948,6 +5124,69 @@ function renderData(){
     </div>
   </div>`;
   
+  // ===== BACKTEST PANEL (v4.13) =====
+  h+=`<div class="section-title">🔬 Backtest Lab</div>`;
+  h+=`<div class="card" style="padding:14px">
+    <div style="font-size:11px;color:var(--dim);line-height:1.5;margin-bottom:10px">Runs every method across your real draw history — predicting each past draw using <b>only the draws before it</b> (no peeking ahead) — and compares them to a pure-random baseline. The real test is the <b>out-of-sample split</b>: does any edge hold up on data it wasn't measured on?</div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <select id="btOp2" style="flex:1;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:12px;font-family:inherit">
+        <option value="MAGNUM">Magnum</option><option value="TOTO">Sports Toto</option><option value="DAMACAI">Damacai</option>
+      </select>
+      <button id="btRunBtn" onclick="runBacktestUI()" style="flex:1;background:linear-gradient(135deg,#8b5cf6,#ec4899);border:none;color:#fff;font-size:12px;font-weight:800;padding:10px;border-radius:8px;cursor:pointer;font-family:inherit">▶ Run Backtest</button>
+    </div>`;
+  const bt=window._lastBacktest;
+  if(bt){
+    const methodMeta={ORACLE:{c:'#c084fc',i:'🔮',n:'Oracle'},HOTHAND:{c:'#fb923c',i:'🔥',n:'Hot Hand'},DEEPLEARN:{c:'#06b6d4',i:'🧠',n:'Deep Learn'},RANDOM:{c:'#64748b',i:'🎲',n:'Random'}};
+    const randRate=bt.tally.RANDOM.draws>0?((bt.tally.RANDOM.anyHit/bt.tally.RANDOM.draws)*100):0;
+    h+=`<div style="font-size:9px;color:var(--dim3);margin-bottom:8px">${bt.opName} · ${bt.testCount} draws tested · ${bt.picksPerMethod} picks/method · history-before-each-draw only</div>`;
+    h+=`<div style="display:flex;flex-direction:column;gap:6px">`;
+    // sort methods by overall anyHit rate, but keep RANDOM visible as the line to beat
+    const ranked=bt.methods.slice().sort((a,b)=>{
+      const ra=bt.tally[a].draws?bt.tally[a].anyHit/bt.tally[a].draws:0;
+      const rb=bt.tally[b].draws?bt.tally[b].anyHit/bt.tally[b].draws:0;return rb-ra;});
+    ranked.forEach(m=>{
+      const t=bt.tally[m],mm=methodMeta[m];
+      const rate=t.draws>0?Math.round((t.anyHit/t.draws)*100):0;
+      const vsRand=Math.round(rate-randRate);
+      const sp=bt.split[m];
+      const beats=m!=='RANDOM'&&rate>randRate;
+      h+=`<div style="background:var(--bg3);border:1px solid ${m==='RANDOM'?'#64748b55':mm.c+'33'};border-radius:8px;padding:10px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span style="font-size:13px">${mm.i}</span>
+          <span style="font-size:12px;font-weight:800;color:${mm.c}">${mm.n}</span>
+          <span style="flex:1"></span>
+          <span style="font-size:18px;font-weight:900;color:${mm.c}">${rate}%</span>
+          ${m!=='RANDOM'?`<span style="font-size:9px;font-weight:700;color:${vsRand>0?'#22c55e':vsRand<0?'#ef4444':'#888'}">${vsRand>0?'+':''}${vsRand} vs 🎲</span>`:`<span style="font-size:8px;color:var(--dim3)">baseline</span>`}
+        </div>
+        <div style="font-size:8px;color:var(--dim3);margin-bottom:4px">${t.straight} straight · ${t.perm} perm · ${t.top3} top-3 hits over ${t.draws} draws</div>
+        <div style="display:flex;gap:6px;font-size:8px">
+          <div style="flex:1;background:var(--bg2);border-radius:4px;padding:4px 6px;text-align:center">Older half<br><b style="color:${mm.c};font-size:11px">${sp.older}%</b></div>
+          <div style="flex:1;background:var(--bg2);border-radius:4px;padding:4px 6px;text-align:center">Newer half<br><b style="color:${mm.c};font-size:11px">${sp.newer}%</b></div>
+          <div style="flex:1;background:var(--bg2);border-radius:4px;padding:4px 6px;text-align:center">Consistency<br><b style="color:${Math.abs(sp.newer-sp.older)<=6?'#22c55e':'#f59e0b'};font-size:11px">${Math.abs(sp.newer-sp.older)<=6?'stable':'swings'}</b></div>
+        </div>
+      </div>`;
+    });
+    h+=`</div>`;
+    // Honest verdict
+    const best=ranked[0];
+    const bestRate=bt.tally[best].draws?Math.round(bt.tally[best].anyHit/bt.tally[best].draws*100):0;
+    const bestBeatsRand=best!=='RANDOM'&&bestRate>Math.round(randRate)+3;
+    const bestSplit=bt.split[best];
+    const bestStable=Math.abs(bestSplit.newer-bestSplit.older)<=6;
+    let verdict='';
+    if(!bestBeatsRand){
+      verdict=`🎲 No method clearly beats random. The "best" (${methodMeta[best].n}, ${bestRate}%) is within noise of the random baseline (${Math.round(randRate)}%). This is the textbook result for a memoryless random draw — exactly what we expected.`;
+    } else if(bestBeatsRand&&!bestStable){
+      verdict=`⚠️ ${methodMeta[best].n} leads overall (${bestRate}%), but it <b>swings</b> between the older and newer halves (${bestSplit.older}% → ${bestSplit.newer}%). That instability is the classic overfitting signature — it looks good in aggregate but doesn't hold out-of-sample. Not safe to trust as a default.`;
+    } else {
+      verdict=`🔎 ${methodMeta[best].n} leads (${bestRate}%) AND holds steady across both halves (${bestSplit.older}% / ${bestSplit.newer}%). That's the one result worth a closer look. Before trusting it: run the other two operators too and see if it repeats. One stable lead on one operator can still be luck.`;
+    }
+    h+=`<div style="margin-top:10px;background:#0a0a15;border:1px dashed #444;border-radius:8px;padding:10px;font-size:9px;color:var(--dim);line-height:1.5">${verdict}</div>`;
+  } else {
+    h+=`<div style="font-size:9px;color:var(--dim3);text-align:center;padding:10px">Pick an operator and run. Takes a few seconds — it replays up to 80 draws of history.</div>`;
+  }
+  h+=`</div>`;
+
   h+=`<div class="section-title">💾 Data Management</div>`;
   h+=`<div class="card">
     <div style="font-size:13px;font-weight:700;margin-bottom:8px">📦 Database Stats</div>
@@ -5799,6 +6038,30 @@ function checkResults(){
         else if(sp.includes(h))spHits++;
         else if(cn.includes(h))cnHits++;
       });
+    }
+    
+    // Check CONTROL entries — random baseline for the DEEP LEARN experiment
+    if(entry.operator==='CONTROL'&&entry.subOperator===opName&&!entry.checked){
+      const cHits=entry.predictions.filter(n=>allActual.includes(n));
+      let cPermHits=0;
+      let cPermDetails=[];
+      entry.predictions.forEach(n=>{
+        if(!allActual.includes(n)){
+          const perms=getPerms(n);
+          const winningPerm=perms.find(p=>allActual.includes(p));
+          if(winningPerm){
+            cPermHits++;
+            const prizeType=t3.includes(winningPerm)?'TOP3':sp.includes(winningPerm)?'SPECIAL':'CONSOLATION';
+            cPermDetails.push({predicted:n,won:winningPerm,prize:prizeType});
+          }
+        }
+      });
+      entry.checked=true;
+      entry.hits=cHits;
+      entry.permHits=cPermHits;
+      entry.permWinDetails=cPermDetails;
+      // NOTE: control hits are tracked on the entry for the comparison panel, but
+      // deliberately NOT added to the main stat counters — they aren't your real bets.
     }
   });
   
