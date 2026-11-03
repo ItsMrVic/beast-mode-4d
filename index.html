@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v4.22 — Stability Update</title>
+<title>Beast Mode 4D v4.23 — Stability Update</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -414,7 +414,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v4.22</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v4.23</span>
       <div class="sub">Historical Analysis & Walk-Forward Research + DeepSeek</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
@@ -8877,6 +8877,17 @@ function runOracle(){
       });
       lastOracleResults=results;
       Object.entries(results).forEach(([opN,res])=>{
+        saveModeHistory('DODGE',opN,targetDate,tDay,
+          (res.dodgeVariants||[]).slice(0,3).map(v=>v.num),
+          {source:'oracle-dodge-variants'});
+        saveModeHistory('CROSSOP',opN,targetDate,tDay,
+          (res.crossOp?.candidates||[]).slice(0,3).map(c=>c.num),
+          {source:'oracle-cross-operator-migration'});
+      });
+      saveModeHistory('ORACLE_SNIPER',null,targetDate,tDay,
+        computeOracleSniper().slice(0,10).map(p=>p.displayNum),
+        {scope:'cross-operator',notTicketWin:true});
+      Object.entries(results).forEach(([opN,res])=>{
         if(history.some(e=>e.operator==='ORACLE'&&e.subOperator===opN&&(e.targetDate||e.date)===targetDate))return;
         history.push({date:targetDate,targetDate,generatedAt:new Date().toISOString(),operator:'ORACLE',subOperator:opN,targetDay:tDay,
           predictions:res.predictions.slice(0,3).map(p=>p.num),checked:false,hits:[],permHits:0,
@@ -9752,7 +9763,10 @@ function runHotHand(){
           predictions:res.picks.slice(0,3).map(p=>p.num),checked:false,hits:[],permHits:0,
           hotHandMeta:{lane:opN,windowSize,drawsAnalyzed:res.drawsAnalyzed,primary:res.primary.map(p=>p.digit).join(','),modelVersion:'v4.19'}});
       });
-      saveAll();render();toast('🔥 Operator-specific Hot Hand scan complete — exploratory rankings saved.');
+      Object.entries(fusions).forEach(([opN,nums])=>
+        saveModeHistory('FUSION',opN,targetDate,tDay,nums,
+          {source:'oracle-and-hot-hand',matching:'digit-set'}));
+      saveAll();render();toast('🔥 Hot Hand and available Fusion mode snapshots saved.');
     }catch(e){console.error('Hot Hand v4.19 error',e);toast('⚠️ Hot Hand scan failed — please check data.');}
     finally{if(btn){btn.disabled=false;btn.textContent='🔥 SCAN HOT STREAK';}}
   },20);
@@ -10787,6 +10801,21 @@ function nextTargetDateMYT(day){
   return target;
 }
 
+
+// v4.23: Persist the actual outputs of each generated mode, not recomputed guesses.
+// Existing entries are never overwritten; duplicate runs for the same mode/date/operator are idempotent.
+function saveModeHistory(mode,operator,targetDate,targetDay,numbers,meta={}){
+  const predictions=[...new Set((Array.isArray(numbers)?numbers:[]).filter(is4D))].slice(0,15);
+  if(!predictions.length||!/^\d{4}-\d{2}-\d{2}$/.test(targetDate||''))return false;
+  if(history.some(e=>e.operator===mode&&(e.subOperator||null)===(operator||null)&&(e.targetDate||e.date)===targetDate))return false;
+  history.push({id:'mode'+Date.now().toString(36)+Math.random().toString(36).slice(2,8),
+    date:targetDate,targetDate,targetDay,generatedAt:new Date().toISOString(),
+    operator:mode,...(operator?{subOperator:operator}:{}),
+    predictions,checked:false,hits:[],permHits:0,
+    historySource:'generated-mode',modeMeta:meta});
+  return true;
+}
+
 function runBeast(){
   const btn=document.getElementById('runBtn');if(!btn)return;
   const targetDay=document.getElementById('tDay')?.value||selectedDay||'Sat';
@@ -10808,6 +10837,10 @@ function runBeast(){
           predictions:picks,checked:false,hits:[],permHits:0,modules:Object.keys(getToggles(op.name)).filter(k=>getToggles(op.name)[k]!==false),
           scoringVersion:'4.16'});
       });
+      // Snapshot the extra modes displayed by Predict, including cross-operator Sniper.
+      const cross=crossOperatorFusion(lastResults);
+      saveModeHistory('SNIPER',null,targetDate,targetDay,
+        cross.playAllOps.slice(0,10).map(p=>p.num),{scope:'cross-operator',notTicketWin:true});
       stats.totalPredictions+=ready.length;
       saveAll();showPermsMap={};render();
       toast(`Historical scores generated for ${ready.length} operators — target ${targetDate}.`);
@@ -11494,7 +11527,7 @@ function checkResults(){
 }
 
 function exportData(){
-  const data={version:'4.22',exported:new Date().toISOString(),operators,history,moduleWeights,moduleToggles,moduleTogglesPerOp,stats,winsLog};
+  const data={version:'4.23',exported:new Date().toISOString(),operators,history,moduleWeights,moduleToggles,moduleTogglesPerOp,stats,winsLog};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;a.download=`beast4d-backup-${new Date().toISOString().slice(0,10)}.json`;
