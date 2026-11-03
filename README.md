@@ -1,3 +1,19 @@
+# BEAST MODE 4D v4.18 — Research Engine Upgrade
+
+- **Oracle:** deterministic scoring across 10,000 candidates, larger non-overlapping windows, smoothed position/pair frequencies, optional weekday comparison, and no compulsory sum-zone elimination. Unsupported Operator Dodge betting suggestions disabled.
+- **Brainstorm:** Chi-Square now uses all ten digits in the original sample and reports distribution deviation, not future win confidence.
+- **Hot Hand:** separates Magnum, Toto and Da Ma Cai selection, keeps pooled data as research-only, uses all 10,000 candidates without cold-digit or digit-sum cutoffs, and records the selected target weekday without duplicates.
+- **Deep Learn:** explicit statistical model (not a neural network); scores all 10,000 outcomes using smoothed historical position and pair counts; standardized historical-fit indices instead of inflated Top 5 scores; distinct target-day selector; duplicates prevented; straight and permutation evaluation separated from randomized controls.
+- **Compatibility:** Preserves the v4.17 repaired offline database lookup, archived results, previous saved history schemas and overall UI. Updates PWA cache version to v418.
+
+## Verification and caveats
+
+JavaScript syntax and three-operator regression tests passed, including duplicate-free target-date history saves, deterministic Oracle, complete Chi-Square samples, and engine UI template rendering in a stub DOM. A full Android/PWA browser run was unavailable. On device, confirm the v4.18 badge and check the 1 November draw archive.
+
+Bundled results end 1 November 2026; no automatic live draw downloads were added. No demonstrated lottery forecasting advantage over random selection. A /100 pattern-fit score is not a win percentage. Device-local data remains on the same website origin; export JSON before changing hosting origins.
+
+---
+
 # BEAST MODE 4D v4.17 — Results Lookup Fix
 
 This version repairs the **Live** and **Check & Learn → Auto-fill** lookups in the available v4.16 HTML source. It is an offline historical archive, **not a real-time online results service**. Results later than 2026-11-01 must be imported manually from a checked source.

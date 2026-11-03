@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v4.17 — Research Edition</title>
+<title>Beast Mode 4D v4.18 — Research Edition</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -414,7 +414,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v4.17</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v4.18</span>
       <div class="sub">Historical Analysis & Walk-Forward Research + DeepSeek</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
@@ -1336,7 +1336,7 @@ function renderPredict(){
   <div class="ctrl-group" style="max-width:90px"><label>Budget (RM)</label><input type="number" id="budgetInput" min="5" max="500" value="${localStorage.getItem('b4d_budget')||'50'}" style="text-align:center;font-weight:700" onchange="localStorage.setItem('b4d_budget',this.value)"></div>
   <button class="btn btn-fire" onclick="runBeast()" id="runBtn">🔥 RUN</button></div>`;
   
-  h+=`<div style="font-size:9px;margin:6px 0 12px;color:var(--dim2);line-height:1.6">🔬 v4.17 Research Edition: all 10,000 outcomes are evaluated. No model has demonstrated a reliable edge over independent random draws. Historical score ≠ winning probability. Data stays on this device.</div>`;
+  h+=`<div style="font-size:9px;margin:6px 0 12px;color:var(--dim2);line-height:1.6">🔬 v4.18 Research Edition: all 10,000 outcomes are evaluated. No model has demonstrated a reliable edge over independent random draws. Historical score ≠ winning probability. Data stays on this device.</div>`;
   // Op tabs
   // Operator logo SVGs - styled after original brand identities
   const opLogos={
@@ -1397,7 +1397,7 @@ function renderPredict(){
       if(crossOp.playAllOps.length>0){
         const opC={MAGNUM:'#D4A017',TOTO:'#DC2626',DAMACAI:'#2563EB'};
         h+=`<div style="background:linear-gradient(135deg,rgba(255,60,60,0.08),rgba(255,165,0,0.05));border:1px solid rgba(255,100,50,0.3);border-radius:12px;padding:12px;margin-bottom:16px">
-          <div style="font-size:12px;font-weight:800;color:#ff6633;margin-bottom:4px">🎯 SNIPER MODE — Play These on ALL 3 Operators</div>
+          <div style="font-size:12px;font-weight:800;color:#ff6633;margin-bottom:4px">🎯 RESEARCH MATCH MODE — Play These on ALL 3 Operators</div>
           <div style="font-size:8px;color:var(--dim2);margin-bottom:10px">These digit sets scored high across multiple operators. Play as iBox on ALL operators for maximum win coverage.</div>`;
         crossOp.playAllOps.slice(0,6).forEach((p,idx)=>{
           const ib=iBoxValue(p.num);
@@ -1931,7 +1931,7 @@ function renderHistory(){
         h+=`<div class="hist-item" style="margin:6px 0;padding:10px;border-radius:8px;background:#0a0a15;border:1px solid #1a1a3a;${borderLeft}${fusionExtra}${hasWin?';box-shadow:0 0 0 1px rgba(34,197,94,0.2)':''}">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
             <div style="display:flex;align-items:center;gap:6px">
-              ${isSniper?`<span style="font-size:10px;color:#ff6633;font-weight:800">🎯 SNIPER</span>`:isOracleSniper?`<span style="font-size:10px;color:#ff3366;font-weight:800">🎯 ORACLE SNIPER</span>`:isOracle?`<span style="font-size:10px;color:#c084fc;font-weight:800">🔮 ORACLE</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isDodge?`<span style="font-size:10px;color:#ef4444;font-weight:800">🎰 DODGE</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isCrossOp?`<span style="font-size:10px;color:#f59e0b;font-weight:800">🔀 CROSS-OP</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isHotHand?`<span style="font-size:10px;color:#fb923c;font-weight:800">🔥 HOT HAND</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>${entry.hotHandMeta?.lane?`<span style="font-size:7px;background:#fb923c22;color:#fb923c;padding:1px 4px;border-radius:3px">${entry.hotHandMeta.lane}</span>`:''}`:isFusion?`<span style="font-size:10px;color:#eab308;font-weight:800">💎 FUSION</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isDeepLearn?`<span style="font-size:10px;color:#06b6d4;font-weight:800">🧠 DEEP LEARN</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isControl?`<span style="font-size:10px;color:#64748b;font-weight:800">🎲 CONTROL</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:`<span style="font-size:10px;font-weight:700;color:${opColor}">${entry.operator}</span>`}
+              ${isSniper?`<span style="font-size:10px;color:#ff6633;font-weight:800">🎯 RESEARCH MATCH</span>`:isOracleSniper?`<span style="font-size:10px;color:#ff3366;font-weight:800">🎯 ORACLE RESEARCH MATCH</span>`:isOracle?`<span style="font-size:10px;color:#c084fc;font-weight:800">🔮 ORACLE</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isDodge?`<span style="font-size:10px;color:#ef4444;font-weight:800">🎰 DODGE</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isCrossOp?`<span style="font-size:10px;color:#f59e0b;font-weight:800">🔀 CROSS-OP</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isHotHand?`<span style="font-size:10px;color:#fb923c;font-weight:800">🔥 HOT HAND</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>${entry.hotHandMeta?.lane?`<span style="font-size:7px;background:#fb923c22;color:#fb923c;padding:1px 4px;border-radius:3px">${entry.hotHandMeta.lane}</span>`:''}`:isFusion?`<span style="font-size:10px;color:#eab308;font-weight:800">💎 FUSION</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isDeepLearn?`<span style="font-size:10px;color:#06b6d4;font-weight:800">🧠 DEEP LEARN</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isControl?`<span style="font-size:10px;color:#64748b;font-weight:800">🎲 CONTROL</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:`<span style="font-size:10px;font-weight:700;color:${opColor}">${entry.operator}</span>`}
               <span style="font-size:8px;background:var(--bg2);color:var(--dim2);padding:2px 6px;border-radius:3px">${entry.targetDay}</span>
               ${entry.generatedAt?`<span style="font-size:7px;color:var(--dim3);font-style:italic" title="${entry.generatedAt}">🕐 ${(()=>{const d=new Date(entry.generatedAt);return d.toLocaleDateString('en-MY',{month:'short',day:'numeric'})+' '+d.toLocaleTimeString('en-MY',{hour:'2-digit',minute:'2-digit',hour12:true});})()}</span>`:''}
             </div>
@@ -2269,7 +2269,7 @@ function addLiveToDatabase(opName){
 }
 
 // ============================================================
-// ORACLE MODE — Multi-Timeframe Consensus Predictor
+// ORACLE MODE — Multi-Window Historical Pattern Analyzer
 // ============================================================
 // Theory: Analyze 4 time windows (last 3, 6, 9, 12 draws)
 // A digit is "hot" at a position if it appeared frequently in that window
@@ -2365,171 +2365,69 @@ function crossOperatorAnalysis(targetDraws,otherOpsDraws,lookback=6){
 let lastOracleResults=null;
 
 function oracleAnalyze(opDraws,targetDay){
-  if(opDraws.length<12)return null;
-
-  // P2: All prizes helper — top3 + special + consolation (23 numbers per draw vs 3)
-  function allPrizeNums(draw){
-    return[...draw.top3,...(draw.special||[]),...(draw.consolation||[])].filter(n=>n&&n.length===4);
-  }
-
-  function buildPosFreq(draws){
-    const f=[{},{},{},{}];
-    draws.forEach(d=>allPrizeNums(d).forEach(n=>{
-      for(let i=0;i<4;i++)f[i][n[i]]=(f[i][n[i]]||0)+1;
-    }));
-    return f;
-  }
-
-  function topDigits(posFreq,n=4){
-    return posFreq.map(freq=>
-      Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,n).map(([d])=>d)
-    );
-  }
-
-  // P3: Non-overlapping windows — each draw votes exactly once
-  // [draws 1-3], [draws 4-6], [draws 7-9], [draws 10-12]
-  const windowSlices=[[0,3],[3,6],[6,9],[9,12]];
-  const windowAnalysis=windowSlices.map(([s,e],idx)=>{
-    const slice=opDraws.slice(s,e);
-    const posFreq=buildPosFreq(slice);
-    return{window:`W${idx+1}`,label:`Draws ${s+1}–${e}`,topPerPos:topDigits(posFreq),posFreq,isDay:false,draws:slice.length};
+  // Research-only position/pair model. The historical score is NOT a probability.
+  const clean=opDraws.filter(d=>d&&Array.isArray(d.top3));
+  if(clean.length<30)return null;
+  const allNums=d=>[...(d.top3||[]),...(d.special||[]),...(d.consolation||[])].filter(n=>/^\d{4}$/.test(n));
+  const slices=[[0,20],[20,60],[60,140],[140,300]];
+  const weights=[0.36,0.29,0.22,0.13];
+  const alpha=8;  // Dirichlet smoothing avoids exaggerated small-sample effects
+  const windowAnalysis=slices.map(([a,b],i)=>{
+    const ds=clean.slice(a,b), pf=Array.from({length:4},()=>Array(10).fill(0));
+    ds.forEach(d=>allNums(d).forEach(n=>{for(let p=0;p<4;p++)pf[p][Number(n[p])]++;}));
+    const topPerPos=pf.map(row=>row.map((count,digit)=>({digit:String(digit),count})).sort((a,b)=>b.count-a.count||a.digit.localeCompare(b.digit)).slice(0,4).map(x=>x.digit));
+    return {window:'W'+(i+1),label:`Draws ${a+1}–${Math.min(b,clean.length)}`,topPerPos,posFreq:pf,draws:ds.length,isDay:false};
   });
-
-  // Day window (P1): last 10 draws matching the selected day, votes 2×
-  const dayDraws=targetDay?opDraws.filter(d=>d.day===targetDay).slice(0,10):[];
-  const hasDayWindow=dayDraws.length>=3;
+  const dayDraws=targetDay?clean.filter(d=>d.day===targetDay).slice(0,60):[];
+  const hasDayWindow=dayDraws.length>=20;
+  let dayFreq=null;
   if(hasDayWindow){
-    const dayPosFreq=buildPosFreq(dayDraws);
-    windowAnalysis.push({window:'Day',label:`${targetDay}(${dayDraws.length})`,topPerPos:topDigits(dayPosFreq,4),posFreq:dayPosFreq,isDay:true,draws:dayDraws.length});
+    dayFreq=Array.from({length:4},()=>Array(10).fill(0));
+    dayDraws.forEach(d=>allNums(d).forEach(n=>{for(let p=0;p<4;p++)dayFreq[p][Number(n[p])]++;}));
+    windowAnalysis.push({window:'Day',label:`${targetDay} (${dayDraws.length})`,topPerPos:dayFreq.map(row=>row.map((count,i)=>({count,i})).sort((a,b)=>b.count-a.count||a.i-b.i).slice(0,4).map(x=>String(x.i))),posFreq:dayFreq,isDay:true,draws:dayDraws.length});
   }
-
-  // Consensus — standard windows vote 1 each, day window votes 2
   const maxVotes=hasDayWindow?6:4;
-  const consensusPerPos=[{},{},{},{}];
-  for(let pos=0;pos<4;pos++){
-    for(let d=0;d<=9;d++){
-      const digit=d.toString();
-      let votes=0;const inWindows=[];let dayBoosted=false;
-      windowAnalysis.forEach(wa=>{
-        if(wa.topPerPos[pos].includes(digit)){
-          const wv=wa.isDay?2:1;
-          votes+=wv;inWindows.push(wa.window);
-          if(wa.isDay)dayBoosted=true;
-        }
-      });
-      if(votes>=3)consensusPerPos[pos][digit]={votes,inWindows,dayBoosted};
-    }
+  const consensusPerPos=Array.from({length:4},()=>({}));
+  for(let p=0;p<4;p++)for(let d=0;d<10;d++){
+    const digit=String(d),present=windowAnalysis.filter(w=>w.topPerPos[p].includes(digit));
+    const votes=present.reduce((s,w)=>s+(w.isDay?2:1),0);
+    consensusPerPos[p][digit]={votes,inWindows:present.map(w=>w.window),dayBoosted:present.some(w=>w.isDay)};
   }
-
-  // Fallback for positions with zero consensus
-  const hasAllPositions=consensusPerPos.every(pos=>Object.keys(pos).length>0);
-  if(!hasAllPositions){
-    for(let pos=0;pos<4;pos++){
-      if(Object.keys(consensusPerPos[pos]).length===0){
-        const allFreq={};
-        windowAnalysis.forEach(wa=>{Object.entries(wa.posFreq[pos]).forEach(([d,c])=>{allFreq[d]=(allFreq[d]||0)+c;});});
-        Object.entries(allFreq).sort((a,b)=>b[1]-a[1]).slice(0,2).forEach(([d])=>{consensusPerPos[pos][d]={votes:1,inWindows:[],fallback:true,dayBoosted:false};});
-      }
-    }
-  }
-
-  // P5: Digit sum zone — find the 6-unit range with highest frequency in last 40 draws
-  const sumNums=opDraws.slice(0,40).flatMap(d=>allPrizeNums(d));
-  const sumFreq={};
-  sumNums.forEach(n=>{const s=[...n].reduce((a,d)=>a+parseInt(d),0);sumFreq[s]=(sumFreq[s]||0)+1;});
-  let sumZone=[0,36],bestSumCount=0;
-  for(let s=0;s<=31;s++){let c=0;for(let i=s;i<=s+5;i++)c+=sumFreq[i]||0;if(c>bestSumCount){bestSumCount=c;sumZone=[s,s+5];}}
-
-  // P6: Pair frequency from last 30 draws (all prizes)
-  const pairNums=opDraws.slice(0,30).flatMap(d=>allPrizeNums(d));
-  const pairF=[{},{},{}];
-  pairNums.forEach(n=>{for(let i=0;i<3;i++){const pp=n.slice(i,i+2);pairF[i][pp]=(pairF[i][pp]||0)+1;}});
-  function pairScore(num){let s=0;for(let i=0;i<3;i++)s+=pairF[i][num.slice(i,i+2)]||0;return s;}
-
-  // P4: Cold digit detection per position (last 20 draws, all prizes)
-  // Per Vic: operators substitute ONE hot digit with a cold digit to dodge payouts
-  // We detect cold digits and generate "Operator Dodge Variants" to counter this
-  const coldPerPos=Array(4).fill(null).map(()=>[]);
-  for(let pos=0;pos<4;pos++){
-    const seenDigits=new Set();
-    opDraws.slice(0,20).forEach(d=>allPrizeNums(d).forEach(n=>seenDigits.add(n[pos])));
-    // Truly cold = never seen in last 20 draws at this position
-    for(let d=0;d<=9;d++){if(!seenDigits.has(d.toString()))coldPerPos[pos].push(d.toString());}
-    // If no truly cold, use least-frequent 2 digits (lukewarm = still rare)
-    if(coldPerPos[pos].length===0){
-      const posF={};
-      opDraws.slice(0,20).forEach(d=>allPrizeNums(d).forEach(n=>{posF[n[pos]]=(posF[n[pos]]||0)+1;}));
-      Object.entries(posF).sort((a,b)=>a[1]-b[1]).slice(0,2).forEach(([d])=>coldPerPos[pos].push(d));
-    }
-  }
-
-  // P8: Repeat detection — did this exact number appear in the last 5 draws?
-  const recent5Set=new Set(opDraws.slice(0,5).flatMap(d=>allPrizeNums(d)));
-
-  // Weighted pick with day boost
-  function weightedPick(pool){
-    const weighted=[];
-    Object.entries(pool).forEach(([d,info])=>{
-      const base=info.votes>=5?5:info.votes>=4?4:info.votes>=3?2:1;
-      const dayExtra=info.dayBoosted?3:0;
-      for(let i=0;i<base+dayExtra;i++)weighted.push(d);
-    });
-    return weighted[Math.floor(Math.random()*weighted.length)];
-  }
-
-  // Generate 5 predictions — P5 sum filter applied during generation
-  const predictions=[];
-  const seenNums=new Set();
-  let attempts=0;
-  while(predictions.length<5&&attempts<300){
-    const num=[0,1,2,3].map(pos=>weightedPick(consensusPerPos[pos])).join('');
-    const digitSum=[...num].reduce((a,d)=>a+parseInt(d),0);
-    if(!seenNums.has(num)&&digitSum>=sumZone[0]&&digitSum<=sumZone[1]){
-      seenNums.add(num);
-      let strength=0,dayCount=0;
-      for(let i=0;i<4;i++){const info=consensusPerPos[i][num[i]];if(info){strength+=info.votes;if(info.dayBoosted)dayCount++;}}
-      const ps=pairScore(num);
-      const isRepeat=recent5Set.has(num);
-      predictions.push({num,strength,maxStrength:maxVotes*4,dayCount,pairScore:ps,isRepeat});
-    }
-    attempts++;
-  }
-  // P6: Re-rank by strength + pair score combined
-  predictions.sort((a,b)=>(b.strength*10+b.pairScore)-(a.strength*10+a.pairScore));
-
-  // P4: Operator Dodge Variants
-  // Theory (Vic): operator sees hot prediction, swaps ONE digit with a cold one to avoid payout
-  // Counter: generate the dodged version of each top pick so we buy both
-  const dodgeVariants=[];
-  predictions.slice(0,3).forEach(p=>{
-    for(let pos=0;pos<4;pos++){
-      const cold=coldPerPos[pos].filter(cd=>cd!==p.num[pos]);
-      if(cold.length>0){
-        const v=p.num.split('');v[pos]=cold[0];
-        const vNum=v.join('');
-        const vSum=[...vNum].reduce((a,d)=>a+parseInt(d),0);
-        if(!dodgeVariants.find(x=>x.num===vNum)&&vNum!==p.num){
-          dodgeVariants.push({
-            num:vNum,baseNum:p.num,swapPos:pos,
-            coldDigit:cold[0],hotDigit:p.num[pos],
-            sumInZone:vSum>=sumZone[0]&&vSum<=sumZone[1]
-          });
-        }
-      }
-    }
+  // Recent adjacent-pair counts are a weak secondary historical descriptor.
+  const pairs=Array.from({length:3},()=>Array(100).fill(0));
+  clean.slice(0,100).forEach(dr=>allNums(dr).forEach(n=>{for(let p=0;p<3;p++)pairs[p][Number(n.slice(p,p+2))]++;}));
+  const pairTotals=pairs.map(row=>row.reduce((a,b)=>a+b,0));
+  const sums=clean.slice(0,100).flatMap(allNums).map(n=>[...n].reduce((s,d)=>s+Number(d),0)).sort((a,b)=>a-b);
+  const sumZone=sums.length?[sums[Math.floor((sums.length-1)*0.25)],sums[Math.floor((sums.length-1)*0.75)]]:[0,36]; // descriptive interquartile range, never an elimination filter
+  const coldPerPos=Array.from({length:4},(_,p)=>{
+    const row=windowAnalysis[0].posFreq[p];return row.map((count,d)=>({count,d})).sort((a,b)=>a.count-b.count||a.d-b.d).slice(0,2).map(x=>String(x.d));
   });
-
-  return{
-    targetDay:targetDay||null,
-    dayDrawsUsed:dayDraws.length,
-    hasDayWindow,
-    windows:windowAnalysis,
-    consensusPerPos,
-    predictions,
-    sumZone,
-    coldPerPos,
-    dodgeVariants:dodgeVariants.slice(0,6),
-  };
+  const recentSet=new Set(clean.slice(0,5).flatMap(allNums));
+  const scored=[];
+  for(let i=0;i<10000;i++){
+    const num=String(i).padStart(4,'0'); let score=0,strength=0,dayCount=0;
+    for(let p=0;p<4;p++){
+      const digit=Number(num[p]);
+      windowAnalysis.slice(0,4).forEach((w,j)=>{
+        const row=w.posFreq[p],total=row.reduce((a,b)=>a+b,0);
+        if(total>0)score+=weights[j]*Math.log((row[digit]+alpha)/(total+10*alpha));
+      });
+      if(hasDayWindow){const row=dayFreq[p],total=row.reduce((a,b)=>a+b,0);score+=0.06*Math.log((row[digit]+alpha)/(total+10*alpha));}
+      const info=consensusPerPos[p][num[p]];strength+=info.votes;
+      if(info.dayBoosted)dayCount++;
+    }
+    let pairScore=0;
+    for(let p=0;p<3;p++){const count=pairs[p][Number(num.slice(p,p+2))];pairScore+=count;score+=0.06*Math.log((count+5)/(pairTotals[p]+500));}
+    scored.push({num,score,strength,maxStrength:maxVotes*4,dayCount,pairScore,isRepeat:recentSet.has(num)});
+  }
+  scored.sort((a,b)=>b.score-a.score||a.num.localeCompare(b.num));
+  const predictions=[],sig=new Set();
+  for(const item of scored){
+    if(sig.has(digitKey(item.num)))continue;
+    if(predictions.some(x=>[0,1,2,3].filter(p=>x.num[p]!==item.num[p]).length<2))continue;
+    predictions.push(item);sig.add(digitKey(item.num));if(predictions.length>=5)break;
+  }
+  return {targetDay:targetDay||null,dayDrawsUsed:dayDraws.length,hasDayWindow,windows:windowAnalysis,consensusPerPos,predictions,sumZone,coldPerPos,dodgeVariants:[],modelVersion:'v4.18',scoreIsProbability:false};
 }
 
 // ============================================================
@@ -2544,137 +2442,45 @@ function oracleAnalyze(opDraws,targetDay){
 //   - Digit sum zone 15-22 (Grok's zone)
 // ============================================================
 function hotHandAnalyze(draws,windowSize){
-  windowSize=windowSize||6;
-  const recent=draws.slice(0,windowSize);
+  windowSize=Math.max(3,Math.min(80,Number(windowSize)||12));
+  const recent=(draws||[]).slice(0,windowSize);
   if(recent.length<3)return null;
-  
-  // Top 3 prizes only — NOT special/consolation (key Grok rule)
-  const nums=recent.flatMap(d=>(d.top3||[]).filter(n=>n&&n.length===4));
+  const nums=recent.flatMap(d=>(d.top3||[]).filter(n=>/^\d{4}$/.test(n)));
   if(nums.length<6)return null;
-  
-  // Overall digit frequency across all positions
-  const freq={};
-  for(let d=0;d<=9;d++)freq[d.toString()]=0;
-  nums.forEach(n=>{for(const d of n)freq[d]++;});
-  
-  const sorted=Object.entries(freq).sort((a,b)=>b[1]-a[1]);
-  const primary=sorted.slice(0,3).map(e=>({digit:e[0],count:e[1]}));
-  const secondary=sorted.slice(3,6).map(e=>({digit:e[0],count:e[1]}));
-  const primaryDigits=new Set(primary.map(p=>p.digit));
-  const secondaryDigits=new Set(secondary.map(p=>p.digit));
-  
-  // Per-position frequency for each hot digit
-  const posFreq={};
-  [...primaryDigits,...secondaryDigits].forEach(d=>{posFreq[d]=[0,0,0,0];});
-  nums.forEach(n=>{
-    for(let i=0;i<4;i++){
-      if(posFreq[n[i]])posFreq[n[i]][i]++;
-    }
-  });
-  
-  // Classify positional role for each hot digit
+  const freq=Array(10).fill(0),pos=Array.from({length:4},()=>Array(10).fill(0));
+  nums.forEach(n=>{for(let p=0;p<4;p++){const d=Number(n[p]);freq[d]++;pos[p][d]++;}});
+  const ranked=freq.map((count,i)=>({digit:String(i),count})).sort((a,b)=>b.count-a.count||a.digit.localeCompare(b.digit));
+  const primary=ranked.slice(0,3),secondary=ranked.slice(3,6);
+  const primSet=new Set(primary.map(x=>x.digit));
   const positionRoles={};
-  Object.entries(posFreq).forEach(([d,p])=>{
-    const startScore=p[0]+p[1];
-    const endScore=p[2]+p[3];
-    if(startScore>endScore*1.3)positionRoles[d]='start';
-    else if(endScore>startScore*1.3)positionRoles[d]='end';
-    else positionRoles[d]='mid';
+  [...primary,...secondary].forEach(x=>{
+    const d=Number(x.digit);const start=pos[0][d]+pos[1][d],end=pos[2][d]+pos[3][d];
+    positionRoles[x.digit]=start>end*1.3?'start':end>start*1.3?'end':'mid';
   });
-  
-  // Sum zone from recent data, clamped to Grok's 15-22 default
-  const sums=nums.map(n=>[...n].reduce((a,d)=>a+parseInt(d),0));
-  const sumMin=Math.min(...sums);
-  const sumMax=Math.max(...sums);
-  const sumZone=[Math.max(15,sumMin),Math.min(22,sumMax)];
-  if(sumZone[0]>sumZone[1]){sumZone[0]=sumMin;sumZone[1]=sumMax;}
-  
-  // Build position-aware digit pools (top 5 digits per position by frequency)
-  const allHot=[...primaryDigits,...secondaryDigits];
-  const posPool=[[],[],[],[]];
-  for(let pos=0;pos<4;pos++){
-    const scored=[];
-    for(const d of allHot){
-      const count=posFreq[d][pos]||0;
-      if(count>0)scored.push({digit:d,count});
-    }
-    scored.sort((a,b)=>b.count-a.count);
-    posPool[pos]=scored.slice(0,5).map(s=>s.digit);
-    if(posPool[pos].length<2)posPool[pos]=allHot.slice(0,4);
+  const sums=nums.map(n=>[...n].reduce((s,d)=>s+Number(d),0)).sort((a,b)=>a-b);
+  const sumZone=[sums[Math.floor((sums.length-1)*.25)],sums[Math.floor((sums.length-1)*.75)]];
+  // Historical-fit only: apply smoothing and never exclude cold digits/sums.
+  const scored=[];
+  for(let i=0;i<10000;i++){
+    const num=String(i).padStart(4,'0');let score=0;
+    for(let p=0;p<4;p++)score+=Math.log((pos[p][Number(num[p])]+8)/(nums.length+80));
+    scored.push({num,score});
   }
-  
-  // Score a 4-digit number
-  function scoreNum(num){
-    let s=0;
-    const seenDigits=new Set(num);
-    for(const d of seenDigits){
-      if(primaryDigits.has(d))s+=10;
-      else if(secondaryDigits.has(d))s+=5;
-    }
-    for(let i=0;i<4;i++){
-      const d=num[i];
-      const pf=posFreq[d];
-      if(pf)s+=pf[i]*0.8;
-    }
-    const ds=[...num].reduce((a,d)=>a+parseInt(d),0);
-    if(ds>=sumZone[0]&&ds<=sumZone[1])s+=5;
-    return s;
+  scored.sort((a,b)=>b.score-a.score||a.num.localeCompare(b.num));
+  const picks=[],seen=new Set();
+  for(const cand of scored){
+    const signature=digitKey(cand.num);if(seen.has(signature))continue;
+    if(picks.some(x=>[0,1,2,3].filter(p=>x.num[p]!==cand.num[p]).length<2))continue;
+    seen.add(signature);
+    const sum=[...cand.num].reduce((s,d)=>s+Number(d),0);
+    const count=[...new Set(cand.num)].filter(d=>primSet.has(d)).length;
+    picks.push({num:cand.num,score:cand.score,stars:count>=3?3:count>=2?2:1,primaryCount:count,sum,sumInZone:sum>=sumZone[0]&&sum<=sumZone[1]});
+    if(picks.length>=6)break;
   }
-  
-  // Generate candidates from position pools (max 5^4=625)
-  const candidates=[];
-  const seen=new Set();
-  for(const d0 of posPool[0])for(const d1 of posPool[1])for(const d2 of posPool[2])for(const d3 of posPool[3]){
-    const num=d0+d1+d2+d3;
-    if(seen.has(num))continue;
-    seen.add(num);
-    candidates.push({num,score:scoreNum(num)});
-  }
-  
-  // Filter to sum zone and sort
-  const filtered=candidates.filter(c=>{
-    const s=[...c.num].reduce((a,d)=>a+parseInt(d),0);
-    return s>=sumZone[0]&&s<=sumZone[1];
-  });
-  filtered.sort((a,b)=>b.score-a.score);
-  
-  // Diversity: unique digit sets (so 9631 and 6193 aren't both in top 6)
-  const diverse=[];
-  const seenSets=new Set();
-  for(const c of filtered){
-    const digitSet=[...c.num].sort().join('');
-    if(seenSets.has(digitSet))continue;
-    seenSets.add(digitSet);
-    diverse.push(c);
-    if(diverse.length>=6)break;
-  }
-  if(diverse.length<6){
-    for(const c of filtered){
-      if(!diverse.includes(c)){
-        diverse.push(c);
-        if(diverse.length>=6)break;
-      }
-    }
-  }
-  const finalPicks=diverse.slice(0,6);
-  
-  // Annotate picks
-  const picksOut=finalPicks.map(c=>{
-    const seenD=new Set(c.num);
-    const primCount=[...seenD].filter(d=>primaryDigits.has(d)).length;
-    const stars=primCount>=3?3:primCount>=2?2:1;
-    const ds=[...c.num].reduce((a,d)=>a+parseInt(d),0);
-    return{
-      num:c.num,score:c.score,stars,primaryCount:primCount,
-      sum:ds,sumInZone:ds>=sumZone[0]&&ds<=sumZone[1]
-    };
-  });
-  
-  return{
-    windowSize:recent.length,drawsAnalyzed:recent.length,
-    totalDigits:nums.length*4,
-    primary,secondary,positionRoles,posFreq,sumZone,picks:picksOut
-  };
+  return {windowSize:recent.length,drawsAnalyzed:recent.length,totalDigits:nums.length*4,
+    primary,secondary,positionRoles,
+    posFreq:Object.fromEntries([...primary,...secondary].map(x=>[x.digit,pos.map(r=>r[Number(x.digit)])])),
+    fullFrequency:freq.slice(),sumZone,picks,modelVersion:'v4.18'};
 }
 
 // Hot Hand results state
@@ -2683,7 +2489,7 @@ let lastHotHandResults=null;
 function renderOracleBody(){
   let h='';
   
-  // 🎯 ORACLE SNIPER — cross-operator consensus numbers
+  // 🎯 ORACLE RESEARCH MATCH — cross-operator consensus numbers
   const snipers=computeOracleSniper();
   if(snipers.length>0){
     h+=`<div style="background:linear-gradient(135deg,rgba(255,60,60,0.15),rgba(255,165,0,0.08));border:2px solid #ff6633;border-radius:12px;padding:14px;margin-bottom:14px;box-shadow:0 4px 16px rgba(255,102,51,0.2)">
@@ -2691,7 +2497,7 @@ function renderOracleBody(){
         <div style="font-size:28px">🎯</div>
         <div style="flex:1">
           <div style="font-size:13px;font-weight:800;color:#ff6633;letter-spacing:1px">ORACLE SNIPER</div>
-          <div style="font-size:8px;color:var(--dim2);margin-top:2px">${snipers.length} cross-operator consensus number${snipers.length>1?'s':''} — PLAY ON ALL 3 OPS</div>
+          <div style="font-size:8px;color:var(--dim2);margin-top:2px">${snipers.length} cross-operator consensus number${snipers.length>1?'s':''} — exploratory comparison</div>
         </div>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
@@ -2700,7 +2506,7 @@ function renderOracleBody(){
           <div style="font-size:7px;color:var(--dim3)">${s.ops.length===3?'🔥 ALL 3':s.ops.join('+')}</div>
         </div>`).join('')}
       </div>
-      <div style="font-size:8px;color:#ff6633;margin-top:8px;font-weight:700;text-align:center">🎯 Strong signal — Oracle agrees across operators (digit-set match)</div>
+      <div style="font-size:8px;color:#ff6633;margin-top:8px;font-weight:700;text-align:center">Exploratory digit-set agreement. Independent lottery draws are not linked.</div>
     </div>`;
   }
   
@@ -2709,10 +2515,10 @@ function renderOracleBody(){
       <div style="font-size:32px">🔮</div>
       <div style="flex:1">
         <div style="font-size:14px;font-weight:800;color:#c084fc;letter-spacing:1px">ORACLE MODE</div>
-        <div style="font-size:9px;color:var(--dim2)">Multi-Timeframe Consensus Predictor</div>
+        <div style="font-size:9px;color:var(--dim2)">Multi-Window Historical Pattern Analyzer</div>
       </div>
     </div>
-    <div style="font-size:9px;color:var(--dim);line-height:1.5">Analyzes <b style="color:#c084fc">5 time windows</b> (3d, 6d, 9d, 12d + <b style="color:#a78bfa">target day</b>) to find digits hot across multiple timeframes. Day-matched draws vote <b style="color:#a78bfa">2×</b> — picks marked <b style="color:#a78bfa">★ DAY</b> are confirmed by same-day history. Only digits in <b style="color:#c084fc">3+ votes</b> qualify.</div>
+    <div style="font-size:9px;color:var(--dim);line-height:1.5">Analyzes non-overlapping <b style="color:#c084fc">20/40/80/160-draw windows</b> plus a separate weekday sample. All 10,000 four-digit candidates are ranked deterministically. Agreement describes history, not future winning odds.</div>
   </div>`;
   
   // Target day + RUN button
@@ -2797,7 +2603,7 @@ function renderOracleBody(){
       h+=`</div>`;
 
       // Sum zone info
-      h+=`<div style="font-size:8px;color:var(--dim3);margin-bottom:8px">Sum zone: <span style="color:#f59e0b;font-weight:700">${res.sumZone[0]}–${res.sumZone[1]}</span> (P5 filter active)</div>`;
+      h+=`<div style="font-size:8px;color:var(--dim3);margin-bottom:8px">Sum zone: <span style="color:#f59e0b;font-weight:700">${res.sumZone[0]}–${res.sumZone[1]}</span> (descriptive middle 50%; not a filter)</div>`;
 
       // Oracle Picks (Top 3 — engines rank from full pool, output best 3)
       h+=`<div style="font-size:8px;color:var(--dim3);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">🎡 Oracle Picks</div>`;
@@ -2824,7 +2630,7 @@ function renderOracleBody(){
       if(res.dodgeVariants&&res.dodgeVariants.length>0){
         h+=`<div style="margin-top:12px;padding:10px;background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.2);border-radius:8px">`;
         h+=`<div style="font-size:8px;color:#ef4444;font-weight:800;margin-bottom:3px;text-transform:uppercase;letter-spacing:0.5px">🎰 Operator Dodge Variants</div>`;
-        h+=`<div style="font-size:8px;color:var(--dim3);margin-bottom:8px;line-height:1.4">Operator takes your hot pick → swaps 1 digit with a cold one. Buy these too to counter the swap.</div>`;
+        h+=`<div style="font-size:8px;color:var(--dim3);margin-bottom:8px;line-height:1.4">No evidence of operator manipulation; cold-digit variants are hypothetical. These swaps are exploratory only; they have no demonstrated winning advantage.</div>`;
         res.dodgeVariants.slice(0,3).forEach((v,i)=>{
           const digits=v.num.split('');
           const numHtml=digits.map((d,pos)=>
@@ -2873,9 +2679,9 @@ function renderOracleBody(){
   } else {
     h+=`<div style="text-align:center;padding:40px 0;color:var(--dim3)">
       <div style="font-size:50px;margin-bottom:10px">🎡</div>
-      <div style="font-size:12px;color:var(--dim2)">Tap SPIN to generate Oracle predictions</div>
-      <div style="font-size:9px;margin-top:4px">Based on your proven multi-timeframe method</div>
-      <div style="font-size:9px;color:#c084fc;margin-top:12px;font-style:italic">"Past winnings: RM7,000 — let's find another 5794"</div>
+      <div style="font-size:12px;color:var(--dim2)">Tap SPIN to rank historical patterns</div>
+      <div style="font-size:9px;margin-top:4px">Deterministic historical-fit ranking, not a win prediction</div>
+      <div style="font-size:9px;color:#c084fc;margin-top:12px;font-style:italic">"Historical patterns do not imply future wins"</div>
     </div>`;
   }
   
@@ -2884,139 +2690,33 @@ function renderOracleBody(){
 
 function runOracle(){
   const btn=document.getElementById('oracleBtn');
-  const jars=document.getElementById('oracleJars');
-  btn.disabled=true;btn.textContent='🎡 SPINNING...';
-  jars.style.display='block';
-  
-  // Start spinning animation
-  const spinIntervals=[];
-  for(let i=0;i<4;i++){
-    const jar=document.getElementById('jar'+i);
-    spinIntervals.push(setInterval(()=>{
-      jar.textContent=Math.floor(Math.random()*10);
-    },60));
-  }
-  
-  // Read target day BEFORE setTimeout so it's captured correctly
-  const tDay=document.getElementById('oracleDay')?.value||'Sat';
-
-  // Calculate results in background
+  const tDay=document.getElementById('oracleDay')?.value||localStorage.getItem('b4d_oracleDay')||'Wed';
+  const targetDate=nextTargetDateMYT(tDay);
+  if(!targetDate){toast('⚠️ No upcoming draw for selected day');return;}
+  if(btn){btn.disabled=true;btn.textContent='🔮 ANALYZING...';}
   setTimeout(()=>{
-    const results={};
-    operators.forEach(op=>{
-      const res=oracleAnalyze(op.draws,tDay);
-      if(res){
-        // Cross-operator migration: pass the OTHER 2 operators' draws
-        const otherOps=operators.filter(o=>o.name!==op.name).map(o=>({name:o.name,draws:o.draws}));
-        res.crossOp=crossOperatorAnalysis(op.draws,otherOps);
+    try{
+      const results={};
+      operators.forEach(op=>{
+        const historyBefore=(op.draws||[]).filter(d=>d.date<targetDate);
+        const res=oracleAnalyze(historyBefore,tDay);
+        if(!res)return;
+        // Cross-operator patterns remain a separate research descriptor, never a proven source of winning probability.
+        const others=operators.filter(o=>o.name!==op.name).map(o=>({name:o.name,draws:(o.draws||[]).filter(d=>d.date<targetDate)}));
+        res.crossOp=crossOperatorAnalysis(historyBefore,others);
         results[op.name]=res;
-      }
-    });
-    lastOracleResults=results;
-    
-    // Stop jars one by one with final digits from MAGNUM's top pick
-    const showcase=results.MAGNUM?.predictions[0]?.num||results.TOTO?.predictions[0]?.num||'1234';
-    for(let i=0;i<4;i++){
-      setTimeout(()=>{
-        clearInterval(spinIntervals[i]);
-        const jar=document.getElementById('jar'+i);
-        jar.textContent=showcase[i];
-        jar.classList.add('jar-locked');
-      },1500+i*400);
-    }
-    
-    // Save to history — 3 entry types per operator so every tier is independently trackable
-    setTimeout(()=>{
-      const now=new Date().toISOString().slice(0,10);
-      Object.entries(results).forEach(([opName,res])=>{
-        // TIER 1: Primary Oracle picks (5 high-consensus numbers)
-        history.push({
-          date:nextTargetDateMYT(tDay)||now,targetDate:nextTargetDateMYT(tDay)||null,generatedAt:new Date().toISOString(),
-          operator:'ORACLE',
-          subOperator:opName,
-          targetDay:tDay,
-          predictions:res.predictions.slice(0,3).map(p=>p.num),
-          checked:false,
-          hits:[],
-          permHits:0,
-          oracleMeta:{
-            strengths:res.predictions.slice(0,3).map(p=>({num:p.num,strength:p.strength,maxStrength:p.maxStrength})),
-            crossOp:res.crossOp?.candidates?.slice(0,3).map(c=>c.num)||[]  // kept for backward compat
-          }
-        });
-        // TIER 2: Operator Dodge Variants (counter hot→cold digit swap)
-        if(res.dodgeVariants&&res.dodgeVariants.length>0){
-          history.push({
-            date:nextTargetDateMYT(tDay)||now,targetDate:nextTargetDateMYT(tDay)||null,generatedAt:new Date().toISOString(),
-            operator:'DODGE',
-            subOperator:opName,
-            targetDay:tDay,
-            predictions:res.dodgeVariants.slice(0,3).map(v=>v.num),
-            checked:false,
-            hits:[],
-            permHits:0,
-            dodgeMeta:{
-              variants:res.dodgeVariants.slice(0,3).map(v=>({
-                num:v.num,baseNum:v.baseNum,swapPos:v.swapPos,
-                hotDigit:v.hotDigit,coldDigit:v.coldDigit,sumInZone:v.sumInZone
-              }))
-            }
-          });
-        }
-        // TIER 3: Cross-Op Migration candidates (digit sets moving between operators)
-        if(res.crossOp&&res.crossOp.candidates&&res.crossOp.candidates.length>0){
-          history.push({
-            date:nextTargetDateMYT(tDay)||now,targetDate:nextTargetDateMYT(tDay)||null,generatedAt:new Date().toISOString(),
-            operator:'CROSSOP',
-            subOperator:opName,
-            targetDay:tDay,
-            predictions:res.crossOp.candidates.slice(0,3).map(c=>c.num),
-            checked:false,
-            hits:[],
-            permHits:0,
-            crossOpMeta:{
-              migrationRate:res.crossOp.migrationRate,
-              migCount:res.crossOp.migCount,
-              totalChecked:res.crossOp.totalChecked,
-              candidates:res.crossOp.candidates.slice(0,3).map(c=>({
-                num:c.num,fromOp:c.fromOp,confirmed:c.confirmed
-              }))
-            }
-          });
-        }
       });
-      
-      // 🎯 ORACLE SNIPER — cross-operator consensus numbers (digit-set match)
-      // Uses the SAME computeOracleSniper() function that powers the visual banner
-      // Oracle logic itself is UNCHANGED — this just persists the sniper output to history
-      const oracleSnipers=computeOracleSniper();
-      if(oracleSnipers.length>0){
-        history.push({
-          date:nextTargetDateMYT(tDay)||now,targetDate:nextTargetDateMYT(tDay)||null,generatedAt:new Date().toISOString(),
-          operator:'ORACLE_SNIPER',
-          targetDay:tDay,
-          predictions:oracleSnipers.map(s=>s.displayNum),
-          checked:false,
-          hits:[],
-          permHits:0,
-          oracleSniperMeta:{
-            picks:oracleSnipers.map(s=>({
-              num:s.displayNum,
-              ops:s.ops,
-              allThree:s.ops.length===3
-            }))
-          }
-        });
-      }
-      
-      saveAll();
-      
-      btn.disabled=false;btn.textContent='🔮 SPIN';
-      setTimeout(()=>{jars.style.display='none'},2000);
-      render();
-      toast('🔮 Oracle + Dodge + Cross-Op saved to history!');
-    },3500);
-  },200);
+      lastOracleResults=results;
+      Object.entries(results).forEach(([opN,res])=>{
+        if(history.some(e=>e.operator==='ORACLE'&&e.subOperator===opN&&(e.targetDate||e.date)===targetDate))return;
+        history.push({date:targetDate,targetDate,generatedAt:new Date().toISOString(),operator:'ORACLE',subOperator:opN,targetDay:tDay,
+          predictions:res.predictions.slice(0,3).map(p=>p.num),checked:false,hits:[],permHits:0,
+          oracleMeta:{strengths:res.predictions.slice(0,3).map(p=>({num:p.num,strength:p.strength,maxStrength:p.maxStrength})),modelVersion:'v4.18'}});
+      });
+      saveAll();render();toast('🔮 Oracle historical-fit ranking saved for '+targetDate);
+    }catch(e){console.error('Oracle v4.18 error',e);toast('⚠️ Oracle analysis failed');}
+    finally{if(btn){btn.disabled=false;btn.textContent='🔮 SPIN';}}
+  },30);
 }
 
 // ============================================================
@@ -3094,91 +2794,36 @@ function computeHotHandSniper(){
 // Replicates Vic's hand-drawn 4-tier color-coded chart automatically
 // ============================================================
 function chiSquareTest(observed){
-  // Chi-square goodness-of-fit test for digit uniformity
-  // H0: digits are uniformly distributed (no hot/cold pattern)
-  // H1: digits have non-uniform distribution (hot pattern is real)
-  // observed: array of 10 frequency counts (one per digit 0-9)
-  const total=observed.reduce((a,b)=>a+b,0);
-  if(total<10)return{chi2:0,significant:false,strength:'insufficient',pValue:1};
-  const expected=total/10; // uniform expectation
-  let chi2=0;
-  for(let i=0;i<10;i++){
-    const diff=observed[i]-expected;
-    chi2+=(diff*diff)/expected;
-  }
-  // Critical values for df=9 (10 digits - 1):
-  // p<0.05 -> chi2 > 16.92 (significant)
-  // p<0.01 -> chi2 > 21.67 (highly significant)
-  // p<0.001 -> chi2 > 27.88 (very highly significant)
-  let strength='WEAK',significant=false,pValue=1;
-  if(chi2>=27.88){strength='VERY STRONG';significant=true;pValue=0.001;}
-  else if(chi2>=21.67){strength='STRONG';significant=true;pValue=0.01;}
-  else if(chi2>=16.92){strength='MODERATE';significant=true;pValue=0.05;}
-  else if(chi2>=12.0){strength='WEAK';significant=false;pValue=0.2;}
-  else{strength='RANDOM';significant=false;pValue=0.5;}
+  const values=Array.isArray(observed)?observed.map(v=>Number(v)||0):[];
+  if(values.length!==10||values.some(v=>v<0))return{chi2:'N/A',significant:false,strength:'INSUFFICIENT',pValue:null};
+  const total=values.reduce((a,b)=>a+b,0);
+  if(total<50)return{chi2:'N/A',significant:false,strength:'INSUFFICIENT',pValue:null};
+  const expected=total/10;
+  const chi2=values.reduce((s,o)=>s+((o-expected)**2)/expected,0);
+  // df=9 reference critical values. Significance says nothing about future winning odds.
+  const significant=chi2>=16.919;
+  const pValue=chi2>=27.877?0.001:chi2>=21.666?0.01:significant?0.05:null;
+  const strength=significant?'DISTRIBUTION DEVIATION':'NO CLEAR DEVIATION';
   return{chi2:chi2.toFixed(2),significant,strength,pValue};
 }
-
 function computeBrainstormChart(){
   if(!lastHotHandResults)return null;
-  const out={hasMagnum:false,hasPool:false};
-  
-  // Helper: posFreq is {digit: [pos0, pos1, pos2, pos3]} — sum across positions for each digit
-  // hotHandAnalyze only populates posFreq for primary+secondary digits, so other digits stay 0
-  const buildFreqArray=(posFreqObj)=>{
-    const freq=new Array(10).fill(0);
-    if(posFreqObj&&typeof posFreqObj==='object'){
-      Object.entries(posFreqObj).forEach(([digit,posCounts])=>{
-        const idx=parseInt(digit);
-        if(!isNaN(idx)&&idx>=0&&idx<=9&&Array.isArray(posCounts)){
-          freq[idx]=posCounts.reduce((a,b)=>a+(b||0),0);
-        }
-      });
-    }
-    return freq;
+  const out={hasMagnum:false,hasPool:false,hasToto:false,hasDamacai:false};
+  const add=(label,result)=>{
+    if(!result)return;
+    const freq=Array.isArray(result.fullFrequency)&&result.fullFrequency.length===10?result.fullFrequency.slice():null;
+    out[label]={primary:(result.primary||[]).map(x=>x.digit),secondary:(result.secondary||[]).map(x=>x.digit),freq:freq||Array(10).fill(0),chi2:chiSquareTest(freq)};
+    out['has'+label[0].toUpperCase()+label.slice(1)]=true;
   };
-  
-  // MAGNUM lane
-  if(lastHotHandResults.magnum){
-    const m=lastHotHandResults.magnum;
-    let freq=buildFreqArray(m.posFreq);
-    // If posFreq was empty/missing, fall back to primary+secondary count totals
-    if(freq.every(v=>v===0)){
-      m.primary?.forEach(p=>{const i=parseInt(p.digit);if(!isNaN(i))freq[i]+=p.count||0;});
-      m.secondary?.forEach(p=>{const i=parseInt(p.digit);if(!isNaN(i))freq[i]+=p.count||0;});
-    }
-    out.magnum={
-      primary:m.primary?.map(p=>p.digit)||[],
-      secondary:m.secondary?.map(p=>p.digit)||[],
-      freq:freq,
-      chi2:chiSquareTest(freq)
-    };
-    out.hasMagnum=true;
-  }
-  
-  // TOTO+DAMACAI POOL lane
-  if(lastHotHandResults.totoDmc){
-    const t=lastHotHandResults.totoDmc;
-    let freq=buildFreqArray(t.posFreq);
-    if(freq.every(v=>v===0)){
-      t.primary?.forEach(p=>{const i=parseInt(p.digit);if(!isNaN(i))freq[i]+=p.count||0;});
-      t.secondary?.forEach(p=>{const i=parseInt(p.digit);if(!isNaN(i))freq[i]+=p.count||0;});
-    }
-    out.pool={
-      primary:t.primary?.map(p=>p.digit)||[],
-      secondary:t.secondary?.map(p=>p.digit)||[],
-      freq:freq,
-      chi2:chiSquareTest(freq)
-    };
-    out.hasPool=true;
-  }
-  
-  // Mid-heat / mid-cold: digits ranked 4-6 (mid-heat) and 7-10 (mid-cold) by combined freq
-  if(out.hasMagnum&&out.hasPool){
-    const combinedFreq=out.magnum.freq.map((v,i)=>v+out.pool.freq[i]);
-    const ranked=combinedFreq.map((c,d)=>({d:String(d),c})).sort((a,b)=>b.c-a.c);
-    out.midHeat=ranked[5]?.d||'?';  // 6th hottest = mid-heat
-    out.midCold=ranked[9]?.d||'?';  // 10th = coldest
+  add('magnum',lastHotHandResults.magnum);
+  add('pool',lastHotHandResults.totoDmc);
+  add('toto',lastHotHandResults.toto);
+  add('damacai',lastHotHandResults.damacai);
+  const available=['magnum','toto','damacai'].filter(k=>out[k]);
+  if(available.length){
+    const combined=Array.from({length:10},(_,i)=>available.reduce((s,k)=>s+out[k].freq[i],0));
+    const ranked=combined.map((c,d)=>({d:String(d),c})).sort((a,b)=>b.c-a.c||a.d.localeCompare(b.d));
+    out.midHeat=ranked[5].d;out.midCold=ranked[9].d;
   }
   return out;
 }
@@ -3455,109 +3100,48 @@ function computePerTierStats(){
 // way to TEST that claim against real results. Track its Top 5 over many draws
 // and compare hit-rate to 5 random numbers — that is the real experiment.
 // ============================================================
-function deepLearnAnalyze(opName){
+function deepLearnAnalyze(opName,historicalDraws){
   const op=operators.find(o=>o.name===opName);
-  if(!op||!op.draws||op.draws.length<5)return null;
-  const draws=op.draws; // newest first
-  const N=draws.length;
-
-  // --- Learn from how PAST TOP-3 WINNERS were composed ---
-  // 1) Positional digit frequency (pos 0..3) across all historical top-3 winners
-  const posFreq=[{},{},{},{}];
-  // 2) Digit overall frequency
-  const digitFreq={};
-  // 3) Sum-of-digits distribution of winners
-  const sumFreq={};
-  // 4) Odd-count distribution (how many odd digits a winner tends to have)
-  const oddFreq={};
-  // 5) Adjacent digit-pair affinity (pos i, pos i+1)
-  const pairFreq={};
-  let winnerCount=0;
-
-  draws.forEach(dr=>{
-    (dr.top3||[]).forEach(num=>{
-      if(!/^\d{4}$/.test(num))return;
-      winnerCount++;
-      const d=num.split('').map(Number);
-      let sum=0,odd=0;
-      d.forEach((dig,pos)=>{
-        posFreq[pos][dig]=(posFreq[pos][dig]||0)+1;
-        digitFreq[dig]=(digitFreq[dig]||0)+1;
-        sum+=dig; if(dig%2===1)odd++;
-        if(pos<3){const pk=dig+'-'+d[pos+1];pairFreq[pk]=(pairFreq[pk]||0)+1;}
-      });
-      sumFreq[sum]=(sumFreq[sum]||0)+1;
-      oddFreq[odd]=(oddFreq[odd]||0)+1;
-    });
-  });
-  if(winnerCount===0)return null;
-
-  // Normalize helpers
-  const posProb=posFreq.map(pf=>{const t=Object.values(pf).reduce((a,b)=>a+b,0)||1;const o={};for(let d=0;d<10;d++)o[d]=(pf[d]||0)/t;return o;});
-  const sumTot=Object.values(sumFreq).reduce((a,b)=>a+b,0)||1;
-  const oddTot=Object.values(oddFreq).reduce((a,b)=>a+b,0)||1;
-  const pairTot=Object.values(pairFreq).reduce((a,b)=>a+b,0)||1;
-
-  // Recent-momentum: digits appearing in last 6 draws' top-3 get a small boost
-  const recentDigit={};
-  draws.slice(0,6).forEach((dr,idx)=>{
-    const w=6-idx;
-    (dr.top3||[]).forEach(num=>{if(/^\d{4}$/.test(num))num.split('').forEach(c=>{recentDigit[c]=(recentDigit[c]||0)+w;});});
-  });
-  const recTot=Object.values(recentDigit).reduce((a,b)=>a+b,0)||1;
-
-  // --- Score a candidate number on how "winner-like" it is ---
-  function scoreCandidate(num){
-    const d=num.split('').map(Number);
-    let score=0;
-    // positional fit (0..40)
-    d.forEach((dig,pos)=>{score+=posProb[pos][dig]*10;});
-    // sum fit (0..20) — reward sums that historically appear
-    const sum=d.reduce((a,b)=>a+b,0);
-    score+=((sumFreq[sum]||0)/sumTot)*20*( Object.keys(sumFreq).length );
-    // odd-count fit (0..15)
-    const odd=d.filter(x=>x%2===1).length;
-    score+=((oddFreq[odd]||0)/oddTot)*15*( Object.keys(oddFreq).length );
-    // adjacent pair affinity (0..15)
-    let pairScore=0;for(let i=0;i<3;i++){const pk=d[i]+'-'+d[i+1];pairScore+=(pairFreq[pk]||0)/pairTot;}
-    score+=pairScore*15*Object.keys(pairFreq).length/3;
-    // recent momentum (0..10)
-    let rec=0;d.forEach(dig=>{rec+=(recentDigit[dig]||0)/recTot;});
-    score+=rec*10*Object.keys(recentDigit).length/4;
-    return score;
+  const target=nextTargetDateMYT(localStorage.getItem('b4d_deepLearnDay')||selectedDay||'Wed');
+  const draws=(historicalDraws||(op&&op.draws)||[]).filter(d=>!target||d.date<target).slice(0,1000);
+  if(draws.length<30)return null;
+  const pf=Array.from({length:4},()=>Array(10).fill(0));
+  const pairs=Array.from({length:3},()=>Array(100).fill(0));
+  const digitFreq=Array(10).fill(0),sumFreq=Array(37).fill(0),oddFreq=Array(5).fill(0);
+  let winners=0;
+  draws.forEach(dr=>(dr.top3||[]).forEach(n=>{
+    if(!/^\d{4}$/.test(n))return;
+    winners++;
+    const digits=[...n].map(Number);
+    let sum=0,odd=0;
+    for(let p=0;p<4;p++){const d=digits[p];pf[p][d]++;digitFreq[d]++;sum+=d;odd+=d%2;if(p<3)pairs[p][Number(n.slice(p,p+2))]++;}
+    sumFreq[sum]++;oddFreq[odd]++;
+  }));
+  if(winners<75)return null;
+  // Fixed feature weights; no future outcome used to refit after a win.
+  const values=[];
+  for(let n=0;n<10000;n++){
+    const num=String(n).padStart(4,'0');let raw=0;
+    for(let p=0;p<4;p++)raw+=0.75*Math.log((pf[p][Number(num[p])]+20)/(winners+200));
+    for(let p=0;p<3;p++)raw+=0.25*Math.log((pairs[p][Number(num.slice(p,p+2))]+3)/(winners+300));
+    values.push({num,raw});
   }
-
-  // --- Build candidate pool ---
-  // Pool = (a) all historical top-3 winners' digit-sets, every permutation
-  //        (b) plus numbers built from the most-frequent digit per position
-  const candidates=new Set();
-  draws.forEach(dr=>{(dr.top3||[]).forEach(num=>{if(/^\d{4}$/.test(num))getAllPermutations4(num).forEach(p=>candidates.add(p));});});
-  // Top digit per position composition (and 2nd-best variants)
-  const topPerPos=posProb.map(pp=>Object.entries(pp).sort((a,b)=>b[1]-a[1]).slice(0,3).map(e=>e[0]));
-  for(const a of topPerPos[0])for(const b of topPerPos[1])for(const c of topPerPos[2])for(const e of topPerPos[3])candidates.add(a+b+c+e);
-
-  // Score and rank
-  const scored=[...candidates].map(num=>({num,score:scoreCandidate(num)}));
-  scored.sort((a,b)=>b.score-a.score);
-
-  // Normalize the TOP 5 against each other so ranks show differentiation
-  // instead of all clamping to ~100. The tiny raw spread is itself evidence
-  // that no candidate is meaningfully "better" than another.
-  const top5raw=scored.slice(0,5);
-  const hi=top5raw.length?top5raw[0].score:1;
-  const lo=top5raw.length?top5raw[top5raw.length-1].score:0;
-  const span=(hi-lo)||1;
-  const top5=top5raw.map((s,i)=>({num:s.num,score:Math.round(72+((s.score-lo)/span)*28)-i}));
-
-  return{
-    top5,
-    learnedFrom:winnerCount,
-    drawsAnalyzed:N,
-    digitFreq,
-    hotDigits:Object.entries(digitFreq).sort((a,b)=>b[1]-a[1]).slice(0,5).map(e=>e[0]),
-    commonSum:Object.entries(sumFreq).sort((a,b)=>b[1]-a[1])[0]?.[0],
-    commonOdd:Object.entries(oddFreq).sort((a,b)=>b[1]-a[1])[0]?.[0]
-  };
+  const mean=values.reduce((s,x)=>s+x.raw,0)/values.length;
+  const variance=values.reduce((s,x)=>s+(x.raw-mean)**2,0)/values.length;
+  const sd=Math.sqrt(variance)||1;
+  values.sort((a,b)=>b.raw-a.raw||a.num.localeCompare(b.num));
+  const top5=[],seen=new Set();
+  for(const x of values){
+    if(seen.has(digitKey(x.num)))continue;
+    if(top5.some(y=>[0,1,2,3].filter(p=>y.num[p]!==x.num[p]).length<2))continue;
+    const z=(x.raw-mean)/sd;
+    top5.push({num:x.num,score:Math.round(Math.min(100,Math.max(0,50+10*z))*10)/10});
+    seen.add(digitKey(x.num));if(top5.length===5)break;
+  }
+  return{top5,learnedFrom:winners,drawsAnalyzed:draws.length,
+    digitFreq:Object.fromEntries(digitFreq.map((count,i)=>[String(i),count])),
+    hotDigits:digitFreq.map((count,i)=>({count,i})).sort((a,b)=>b.count-a.count||a.i-b.i).slice(0,5).map(x=>String(x.i)),
+    commonSum:String(sumFreq.indexOf(Math.max(...sumFreq))),commonOdd:String(oddFreq.indexOf(Math.max(...oddFreq))),modelVersion:'v4.18'};
 }
 
 // Save DEEP LEARN Top 5 (all 3 operators) to history as DEEPLEARN entries,
@@ -3567,17 +3151,13 @@ function deepLearnAnalyze(opName){
 // Tally the DEEP LEARN vs CONTROL experiment from checked history entries.
 // Returns hit counts for both so the user can see if DEEP LEARN beats random.
 function deepLearnExperimentTally(){
-  let dl={draws:0,straight:0,perm:0,top3:0},ct={draws:0,straight:0,perm:0,top3:0};
+  const dl={draws:0,straight:0,perm:0,top3:0},ct={draws:0,straight:0,perm:0,top3:0};
   history.forEach(e=>{
     if(!e.checked)return;
-    if(e.operator==='DEEPLEARN'){
-      dl.draws++; dl.straight+=(e.hits?.length||0); dl.perm+=(e.permHits||0);
-      (e.permWinDetails||[]).forEach(d=>{if(d.prize==='TOP3')dl.top3++;});
-      (e.hits||[]).forEach(()=>{}); // straight top3 counted via subOp draw below if needed
-    } else if(e.operator==='CONTROL'){
-      ct.draws++; ct.straight+=(e.hits?.length||0); ct.perm+=(e.permHits||0);
-      (e.permWinDetails||[]).forEach(d=>{if(d.prize==='TOP3')ct.top3++;});
-    }
+    const side=e.operator==='DEEPLEARN'?dl:e.operator==='CONTROL'?ct:null;
+    if(!side)return;
+    side.draws++;if((e.hits||[]).length>0)side.straight++;
+    side.perm+=(e.permHits||0); // raw number of permutation matches, separate from straight metric
   });
   return{dl,ct};
 }
@@ -3586,49 +3166,27 @@ function randomFourDigit(){
   return Math.floor(Math.random()*10000).toString().padStart(4,'0');
 }
 function saveDeepLearnPicks(tDay){
-  const now=new Date().toISOString().slice(0,10);
+  const targetDate=nextTargetDateMYT(tDay);
+  if(!targetDate){toast('⚠️ No verified upcoming target date. Choose Wed/Sat/Sun.');return;}
   let saved=0;
   ['MAGNUM','TOTO','DAMACAI'].forEach(opN=>{
-    const res=deepLearnAnalyze(opN);
-    if(!res||!res.top5||res.top5.length===0)return;
-    // Avoid duplicate save for same op+date if user taps twice
-    const dup=history.some(e=>e.operator==='DEEPLEARN'&&e.subOperator===opN&&e.date===now&&!e.checked);
+    const op=operators.find(o=>o.name===opN);
+    const draws=(op?.draws||[]).filter(d=>d.date<targetDate);
+    const res=deepLearnAnalyze(opN,draws);
+    if(!res?.top5?.length)return;
+    const dup=history.some(e=>e.operator==='DEEPLEARN'&&e.subOperator===opN&&(e.targetDate||e.date)===targetDate);
     if(dup)return;
-    history.push({
-      date:nextTargetDateMYT(tDay)||now,targetDate:nextTargetDateMYT(tDay)||null,generatedAt:new Date().toISOString(),
-      operator:'DEEPLEARN',
-      subOperator:opN,
-      targetDay:tDay,
-      predictions:res.top5.map(p=>p.num),
-      checked:false,
-      hits:[],
-      permHits:0,
-      deepMeta:{
-        scores:res.top5.map(p=>({num:p.num,score:p.score})),
-        learnedFrom:res.learnedFrom,
-        drawsAnalyzed:res.drawsAnalyzed,
-        hotDigits:res.hotDigits
-      }
-    });
-    // CONTROL: 5 random numbers, same count, for head-to-head comparison
-    const controlNums=[];
-    while(controlNums.length<5){const r=randomFourDigit();if(!controlNums.includes(r))controlNums.push(r);}
-    history.push({
-      date:nextTargetDateMYT(tDay)||now,targetDate:nextTargetDateMYT(tDay)||null,generatedAt:new Date().toISOString(),
-      operator:'CONTROL',
-      subOperator:opN,
-      targetDay:tDay,
-      predictions:controlNums,
-      checked:false,
-      hits:[],
-      permHits:0,
-      controlMeta:{note:'random baseline for DEEP LEARN comparison'}
-    });
+    history.push({date:targetDate,targetDate,generatedAt:new Date().toISOString(),operator:'DEEPLEARN',subOperator:opN,targetDay:tDay,
+      predictions:res.top5.map(p=>p.num),checked:false,hits:[],permHits:0,
+      deepMeta:{scores:res.top5.map(p=>({num:p.num,score:p.score})),learnedFrom:res.learnedFrom,drawsAnalyzed:res.drawsAnalyzed,modelVersion:'v4.18'}});
+    const control=[];
+    while(control.length<5){const r=randomFourDigit();if(!control.includes(r))control.push(r);}
+    history.push({date:targetDate,targetDate,generatedAt:new Date().toISOString(),operator:'CONTROL',subOperator:opN,targetDay:tDay,
+      predictions:control,checked:false,hits:[],permHits:0,controlMeta:{note:'five random straight numbers, same target date and bet coverage'}});
     saved++;
   });
-  saveAll();
-  if(saved>0)toast('💾 Saved DEEP LEARN + random control for '+saved+' operator'+(saved>1?'s':'')+' — check them after the draw!');
-  else toast('Already saved for today (or no picks yet)');
+  if(saved)saveAll();
+  toast(saved?`💾 Saved Deep Learn + random control for ${saved} operator(s), draw ${targetDate}`:'Already saved for this target date (or insufficient history)');
   render();
 }
 
@@ -3650,7 +3208,7 @@ function renderEngines(){
   let h=`<div style="display:flex;gap:6px;margin-bottom:14px;background:#0a0a15;border:1px solid #1a1a3a;border-radius:12px;padding:5px">
     <button onclick="setEngineMode('oracle')" style="flex:1;background:${oracleActive?'linear-gradient(135deg,#8b5cf6,#ec4899)':'transparent'};border:none;color:${oracleActive?'#fff':'var(--dim2)'};padding:12px 8px;border-radius:8px;cursor:pointer;font-family:inherit;transition:all 0.2s">
       <div style="font-size:11px;font-weight:800;letter-spacing:1.2px">🔮 ORACLE</div>
-      <div style="font-size:8px;margin-top:2px;opacity:0.85">Multi-timeframe consensus</div>
+      <div style="font-size:8px;margin-top:2px;opacity:0.85">Multi-window comparison</div>
     </button>
     <button onclick="setEngineMode('hothand')" style="flex:1;background:${hotActive?'linear-gradient(135deg,#f97316,#ef4444)':'transparent'};border:none;color:${hotActive?'#fff':'var(--dim2)'};padding:12px 8px;border-radius:8px;cursor:pointer;font-family:inherit;transition:all 0.2s">
       <div style="font-size:11px;font-weight:800;letter-spacing:1.2px">🔥 HOT HAND</div>
@@ -3664,33 +3222,35 @@ function renderEngines(){
   
   // ===== DEEP LEARN render (experimental Top 5 generator) =====
   if(deepActive){
+    const deepSelectedDay=localStorage.getItem('b4d_deepLearnDay')||selectedDay||'Wed';
     h+=`<div style="background:linear-gradient(135deg,rgba(6,182,212,0.10),rgba(59,130,246,0.05));border:1px solid rgba(6,182,212,0.35);border-radius:12px;padding:12px;margin-bottom:12px">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
         <div style="font-size:22px">🧠</div>
-        <div style="flex:1"><div style="font-size:12px;font-weight:800;color:#06b6d4;letter-spacing:1px">DEEP LEARN — Top 5 for Top 3</div>
-        <div style="font-size:8px;color:var(--dim2);margin-top:2px">Learns each operator's full draw history + winner composition</div></div>
+        <div style="flex:1"><div style="font-size:12px;font-weight:800;color:#06b6d4;letter-spacing:1px">DEEP LEARN — Top 5 historical fit</div>
+        <div style="font-size:8px;color:var(--dim2);margin-top:2px">Smoothed position/pair model, using up to 1,000 earlier draws</div></div>
       </div>
-      <div style="font-size:8px;color:#fbbf24;line-height:1.5;background:#1a1a0a;border:1px dashed #665500;border-radius:6px;padding:6px 8px">⚠️ EXPERIMENTAL. 4D draws are independent random events, so this can't beat chance at predicting winners. It's a structured way to <b>test</b> that. Track these Top 5 vs 5 random numbers over many draws.</div>
+      <div style="font-size:8px;color:#fbbf24;line-height:1.5;background:#1a1a0a;border:1px dashed #665500;border-radius:6px;padding:6px 8px">⚠️ EXPERIMENTAL. Fair 4D draws are independent. This model has not demonstrated higher future winning odds. It's a structured way to <b>test</b> that. Track these Top 5 vs 5 random numbers over many draws.</div>
     </div>`;
+    h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><label for="deepLearnDay" style="font-size:9px;color:var(--dim2)">TARGET DRAW:</label><select id="deepLearnDay" onchange="localStorage.setItem('b4d_deepLearnDay',this.value);render()" style="background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:8px;flex:1">${[['Wed','Wednesday'],['Sat','Saturday'],['Sun','Sunday']].map(([d,l])=>`<option value="${d}"${d===deepSelectedDay?' selected':''}>${l}</option>`).join('')}</select></div>`;
     // Experiment scoreboard: DEEP LEARN vs random control
     const tally=deepLearnExperimentTally();
     if(tally.dl.draws>0||tally.ct.draws>0){
-      const dlHitRate=tally.dl.draws>0?Math.round(((tally.dl.straight+tally.dl.perm)/tally.dl.draws)*100):0;
-      const ctHitRate=tally.ct.draws>0?Math.round(((tally.ct.straight+tally.ct.perm)/tally.ct.draws)*100):0;
+      const dlHitRate=tally.dl.draws>0?Math.round((tally.dl.straight/tally.dl.draws)*1000)/10:0;
+      const ctHitRate=tally.ct.draws>0?Math.round((tally.ct.straight/tally.ct.draws)*1000)/10:0;
       h+=`<div style="background:#0a0a15;border:1px solid #1a1a3a;border-radius:12px;padding:12px;margin-bottom:12px">
         <div style="font-size:11px;font-weight:800;color:#e2e8f0;letter-spacing:0.5px;margin-bottom:2px">🔬 The Experiment: DEEP LEARN vs Random</div>
-        <div style="font-size:8px;color:var(--dim3);margin-bottom:10px">Checked draws so far: ${Math.max(tally.dl.draws,tally.ct.draws)} per side. ${Math.max(tally.dl.draws,tally.ct.draws)<20?'Need ~20+ for a meaningful read.':'Enough data to start reading.'}</div>
+        <div style="font-size:8px;color:var(--dim3);margin-bottom:10px">Checked draws so far: ${Math.max(tally.dl.draws,tally.ct.draws)} per side. ${Math.max(tally.dl.draws,tally.ct.draws)<20?'Small sample: many more draws needed.':'Still compare to random expectation and uncertainty.'}</div>
         <div style="display:flex;gap:8px">
           <div style="flex:1;background:rgba(6,182,212,0.08);border:1px solid rgba(6,182,212,0.3);border-radius:8px;padding:10px;text-align:center">
             <div style="font-size:9px;color:#06b6d4;font-weight:800;margin-bottom:4px">🧠 DEEP LEARN</div>
             <div style="font-size:22px;font-weight:900;color:#06b6d4">${dlHitRate}%</div>
-            <div style="font-size:7px;color:var(--dim3)">hit rate / draw</div>
+            <div style="font-size:7px;color:var(--dim3)">exact-match draw rate</div>
             <div style="font-size:8px;color:var(--dim2);margin-top:4px">${tally.dl.straight} straight · ${tally.dl.perm} perm · ${tally.dl.top3} top3</div>
           </div>
           <div style="flex:1;background:rgba(100,116,139,0.08);border:1px solid rgba(100,116,139,0.3);border-radius:8px;padding:10px;text-align:center">
             <div style="font-size:9px;color:#94a3b8;font-weight:800;margin-bottom:4px">🎲 RANDOM</div>
             <div style="font-size:22px;font-weight:900;color:#94a3b8">${ctHitRate}%</div>
-            <div style="font-size:7px;color:var(--dim3)">hit rate / draw</div>
+            <div style="font-size:7px;color:var(--dim3)">exact-match draw rate</div>
             <div style="font-size:8px;color:var(--dim2);margin-top:4px">${tally.ct.straight} straight · ${tally.ct.perm} perm · ${tally.ct.top3} top3</div>
           </div>
         </div>
@@ -3706,7 +3266,7 @@ function renderEngines(){
       if(!res){
         h+=`<div style="font-size:10px;color:var(--dim2);padding:6px">Not enough draw history yet (need 5+).</div></div>`;return;
       }
-      h+=`<div style="font-size:8px;color:var(--dim2);margin-bottom:8px">Learned from ${res.learnedFrom} past top-3 winners across ${res.drawsAnalyzed} draws · hot digits: <b style="color:${c}">${res.hotDigits.join(' ')}</b> · common sum: ${res.commonSum}</div>`;
+      h+=`<div style="font-size:8px;color:var(--dim2);margin-bottom:8px">Analyzed ${res.learnedFrom} past top-3 winners across ${res.drawsAnalyzed} draws · hot digits: <b style="color:${c}">${res.hotDigits.join(' ')}</b> · common sum: ${res.commonSum}</div>`;
       h+=`<div style="display:flex;flex-direction:column;gap:6px">`;
       res.top5.forEach((p,i)=>{
         h+=`<div style="display:flex;align-items:center;gap:10px;background:#12122a;border-radius:8px;padding:8px 10px">
@@ -3719,8 +3279,8 @@ function renderEngines(){
     });
     // Save button — persists today's Top 5 (per operator) to history so they
     // get scored automatically when you Check Results & Train AI tonight.
-    const tDayNow=selectedDay||'Sat';
-    h+=`<button onclick="saveDeepLearnPicks('${tDayNow}')" style="width:100%;background:linear-gradient(135deg,#06b6d4,#3b82f6);border:none;color:#fff;font-size:12px;font-weight:800;letter-spacing:0.5px;padding:12px;border-radius:10px;cursor:pointer;font-family:inherit;margin-top:4px">💾 Save Top 5 to History (for tonight's check)</button>
+    const tDayNow=deepSelectedDay;
+    h+=`<button onclick="saveDeepLearnPicks('${tDayNow}')" style="width:100%;background:linear-gradient(135deg,#06b6d4,#3b82f6);border:none;color:#fff;font-size:12px;font-weight:800;letter-spacing:0.5px;padding:12px;border-radius:10px;cursor:pointer;font-family:inherit;margin-top:4px">💾 Save Top 5 + random control for selected draw</button>
     <div style="font-size:8px;color:var(--dim3);text-align:center;margin-top:6px">Saves all 3 operators' Top 5 as DEEP LEARN entries. They'll appear in Check Results & be scored like every other engine.</div>`;
     pg.innerHTML=h;return;
   }
@@ -3734,13 +3294,13 @@ function renderEngines(){
         <div style="font-size:24px">💎</div>
         <div style="flex:1">
           <div style="font-size:12px;font-weight:800;color:#eab308;letter-spacing:1px">FUSION SIGNALS ACTIVE</div>
-          <div style="font-size:9px;color:var(--dim2);margin-top:2px">${fusionPicks.length} number${fusionPicks.length>1?'s':''} confirmed by BOTH Oracle + Hot Hand</div>
+          <div style="font-size:9px;color:var(--dim2);margin-top:2px">${fusionPicks.length} number${fusionPicks.length>1?'s':''} also appears in Oracle + Hot Hand (correlated methods)</div>
         </div>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
         ${fusionPicks.map(f=>`<div style="background:#0a0a15;border:2px solid #eab308;border-radius:8px;padding:6px 10px;font-family:monospace;font-size:16px;font-weight:900;color:#eab308;letter-spacing:2px">${f.num}</div>`).join('')}
       </div>
-      <div style="font-size:8px;color:#eab308;margin-top:8px;font-weight:700;text-align:center">💎 PLAY STRAIGHT ON ALL 3 OPERATORS (5794 strategy)</div>
+      <div style="font-size:8px;color:#eab308;margin-top:8px;font-weight:700;text-align:center">Shared patterns can occur by chance — not a ticket recommendation</div>
     </div>`;
   }
   
@@ -3822,7 +3382,7 @@ function renderEngines(){
 // HOT HAND UI — the scan button + results display
 // ============================================================
 function renderHotHandBody(){
-  const windowSize=parseInt(localStorage.getItem('b4d_hhWindow')||'6');
+  const windowSize=parseInt(localStorage.getItem('b4d_hhWindow')||'12');
   
   let h=`<div style="background:linear-gradient(135deg,rgba(249,115,22,0.12),rgba(220,38,38,0.06));border:1px solid rgba(249,115,22,0.3);border-radius:12px;padding:14px;margin-bottom:14px">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
@@ -3832,15 +3392,18 @@ function renderHotHandBody(){
         <div style="font-size:9px;color:var(--dim2)">Short-Term Recent-Form Streak Analyzer</div>
       </div>
     </div>
-    <div style="font-size:9px;color:var(--dim);line-height:1.5">Grok's proven method that won <b style="color:#fbbf24">RM7K on 5794</b> and <b style="color:#fbbf24">RM1,750 on 9631</b>. Analyzes the last <b style="color:#fb923c">${windowSize} draws</b> using only <b style="color:#fb923c">top 3 prizes</b>. Two lanes: <b style="color:#fb923c">MAGNUM solo</b> + <b style="color:#fb923c">TOTO+DAMACAI pooled</b>.</div>
+    <div style="font-size:9px;color:var(--dim);line-height:1.5">Explores short-run <b style="color:#fb923c">Top 3 digit patterns</b> over ${windowSize} draws <b>separately for each operator</b>. Combined Toto + Da Ma Cai is shown for comparison only. No algorithm has a verified edge over a fair draw.</div>
   </div>`;
   
   // Window selector — 3/6/9/12 draws (6 = Grok's proven default that won 5794, 9631, 4671, 2167, 1276)
   h+=`<div style="display:flex;gap:4px;margin-bottom:12px;align-items:center">
     <div style="font-size:9px;color:var(--dim2);margin-right:4px;flex-shrink:0">WINDOW:</div>
-    ${[3,6,9,12].map(n=>`<button onclick="localStorage.setItem('b4d_hhWindow','${n}');render()" style="flex:1;padding:6px 4px;border:1px solid ${n===windowSize?'#fb923c':'var(--border)'};background:${n===windowSize?'#fb923c22':'var(--bg4)'};color:${n===windowSize?'#fb923c':'var(--dim)'};border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">${n} draws</button>`).join('')}
+    ${[6,12,20,40].map(n=>`<button onclick="localStorage.setItem('b4d_hhWindow','${n}');render()" style="flex:1;padding:6px 4px;border:1px solid ${n===windowSize?'#fb923c':'var(--border)'};background:${n===windowSize?'#fb923c22':'var(--bg4)'};color:${n===windowSize?'#fb923c':'var(--dim)'};border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">${n} draws</button>`).join('')}
   </div>`;
   
+  const selectedHotHandDay=localStorage.getItem('b4d_hotHandDay')||'Wed';
+  h+=`<div style="display:flex;gap:8px;margin:0 0 12px;align-items:center"><label for="hotHandDay" style="font-size:9px;color:var(--dim2)">TARGET DRAW:</label><select id="hotHandDay" onchange="localStorage.setItem('b4d_hotHandDay',this.value);" style="flex:1;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px">${[['Wed','Wednesday'],['Sat','Saturday'],['Sun','Sunday']].map(([d,l])=>`<option value="${d}"${selectedHotHandDay===d?' selected':''}>${l}</option>`).join('')}</select></div>`;
+
   // SCAN button
   h+=`<button id="hothandBtn" onclick="runHotHand()" style="width:100%;padding:16px;background:linear-gradient(135deg,#f97316,#ef4444);border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:900;letter-spacing:2px;cursor:pointer;margin-bottom:14px;box-shadow:0 4px 12px rgba(249,115,22,0.25)">🔥 SCAN HOT STREAK</button>`;
   
@@ -3863,7 +3426,7 @@ function renderHotHandBody(){
             <div style="font-size:7px;color:var(--dim3)">${s.magnumForm===s.poolForm?'EXACT':'DIGIT SET'}</div>
           </div>`).join('')}
         </div>
-        <div style="font-size:8px;color:#ff6633;margin-top:8px;font-weight:700;text-align:center">🎯 Both lanes converged — strongest Hot Hand signal</div>
+        <div style="font-size:8px;color:#ff6633;margin-top:8px;font-weight:700;text-align:center">Correlated patterns only — not independent confirmation of a win</div>
       </div>`;
     }
     
@@ -3881,17 +3444,15 @@ function renderHotHandBody(){
         </div>`;
       };
       const chiBadge=(chi2Result)=>{
-        const colors={'VERY STRONG':'#22c55e','STRONG':'#22c55e','MODERATE':'#eab308','WEAK':'#f59e0b','RANDOM':'#ef4444','insufficient':'#6b7280'};
+        const colors={'DISTRIBUTION DEVIATION':'#eab308','NO CLEAR DEVIATION':'#94a3b8','INSUFFICIENT':'#6b7280'};
         const c=colors[chi2Result.strength]||'#6b7280';
         return `<span style="display:inline-block;background:${c}22;color:${c};border:1px solid ${c};padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700">${chi2Result.strength} (χ²=${chi2Result.chi2})</span>`;
       };
       
       // Build chart rows
       let rows='';
-      if(chart.hasPool){
-        rows+=renderRow('TOTO+DMC<br>3 HOT DIGIT',chart.pool.primary,'#dc2626','#fff','Top 3 most-frequent');
-        rows+=renderRow('TOTO+DMC<br>2nd HOT',chart.pool.secondary,'#eab308','#1a1a1a','4th-6th most-frequent');
-      }
+      if(chart.hasToto){rows+=renderRow('TOTO<br>3 HOT DIGIT',chart.toto.primary,'#dc2626','#fff','Top 3 historically frequent');rows+=renderRow('TOTO<br>2nd HOT',chart.toto.secondary,'#eab308','#1a1a1a','Next 3 digits');}
+      if(chart.hasDamacai){rows+=renderRow('DAMACAI<br>3 HOT DIGIT',chart.damacai.primary,'#dc2626','#fff','Top 3 historically frequent');rows+=renderRow('DAMACAI<br>2nd HOT',chart.damacai.secondary,'#eab308','#1a1a1a','Next 3 digits');}
       if(chart.hasMagnum){
         rows+=renderRow('MAGNUM<br>3 HOT DIGIT',chart.magnum.primary,'#dc2626','#fff','Top 3 most-frequent');
         rows+=renderRow('MAGNUM<br>2nd HOT',chart.magnum.secondary,'#eab308','#1a1a1a','4th-6th most-frequent');
@@ -3901,7 +3462,7 @@ function renderHotHandBody(){
       let midRow='';
       if(chart.midHeat||chart.midCold){
         midRow=`<div style="display:flex;align-items:center;gap:6px;margin-top:8px;padding-top:8px;border-top:1px dashed rgba(168,85,247,0.2)">
-          <div style="font-size:8px;color:var(--dim2);width:118px;text-align:right">Mid digits<div style="color:var(--dim3);font-size:7px">Borderline / Avoid</div></div>
+          <div style="font-size:8px;color:var(--dim2);width:118px;text-align:right">Mid digits<div style="color:var(--dim3);font-size:7px">Descriptive only</div></div>
           <div style="display:flex;gap:6px;flex:1">
             <div style="background:#fb923c;color:#000;font-family:monospace;font-size:18px;font-weight:900;padding:8px 16px;border-radius:6px;flex:1;text-align:center">${chart.midHeat||'?'}<div style="font-size:7px;font-weight:600;color:#000">MID HEAT</div></div>
             <div style="background:#3b82f6;color:#fff;font-family:monospace;font-size:18px;font-weight:900;padding:8px 16px;border-radius:6px;flex:1;text-align:center">${chart.midCold||'?'}<div style="font-size:7px;font-weight:600;color:#fff">MID COLD</div></div>
@@ -3911,11 +3472,12 @@ function renderHotHandBody(){
       
       // Confidence indicators
       let confidence='';
-      if(chart.hasPool||chart.hasMagnum){
+      if(chart.hasToto||chart.hasDamacai||chart.hasMagnum){
         confidence='<div style="margin-top:10px;padding-top:8px;border-top:1px dashed rgba(168,85,247,0.2);font-size:8px;color:var(--dim);line-height:1.5">';
-        if(chart.hasPool)confidence+=`<div style="margin-bottom:3px">📊 TOTO+DMC pool: ${chiBadge(chart.pool.chi2)}</div>`;
+        if(chart.hasToto)confidence+=`<div style="margin-bottom:3px">📊 TOTO: ${chiBadge(chart.toto.chi2)}</div>`;
+        if(chart.hasDamacai)confidence+=`<div style="margin-bottom:3px">📊 DAMACAI: ${chiBadge(chart.damacai.chi2)}</div>`;
         if(chart.hasMagnum)confidence+=`<div>📊 MAGNUM lane: ${chiBadge(chart.magnum.chi2)}</div>`;
-        confidence+=`<div style="margin-top:6px;color:var(--dim3);font-style:italic;font-size:7px">χ² test: STRONG/MODERATE = hot digits statistically distinct from random. WEAK/RANDOM = caution, signal may be noise.</div></div>`;
+        confidence+=`<div style="margin-top:6px;color:var(--dim3);font-style:italic;font-size:7px">χ² uses all 10 digit counts (df=9). Deviation from uniformity is not evidence of an increased future win probability.</div></div>`;
       }
       
       h+=`<div style="background:linear-gradient(135deg,rgba(168,85,247,0.10),rgba(236,72,153,0.05));border:1px solid rgba(168,85,247,0.3);border-radius:12px;padding:12px;margin-bottom:14px">
@@ -3933,9 +3495,9 @@ function renderHotHandBody(){
       h+=renderHotHandLane('🟡 MAGNUM (solo lane)','#D4A017',lastHotHandResults.magnum,lastHotHandResults.fusionMagnum||[]);
     }
     // TOTO+DMC pooled lane
-    if(lastHotHandResults.totoDmc){
-      h+=renderHotHandLane('🔀 TOTO + DAMACAI (pooled)','#c084fc',lastHotHandResults.totoDmc,lastHotHandResults.fusionPool||[]);
-    }
+    if(lastHotHandResults.toto){h+=renderHotHandLane('🔴 SPORTS TOTO (independent)','#dc2626',lastHotHandResults.toto,lastHotHandResults.fusionByOperator?.TOTO||[]);}
+    if(lastHotHandResults.damacai){h+=renderHotHandLane('🔵 DA MA CAI (independent)','#2563eb',lastHotHandResults.damacai,lastHotHandResults.fusionByOperator?.DAMACAI||[]);}
+    if(lastHotHandResults.totoDmc){h+=`<details style="font-size:10px;color:var(--dim2)"><summary>Research only: TOTO + DAMACAI pooled sample (not used for picks)</summary>`+renderHotHandLane('COMBINED — DIAGNOSTIC ONLY','#94a3b8',lastHotHandResults.totoDmc,[])+`</details>`;}
   }else{
     h+=`<div style="background:#0a0a15;border:1px dashed #2a2a4a;border-radius:10px;padding:24px;text-align:center">
       <div style="font-size:32px;margin-bottom:8px">🎯</div>
@@ -3990,96 +3552,41 @@ function renderHotHandLane(title,color,result,fusionNums){
 // ============================================================
 function runHotHand(){
   const btn=document.getElementById('hothandBtn');
-  if(btn){btn.disabled=true;btn.textContent='🔥 SCANNING...';btn.style.opacity='0.7';}
-  
+  if(btn){btn.disabled=true;btn.textContent='🔥 SCANNING...';}
   setTimeout(()=>{
     try{
-      const windowSize=parseInt(localStorage.getItem('b4d_hhWindow')||'6');
-      
-      // Lane A: MAGNUM solo (original proven method)
-      const magnumOp=operators.find(o=>o.name==='MAGNUM');
-      const magnumResult=magnumOp?hotHandAnalyze(magnumOp.draws,windowSize):null;
-      
-      // Lane B: TOTO + DAMACAI pooled (original proven method)
-      const toto=operators.find(o=>o.name==='TOTO');
-      const dmc=operators.find(o=>o.name==='DAMACAI');
-      let totoDmcResult=null;
-      if(toto&&dmc){
-        const pool=[...(toto.draws||[]),...(dmc.draws||[])].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
-        // Pool has 2 ops — use 2x window to keep equivalent sample size
-        totoDmcResult=hotHandAnalyze(pool,windowSize*2);
-      }
-      
-      // FUSION: use digit-set matching (more meaningful for 4D)
-      // Oracle picks 7461 + Hot Hand picks any permutation of {1,4,6,7} = FUSION
-      const digitSetKey=n=>[...n].sort().join('');
-      const oracleAllSets=new Map(); // setKey -> {num, op}
-      if(lastOracleResults){
-        Object.entries(lastOracleResults).forEach(([opName,res])=>{
-          if(res&&res.predictions){
-            res.predictions.forEach(p=>{
-              const key=digitSetKey(p.num);
-              if(!oracleAllSets.has(key))oracleAllSets.set(key,{num:p.num,op:opName});
-            });
-          }
-        });
-      }
-      const fusionMagnum=magnumResult?magnumResult.picks.filter(p=>oracleAllSets.has(digitSetKey(p.num))).map(p=>p.num):[];
-      const fusionPool=totoDmcResult?totoDmcResult.picks.filter(p=>oracleAllSets.has(digitSetKey(p.num))).map(p=>p.num):[];
-      
-      lastHotHandResults={
-        magnum:magnumResult,totoDmc:totoDmcResult,
-        fusionMagnum,fusionPool,windowSize
-      };
-      
-      // Save to history — HOTHAND and FUSION tiers
-      const now=new Date().toISOString().slice(0,10);
-      const tDay=document.getElementById('oracleDay')?.value||'Wed';
-      
-      if(magnumResult&&magnumResult.picks.length>0){
-        history.push({
-          date:nextTargetDateMYT(tDay)||now,targetDate:nextTargetDateMYT(tDay)||null,generatedAt:new Date().toISOString(),operator:'HOTHAND',subOperator:'MAGNUM',targetDay:tDay,
-          predictions:magnumResult.picks.slice(0,3).map(p=>p.num),
-          checked:false,hits:[],permHits:0,
-          hotHandMeta:{lane:'MAGNUM',windowSize,drawsAnalyzed:magnumResult.drawsAnalyzed,primary:magnumResult.primary.map(p=>p.digit).join(','),stars:magnumResult.picks.slice(0,3).map(p=>({num:p.num,stars:p.stars}))}
-        });
-      }
-      if(totoDmcResult&&totoDmcResult.picks.length>0){
-        // Save the pooled result as separate entries for TOTO and DAMACAI
-        // Both should be checked independently (either op hitting = win)
-        ['TOTO','DAMACAI'].forEach(opName=>{
-          history.push({
-            date:nextTargetDateMYT(tDay)||now,targetDate:nextTargetDateMYT(tDay)||null,generatedAt:new Date().toISOString(),operator:'HOTHAND',subOperator:opName,targetDay:tDay,
-            predictions:totoDmcResult.picks.slice(0,3).map(p=>p.num),
-            checked:false,hits:[],permHits:0,
-            hotHandMeta:{lane:'TOTO+DMC',windowSize:windowSize*2,drawsAnalyzed:totoDmcResult.drawsAnalyzed,primary:totoDmcResult.primary.map(p=>p.digit).join(','),stars:totoDmcResult.picks.slice(0,3).map(p=>({num:p.num,stars:p.stars}))}
-          });
-        });
-      }
-      
-      // FUSION entries — per-operator, since fusion picks are played on all 3 ops
-      const allFusionNums=[...new Set([...fusionMagnum,...fusionPool])];
-      if(allFusionNums.length>0){
-        ['MAGNUM','TOTO','DAMACAI'].forEach(opName=>{
-          history.push({
-            date:nextTargetDateMYT(tDay)||now,targetDate:nextTargetDateMYT(tDay)||null,generatedAt:new Date().toISOString(),operator:'FUSION',subOperator:opName,targetDay:tDay,
-            predictions:allFusionNums,
-            checked:false,hits:[],permHits:0,
-            fusionMeta:{fromOracle:allFusionNums.map(n=>{const s=oracleAllSets.get(digitSetKey(n));return s?s.op:'?';}),hhLanes:allFusionNums.map(n=>fusionMagnum.includes(n)&&fusionPool.includes(n)?'BOTH':fusionMagnum.includes(n)?'MAGNUM':'TOTO+DMC')}
-          });
-        });
-      }
-      
-      saveAll();
-      if(btn){btn.disabled=false;btn.textContent='🔥 SCAN HOT STREAK';btn.style.opacity='1';}
-      render();
-      toast(allFusionNums.length>0?`🔥 Hot Hand + 💎 ${allFusionNums.length} FUSION signals!`:'🔥 Hot Hand scan complete!');
-    }catch(e){
-      console.error('Hot Hand error',e);
-      if(btn){btn.disabled=false;btn.textContent='🔥 SCAN HOT STREAK';btn.style.opacity='1';}
-      toast('⚠️ Hot Hand scan failed — check data');
-    }
-  },300);
+      const windowSize=parseInt(localStorage.getItem('b4d_hhWindow')||'12',10);
+      const tDay=document.getElementById('hotHandDay')?.value||localStorage.getItem('b4d_hotHandDay')||'Wed';
+      const targetDate=nextTargetDateMYT(tDay);
+      if(!targetDate){toast('⚠️ Select an upcoming draw day.');return;}
+      const perOperator={};
+      ['MAGNUM','TOTO','DAMACAI'].forEach(opName=>{
+        const op=operators.find(o=>o.name===opName);
+        if(op)perOperator[opName]=hotHandAnalyze((op.draws||[]).filter(d=>d.date<targetDate),windowSize);
+      });
+      const pool=[...(operators.find(o=>o.name==='TOTO')?.draws||[]),...(operators.find(o=>o.name==='DAMACAI')?.draws||[])]
+        .filter(d=>d.date<targetDate).sort((a,b)=>b.date.localeCompare(a.date));
+      const pooled=hotHandAnalyze(pool,windowSize*2); // Research-only comparator; not used to issue either operator's picks.
+      const oracleResults=lastOracleResults||{};
+      const fusions={};
+      Object.entries(perOperator).forEach(([opN,result])=>{
+        const sameOpOracle=oracleResults[opN]?.predictions||[];
+        const signatures=new Set(sameOpOracle.map(p=>digitKey(p.num)));
+        fusions[opN]=result?.picks.filter(p=>signatures.has(digitKey(p.num))).map(p=>p.num)||[];
+      });
+      lastHotHandResults={magnum:perOperator.MAGNUM,toto:perOperator.TOTO,damacai:perOperator.DAMACAI,totoDmc:pooled,
+        fusionMagnum:fusions.MAGNUM||[],fusionPool:[...(fusions.TOTO||[]),...(fusions.DAMACAI||[])],fusionByOperator:fusions,windowSize,modelVersion:'v4.18'};
+      Object.entries(perOperator).forEach(([opN,res])=>{
+        if(!res?.picks?.length)return;
+        if(history.some(e=>e.operator==='HOTHAND'&&e.subOperator===opN&&(e.targetDate||e.date)===targetDate))return;
+        history.push({date:targetDate,targetDate,generatedAt:new Date().toISOString(),operator:'HOTHAND',subOperator:opN,targetDay:tDay,
+          predictions:res.picks.slice(0,3).map(p=>p.num),checked:false,hits:[],permHits:0,
+          hotHandMeta:{lane:opN,windowSize,drawsAnalyzed:res.drawsAnalyzed,primary:res.primary.map(p=>p.digit).join(','),modelVersion:'v4.18'}});
+      });
+      saveAll();render();toast('🔥 Operator-specific Hot Hand scan complete — exploratory rankings saved.');
+    }catch(e){console.error('Hot Hand v4.18 error',e);toast('⚠️ Hot Hand scan failed — please check data.');}
+    finally{if(btn){btn.disabled=false;btn.textContent='🔥 SCAN HOT STREAK';}}
+  },20);
 }
 
 // ============================================================
