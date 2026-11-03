@@ -22,9 +22,9 @@ jobs:
           from pathlib import Path
           import re
           s=Path('index.html').read_text()
-          scripts=re.findall(r'<script(?:\\s[^>]*)?>([\\s\\S]*?)</script>',s)
+          scripts=re.findall(r'<script(?:\s[^>]*)?>([\s\S]*?)</script>',s)
           assert scripts, 'No scripts found'
-          Path('/tmp/beast-v422.js').write_text('\\n'.join(scripts))
+          Path('/tmp/beast-v422.js').write_text('\n'.join(scripts))
           PY
           node --check /tmp/beast-v422.js
       - name: Commit updated HTML
