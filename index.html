@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v4.15</title>
+<title>Beast Mode 4D v4.16 — Research Edition</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -414,8 +414,8 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v4.15</span>
-      <div class="sub">AI-Powered Sniper Prediction Engine + DeepSeek AI</div>
+      <h1>BEAST MODE 4D</h1><span class="ver">v4.16</span>
+      <div class="sub">Historical Analysis & Walk-Forward Research + DeepSeek</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
   </div>
@@ -513,7 +513,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
 <div class="modal-bg" id="modalCheck">
   <div class="modal" onclick="event.stopPropagation()">
     <h3>📋 Check Results Against Predictions</h3>
-    <p style="font-size:11px;color:var(--dim);margin-bottom:14px">Enter actual winning numbers or fetch from database. This updates the accuracy tracker and adjusts module weights.</p>
+    <p style="font-size:11px;color:var(--dim);margin-bottom:14px">Enter actual winning numbers or fetch from database. This records exact hits for a matching target date. It does not automatically adjust scoring weights.</p>
     <div class="field"><label>Draw Date</label><input type="date" id="chkDate"></div>
     <div class="field"><label>Operator</label>
       <select id="chkOp"><option value="MAGNUM">Magnum</option><option value="TOTO">Sports Toto</option><option value="DAMACAI">Damacai</option></select>
@@ -655,13 +655,19 @@ const DEFAULT_OPS=[
 ]}];
 
 // Default module weights (self-learning adjusts these)
-const DEFAULT_WEIGHTS={position:1,daySpecific:1.3,markov:1,monteCarlo:0.8,chiSquare:1,momentum:1,digitSum:0.9,pairs:0.8,oddEven:0.5,repeat:1.5,crossOp:1.2,mirror:0.6,elimination:1.1,streak:1,entropy:1,genetic:1.2};
+const DEFAULT_WEIGHTS={position:1,daySpecific:0.15,markov:0,monteCarlo:0,chiSquare:0,momentum:0.10,digitSum:0.10,pairs:0.40,oddEven:0.10,repeat:0,crossOp:0,mirror:0,elimination:0,streak:0,entropy:0,genetic:0};
+
 
 // Module on/off toggles
-const DEFAULT_TOGGLES={position:true,daySpecific:true,markov:true,monteCarlo:true,chiSquare:true,momentum:true,digitSum:true,pairs:true,oddEven:true,repeat:true,crossOp:true,mirror:true,elimination:true,streak:true,entropy:true,genetic:true};
+const DEFAULT_TOGGLES={position:true,daySpecific:false,markov:false,monteCarlo:false,chiSquare:false,momentum:false,digitSum:false,pairs:true,oddEven:false,repeat:false,crossOp:false,mirror:false,elimination:false,streak:false,entropy:false,genetic:false};
+
 
 function load(key,def){try{const s=localStorage.getItem(key);return s?JSON.parse(s):JSON.parse(JSON.stringify(def));}catch(e){return JSON.parse(JSON.stringify(def));}}
-function save(key,val){try{localStorage.setItem(key,JSON.stringify(val));}catch(e){}}
+function save(key,val){try{localStorage.setItem(key,JSON.stringify(val));return true;}catch(e){
+  console.error('Unable to save '+key,e);
+  if(!window._b4dStorageWarned){window._b4dStorageWarned=true;alert('Storage is full or blocked. Latest changes may NOT have been saved. Export a backup, then reduce the number of imported draws.');}
+  return false;
+}}
 
 let operators=load(KEYS.ops,DEFAULT_OPS);
 let history=load(KEYS.hist,[]);
@@ -669,6 +675,17 @@ let moduleWeights=load(KEYS.weights,DEFAULT_WEIGHTS);
 let moduleToggles=load(KEYS.toggles,DEFAULT_TOGGLES);
 let moduleTogglesPerOp=load(KEYS.togglesPerOp,{});
 let stats=load(KEYS.stats,{totalPredictions:0,totalChecks:0,top3Hits:0,specialHits:0,consolationHits:0,anyHits:0,checksLog:[]});
+// v4.16: preserve legacy weight/toggle preferences before resetting unsafe defaults.
+// Historical draws, predictions, P&L and operator data remain untouched.
+try {
+  if(!localStorage.getItem('b4d_v416_migrated')){
+    localStorage.setItem('b4d_v415_settings_backup',JSON.stringify({weights:moduleWeights,toggles:moduleToggles,togglesPerOp:moduleTogglesPerOp}));
+    moduleWeights={...DEFAULT_WEIGHTS}; moduleToggles={...DEFAULT_TOGGLES}; moduleTogglesPerOp={};
+    save(KEYS.weights,moduleWeights); save(KEYS.toggles,moduleToggles); save(KEYS.togglesPerOp,moduleTogglesPerOp);
+    localStorage.setItem('b4d_v416_migrated','1');
+  }
+} catch(e){console.warn('Settings migration skipped',e);}
+
 // v4.13: permanent wins log — survives clearCheckedHistory so wins are never lost
 let winsLog=load(KEYS.winsLog,[]);
 
@@ -835,37 +852,11 @@ function geneticAlgorithm(draws,targetDay,popSize=200,generations=100){
 
 // NEW: Confidence % calculator - multi-module agreement score
 function calculateConfidence(num,allScores,predictions,analysis){
-  const maxScore=predictions[0]?.[1]||1;
-  const score=allScores[num]||0;
-  
-  // Base confidence from relative score position (0-40%)
-  let conf=Math.min((score/maxScore)*40,40);
-  
-  // Bonus: repeat number (+15%)
-  if(analysis.reps.find(r=>r.n===num))conf+=15;
-  
-  // Bonus: in digit sum zone (+10%)
-  const dsum=[...num].reduce((a,d)=>a+parseInt(d),0);
-  if(dsum>=analysis.sz.zone[0]&&dsum<=analysis.sz.zone[1])conf+=10;
-  
-  // Bonus: streak (+10%)
-  if(analysis.streaks.find(([n])=>n===num))conf+=10;
-  
-  // Bonus: cross-operator (+8%)
-  if(analysis.crossOp>0)conf+=3;
-  
-  // Bonus: in GA top 10 (+12%)
-  if(analysis.gaTop&&analysis.gaTop.find(g=>g.n===num))conf+=12;
-  
-  // Bonus: entropy exploitable positions used (+5%)
-  if(analysis.entropy){
-    let entBonus=0;
-    analysis.entropy.forEach((e,i)=>{if(e.biasLevel==='EXPLOITABLE')entBonus+=1.25;});
-    conf+=entBonus;
-  }
-  
-  return Math.min(Math.round(conf),95); // Cap at 95% - never 100% on lottery
+  // Backwards-compatible name: returns HISTORICAL PATTERN INDEX, never probability.
+  const s=allScores?.[num];
+  return Number.isFinite(s)?Math.max(0,Math.min(100,Math.round(s))):50;
 }
+
 
 // NEW: Expected Value calculator
 function calculateEV(num,betAmount,betType){
@@ -904,8 +895,8 @@ function iBoxValue(num){
   const iboxPayout=straightPayout/perms;
   
   return{perms,iboxPayout:iboxPayout.toFixed(0),straightPayout,
-    recommendation:perms<=6?'IBOX BETTER VALUE':'STRAIGHT BETTER',
-    reason:perms<=6?`Only ${perms} perms = RM${iboxPayout.toFixed(0)} per RM1 iBox`:`${perms} perms dilutes payout to RM${iboxPayout.toFixed(0)}`};
+    recommendation:perms<=6?'NO PROVEN ADVANTAGE':'NO PROVEN ADVANTAGE',
+    reason:perms<=6?`There are ${perms} permutations; check official ticket cost and payout`:`${perms} perms dilutes payout to RM${iboxPayout.toFixed(0)}`};
 }
 
 function getPerms(num){const perms=new Set();function p(arr,l=0){if(l===arr.length-1){perms.add(arr.join(""));return}for(let i=l;i<arr.length;i++){[arr[l],arr[i]]=[arr[i],arr[l]];p([...arr],l+1)}}p(num.split(""));perms.delete(num);return[...perms];}
@@ -1088,262 +1079,146 @@ function generateBuyList(allResults,budget=50){
 // ============================================================
 function runBacktest(opName,numDraws=30,onProgress=null){
   const op=operators.find(o=>o.name===opName);
-  if(!op||op.draws.length<numDraws+20)return null;
-  
-  // Take the last N draws to test (newest first, but reverse to walk forward)
-  const testDraws=op.draws.slice(0,numDraws);
-  
-  // Helper: score a prediction set against actual winning numbers
-  function scoreHits(preds,actualAll,actualT3){
-    let straight=0,perm=0,t3Hit=0;
-    preds.forEach(([num])=>{
-      if(actualAll.includes(num)){
-        straight++;
-        if(actualT3.includes(num))t3Hit++;
-      }else{
-        const perms=getPerms(num);
-        if(perms.some(p=>actualAll.includes(p)))perm++;
-      }
-    });
-    return{straight,perm,t3Hit,any:straight+perm};
+  if(!op||!Array.isArray(op.draws)||op.draws.length<Math.max(31,numDraws+30))return null;
+  const chronological=op.draws.slice().sort((a,b)=>b.date.localeCompare(a.date));
+  const testDraws=chronological.slice(0,numDraws).reverse();
+  let successes=0,straightMatches=0,firstPrizeMatches=0,randomHits=0,randomMatches=0,permMatches=0,tested=0;
+  for(const testDraw of testDraws){
+    const historical=chronological.filter(d=>d.date<testDraw.date);
+    if(historical.length<30)continue;
+    const result=masterFusion(historical,testDraw.day,null,moduleWeights,getToggles(opName));
+    const picks=result.predictions.slice(0,5).map(([n])=>n);
+    const actual=drawNumbers(testDraw), actualSet=new Set(actual), top3=new Set(testDraw.top3||[]);
+    const exact=picks.filter(n=>actualSet.has(n));
+    straightMatches+=exact.length;
+    firstPrizeMatches+=picks.includes(testDraw.top3?.[0])?1:0;
+    successes+=exact.length>0?1:0;
+    // Same-number count, deterministic random control for a fair within-sample comparison.
+    const rng=mulberry32(hashStr(opName+'|'+testDraw.date));
+    const rand=new Set();while(rand.size<picks.length)rand.add(String(Math.floor(rng()*10000)).padStart(4,'0'));
+    const matches=[...rand].filter(n=>actualSet.has(n));
+    randomMatches+=matches.length;randomHits+=matches.length>0?1:0;
+    // Rearrangement matches are diagnostics, NOT straight-ticket wins.
+    permMatches+=picks.filter(n=>!actualSet.has(n)&&getPerms(n).some(q=>actualSet.has(q))).length;
+    tested++;
+    if(onProgress)onProgress(tested/testDraws.length);
   }
-  
-  // Baseline: run predictions with ALL modules ON
-  const moduleKeys=Object.keys(moduleToggles);
-  const allOnResults={name:'ALL MODULES',hits:{straight:0,perm:0,t3Hit:0,any:0},draws:0};
-  const perModuleResults={};
-  moduleKeys.forEach(k=>{
-    perModuleResults[k]={name:k,hits:{straight:0,perm:0,t3Hit:0,any:0},draws:0,wouldWin:0};
-  });
-  
-  // Also compute: what if we ran WITHOUT each specific module?
-  const withoutModuleResults={};
-  moduleKeys.forEach(k=>{
-    withoutModuleResults[k]={name:k,hits:{straight:0,perm:0,t3Hit:0,any:0},draws:0};
-  });
-  
-  // Walk forward: use data BEFORE each test draw to predict, then check
-  // Use seeded RNG so results are deterministic across runs
-  for(let i=0;i<testDraws.length;i++){
-    const testDraw=testDraws[i];
-    const historicalDraws=op.draws.slice(i+1); // Data before this draw
-    
-    if(historicalDraws.length<30)continue;
-    
-    const actualAll=[...testDraw.top3,...(testDraw.special||[]),...(testDraw.consolation||[])];
-    const actualT3=testDraw.top3;
-    const targetDay=testDraw.day;
-    const baseSeed=hashStr(opName+testDraw.date);
-    
-    // 1. Run with ALL modules ON (seeded for determinism)
-    const allOn={};moduleKeys.forEach(k=>allOn[k]=true);
-    try{
-      const result=withSeed(baseSeed,()=>masterFusion(historicalDraws,targetDay,null,moduleWeights,allOn));
-      if(result&&result.predictions){
-        const top10=result.predictions.slice(0,10);
-        const hits=scoreHits(top10,actualAll,actualT3);
-        allOnResults.hits.straight+=hits.straight;
-        allOnResults.hits.perm+=hits.perm;
-        allOnResults.hits.t3Hit+=hits.t3Hit;
-        allOnResults.hits.any+=hits.any;
-        allOnResults.draws++;
-      }
-    }catch(e){console.warn('backtest all-on err',e);}
-    
-    // 2. For each module, test with ONLY that module on (seeded)
-    for(const modKey of moduleKeys){
-      const onlyThis={};moduleKeys.forEach(k=>onlyThis[k]=(k===modKey));
-      try{
-        const result=withSeed(baseSeed+hashStr(modKey),()=>masterFusion(historicalDraws,targetDay,null,moduleWeights,onlyThis));
-        if(result&&result.predictions){
-          const top10=result.predictions.slice(0,10);
-          const hits=scoreHits(top10,actualAll,actualT3);
-          perModuleResults[modKey].hits.straight+=hits.straight;
-          perModuleResults[modKey].hits.perm+=hits.perm;
-          perModuleResults[modKey].hits.t3Hit+=hits.t3Hit;
-          perModuleResults[modKey].hits.any+=hits.any;
-          perModuleResults[modKey].draws++;
-          if(hits.any>0)perModuleResults[modKey].wouldWin++;
-        }
-      }catch(e){}
-    }
-    
-    // 3. For each module, test with all EXCEPT that module (seeded with same baseSeed as allOn for fair comparison)
-    for(const modKey of moduleKeys){
-      const allExcept={};moduleKeys.forEach(k=>allExcept[k]=(k!==modKey));
-      try{
-        const result=withSeed(baseSeed,()=>masterFusion(historicalDraws,targetDay,null,moduleWeights,allExcept));
-        if(result&&result.predictions){
-          const top10=result.predictions.slice(0,10);
-          const hits=scoreHits(top10,actualAll,actualT3);
-          withoutModuleResults[modKey].hits.straight+=hits.straight;
-          withoutModuleResults[modKey].hits.perm+=hits.perm;
-          withoutModuleResults[modKey].hits.t3Hit+=hits.t3Hit;
-          withoutModuleResults[modKey].hits.any+=hits.any;
-          withoutModuleResults[modKey].draws++;
-        }
-      }catch(e){}
-    }
-    
-    if(onProgress)onProgress((i+1)/testDraws.length);
-  }
-  
-  // Calculate module impact: withoutX - allOn = negative means X helps
-  // If allOn hits > withoutX hits, that module was helping
-  // If withoutX hits > allOn hits, that module was hurting
-  const moduleImpact=moduleKeys.map(k=>{
-    const baseline=allOnResults.hits.any;
-    const without=withoutModuleResults[k].hits.any;
-    const solo=perModuleResults[k].hits.any;
-    const delta=baseline-without; // positive = module helps
-    return{
-      key:k,
-      solo:solo,
-      withoutThis:without,
-      delta:delta,
-      verdict:delta>0?'HELPS':delta<0?'HURTS':'NEUTRAL'
-    };
-  }).sort((a,b)=>b.delta-a.delta);
-  
-  return{
-    opName,
-    testedDraws:allOnResults.draws,
-    baseline:allOnResults.hits,
-    moduleImpact,
-    perModule:perModuleResults,
-    without:withoutModuleResults
-  };
+  return{opName,testedDraws:tested,baseline:{straight:straightMatches,perm:permMatches,t3Hit:firstPrizeMatches,any:successes},
+    randomBaseline:{exact:randomMatches,drawHits:randomHits},
+    randomExpectation:tested*(1-Math.pow(1-5/10000,23)),
+    moduleImpact:[],perModule:{},without:{},
+    note:'Five exact-number selections per draw. Permutations are tracked separately and not counted as actual wins. This is evaluation, not validated prediction.'};
 }
+
 
 // ============================================================
 // MASTER FUSION with self-learning weights
 // ============================================================
+// v4.16 RESEARCH ENGINE — exact evaluation of all 10,000 candidates.
+// Component scores are historical fit indices, NOT future winning probabilities.
+// Only fully observed past draws are included. Diagnostic methods do not vote.
+function is4D(x){return typeof x==='string'&&/^\d{4}$/.test(x);}
+function drawNumbers(d){return [...(Array.isArray(d?.top3)?d.top3:[]),...(Array.isArray(d?.special)?d.special:[]),...(Array.isArray(d?.consolation)?d.consolation:[])].filter(is4D);}
+function countPositions(nums){const m=Array.from({length:4},()=>Array(10).fill(0));nums.forEach(n=>{for(let i=0;i<4;i++)m[i][+n[i]]++;});return m;}
+function countPairs(nums){const m=Array.from({length:3},()=>Array(100).fill(0));nums.forEach(n=>{for(let i=0;i<3;i++)m[i][+(n.slice(i,i+2))]++;});return m;}
+function centeredLogRatio(n,count,total,k,alpha){return Math.log(((count+alpha)/(total+k*alpha))*k);}
+function candidateDispersion(items){let mean=0;for(const x of items)mean+=x;mean/=Math.max(items.length,1);let variance=0;for(const x of items)variance+=(x-mean)**2;return{mean,sd:Math.sqrt(variance/Math.max(items.length,1))||1};}
+function safePatternScore(z){return Math.max(1,Math.min(99,Math.round(50+10*z)));}
 function masterFusion(opDraws,targetDay,allOps,w=moduleWeights,t=moduleToggles){
-  const allNums=opDraws.flatMap(d=>[...d.top3,...(d.special||[]),...(d.consolation||[])].filter(Boolean));
-  const wf=getWeighted(opDraws),df=getDayFreq(opDraws,targetDay);
-  const mk=buildMarkov(allNums),mc=monteCarlo(allNums,30000);
-  const mcMax=Math.max(...Object.values(mc),1);
-  const chi=chiSquare(allNums),mom=momentum(opDraws);
-  const reps=findRepeats(opDraws),repSet=new Set(reps.map(r=>r.n)),repCnt={};reps.forEach(r=>repCnt[r.n]=r.c);
-  const sz=digitSumZone(opDraws),pf=pairFreq(allNums),topOE=oddEvenTop(opDraws);
-  const crossNums=allOps?crossOp(allOps):new Set();
-  const eliminated=getEliminatedDigits(opDraws);
-  const streaks=streakDetect(opDraws);
-  const streakSet=new Set(streaks.map(([n])=>n));
-
-  const hotPos=[0,1,2,3].map(p=>{const h=new Set();DIGITS.forEach(d=>{if(chi[p].digits[d].s==="HOT")h.add(d)});return h});
-  const upPos=[0,1,2,3].map(p=>{const u=new Set();DIGITS.forEach(d=>{if(mom[p][d].tr==="UP")u.add(d)});return u});
-  const mirrors=new Set((opDraws[0]?.top3||[]).map(n=>n.split("").reverse().join("")).filter(r=>!(opDraws[0]?.top3||[]).includes(r)));
-
-  const wProbs=wf.map(f=>{const t=Object.values(f).reduce((a,b)=>a+b,0)||1;const p={};DIGITS.forEach(d=>p[d]=f[d]/t);return p});
-  const dProbs=df.allF.map(f=>{const t=Object.values(f).reduce((a,b)=>a+b,0)||1;const p={};DIGITS.forEach(d=>p[d]=f[d]/t);return p});
-
-  const topD=[0,1,2,3].map(pos=>{
-    const c={};DIGITS.forEach(d=>c[d]=(wf[pos][d]||0)*2+(df.allF[pos][d]||0)*5+(df.t3F[pos][d]||0)*8);
-    return Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([d])=>d);
-  });
-
-  const scores={};
-  for(const d1 of topD[0])for(const d2 of topD[1])for(const d3 of topD[2])for(const d4 of topD[3]){
-    const num=d1+d2+d3+d4;let s=0;
-    // Elimination filter
-    if(t.elimination!==false){
-      for(let i=0;i<4;i++)if(eliminated[i].has(num[i]))s-=10*w.elimination;
-    }
-    
-    let ps=1,ds=1;for(let i=0;i<4;i++){ps*=wProbs[i][num[i]]||0.05;ds*=dProbs[i][num[i]]||0.05;}
-    if(t.position!==false)s+=ps*15000*w.position;
-    if(t.daySpecific!==false)s+=ds*20000*w.daySpecific;
-    for(let i=0;i<4;i++){
-      if(t.chiSquare!==false&&hotPos[i].has(num[i]))s+=3.75*w.chiSquare;
-      if(t.momentum!==false&&upPos[i].has(num[i]))s+=2.5*w.momentum;
-    }
-    const dsum=[...num].reduce((a,d)=>a+parseInt(d),0);
-    if(t.digitSum!==false&&dsum>=sz.zone[0]&&dsum<=sz.zone[1])s+=10*w.digitSum;
-    if(t.pairs!==false)s+=Math.min(((pf[0][num.slice(0,2)]||0)+(pf[1][num.slice(1,3)]||0)+(pf[2][num.slice(2,4)]||0))*0.5*w.pairs,10);
-    if(t.oddEven!==false&&topOE.has([...num].map(d=>parseInt(d)%2===1?"O":"E").join("")))s+=5*w.oddEven;
-    scores[num]=s;
+  const historyOnly=(Array.isArray(opDraws)?opDraws:[]).filter(d=>d&&/^\d{4}-\d{2}-\d{2}$/.test(d.date))
+    .slice().sort((a,b)=>b.date.localeCompare(a.date));
+  const recent=historyOnly.slice(0,500), long=historyOnly.slice(0,2000), weekday=historyOnly.filter(d=>d.day===targetDay).slice(0,500);
+  const nums=recent.flatMap(drawNumbers), longNums=long.flatMap(drawNumbers), dayNums=weekday.flatMap(drawNumbers);
+  const rp=countPositions(nums), lp=countPositions(longNums), dp=countPositions(dayNums), pairs=countPairs(nums);
+  const previous=historyOnly.slice(500,1000).flatMap(drawNumbers), oldPos=countPositions(previous);
+  const recentTotals=rp.map(a=>a.reduce((x,y)=>x+y,0));
+  const longTotals=lp.map(a=>a.reduce((x,y)=>x+y,0));
+  const dayTotals=dp.map(a=>a.reduce((x,y)=>x+y,0));
+  const pairTotals=pairs.map(a=>a.reduce((x,y)=>x+y,0));
+  const isOn=k=>(t?.[k]!==false)&&(Number(w?.[k])||0)>0;
+  // Fixed, conservative smoothing and weights. Never tuned on the draw to be predicted.
+  const components={position:[],pairs:[],daySpecific:[],momentum:[],digitSum:[],oddEven:[]};
+  // Digit-sum and odd/even baselines use the true uniform-combination distributions.
+  const allSums=Array(37).fill(0), allOdds=Array(5).fill(0);
+  for(let n=0;n<10000;n++){
+    const st=String(n).padStart(4,'0');
+    allSums[+st[0]+ +st[1]+ +st[2]+ +st[3]]++;
+    allOdds[[...st].filter(ch=>+ch%2).length]++;
   }
-
-  allNums.forEach(num=>{if(num.length===4&&!(num in scores)){let s=0,ps=1,ds=1;for(let i=0;i<4;i++){ps*=wProbs[i][num[i]]||0.05;ds*=dProbs[i][num[i]]||0.05;}if(t.position!==false)s+=ps*15000*w.position;if(t.daySpecific!==false)s+=ds*20000*w.daySpecific;const dsum=[...num].reduce((a,d)=>a+parseInt(d),0);if(t.digitSum!==false&&dsum>=sz.zone[0]&&dsum<=sz.zone[1])s+=10*w.digitSum;for(let i=0;i<4;i++){if(t.chiSquare!==false&&hotPos[i].has(num[i]))s+=3.75*w.chiSquare;if(t.momentum!==false&&upPos[i].has(num[i]))s+=2.5*w.momentum;}scores[num]=s;}});
-
-  Object.keys(scores).forEach(num=>{
-    if(t.markov!==false){let mp=1;for(let i=0;i<3;i++)mp*=mk[num[i]]?.[num[i+1]]||0.1;scores[num]+=mp*1500*w.markov;}
-    if(t.monteCarlo!==false)scores[num]+=((mc[num]||0)/mcMax)*10*w.monteCarlo;
-    if(t.mirror!==false&&mirrors.has(num))scores[num]+=8*w.mirror;
-    if(t.repeat!==false&&repSet.has(num))scores[num]+=(repCnt[num]||1)*25*w.repeat;
-    if(t.crossOp!==false&&crossNums.has(num))scores[num]+=20*w.crossOp;
-    if(t.streak!==false&&streakSet.has(num))scores[num]+=15*w.streak;
-  });
-
-  const sorted=Object.entries(scores).sort((a,b)=>b[1]-a[1]);
-  const recycled=recyclingDetector(opDraws);
-  const entropy=t.entropy!==false?entropyScoring(opDraws):null;
-  const gaTop=t.genetic!==false?geneticAlgorithm(opDraws,targetDay,150,80):[];
-  
-  // Boost GA winners in fusion scores (only if GA enabled)
-  if(t.genetic!==false)gaTop.forEach(({n,f},i)=>{if(scores[n])scores[n]+=f*0.3*(1-i*0.05);});
-  
-  // PERMUTATION-AWARE SCORING: Boost all permutations of high-scoring digit sets
-  const digitSetScores={};
-  Object.entries(scores).forEach(([num,score])=>{
-    const key=digitSetKey(num);
-    if(!digitSetScores[key])digitSetScores[key]={total:0,count:0,best:0};
-    digitSetScores[key].total+=score;
-    digitSetScores[key].count++;
-    if(score>digitSetScores[key].best)digitSetScores[key].best=score;
-  });
-  // If a digit set has multiple high-scoring permutations, boost all of them
-  Object.entries(scores).forEach(([num,score])=>{
-    const key=digitSetKey(num);
-    const ds=digitSetScores[key];
-    if(ds.count>=2&&ds.best>0){
-      // Boost proportional to how many permutations scored well
-      scores[num]+=ds.total*0.05*Math.min(ds.count,6);
+  const sumCounts=Array(37).fill(0),oddCounts=Array(5).fill(0);
+  nums.forEach(n=>{sumCounts[[...n].reduce((a,d)=>a+ +d,0)]++;oddCounts[[...n].filter(d=>+d%2).length]++;});
+  const candidates=Array.from({length:10000},(_,i)=>String(i).padStart(4,'0'));
+  candidates.forEach(n=>{
+    let pos=0, pair=0, day=0, momentum=0;
+    for(let i=0;i<4;i++){
+      const d=+n[i];
+      pos+=0.70*centeredLogRatio(d,rp[i][d],recentTotals[i],10,60)+0.30*centeredLogRatio(d,lp[i][d],longTotals[i],10,160);
+      day+=centeredLogRatio(d,dp[i][d],dayTotals[i],10,150);
+      const oldTotal=oldPos[i].reduce((a,b)=>a+b,0);
+      const recentP=(rp[i][d]+120)/(recentTotals[i]+1200), oldP=(oldPos[i][d]+120)/(oldTotal+1200);
+      momentum+=Math.max(-0.20,Math.min(0.20,recentP-oldP));
+      if(i<3)pair+=centeredLogRatio(+(n.slice(i,i+2)),pairs[i][+(n.slice(i,i+2))],pairTotals[i],100,20);
     }
+    const sum=[...n].reduce((a,d)=>a+ +d,0);
+    const odd=[...n].filter(d=>+d%2).length;
+    const sumRatio=Math.log((sumCounts[sum]+Math.max(2,80*allSums[sum]/10000))/(Math.max(nums.length,1)+80) / (allSums[sum]/10000));
+    const oddRatio=Math.log((oddCounts[odd]+Math.max(2,80*allOdds[odd]/10000))/(Math.max(nums.length,1)+80) / (allOdds[odd]/10000));
+    components.position.push(pos);components.pairs.push(pair);components.daySpecific.push(day);
+    components.momentum.push(momentum);components.digitSum.push(sumRatio);components.oddEven.push(oddRatio);
   });
-  
-  const finalSorted=Object.entries(scores).sort((a,b)=>b[1]-a[1]);
-  const analysisData={chi,mom,sz,reps,crossOp:crossNums.size,mirrors:[...mirrors],dayCount:df.count,eliminated,streaks:streaks.slice(0,5),recycled,entropy,gaTop};
-  
-  // Calculate confidence for top predictions
-  const allScoresMap=Object.fromEntries(finalSorted.slice(0,200));
-  const predsWithConf=finalSorted.slice(0,20).map(([n,s])=>({num:n,score:s,confidence:calculateConfidence(n,allScoresMap,finalSorted.slice(0,20),analysisData)}));
-  
-  return{predictions:finalSorted.slice(0,20),predsWithConf,allScores:allScoresMap,analysis:analysisData};
+  const standardized={};Object.entries(components).forEach(([name,values])=>{
+    const {mean,sd}=candidateDispersion(values);
+    standardized[name]=values.map(v=>Math.max(-3,Math.min(3,(v-mean)/sd)));
+  });
+  const combined=candidates.map((_,i)=>{
+    let score=0;
+    for(const k of Object.keys(standardized))if(isOn(k))score+=Math.min(2,Math.max(0,+w[k]))*standardized[k][i];
+    return score;
+  });
+  const {mean,sd}=candidateDispersion(combined);
+  const noSignal=!Object.keys(standardized).some(isOn);
+  const allScores={}; const rank=[];
+  for(let i=0;i<candidates.length;i++){
+    const score=noSignal?50:safePatternScore((combined[i]-mean)/sd);
+    allScores[candidates[i]]=score;rank.push([candidates[i],score]);
+  }
+  // Sort by UNROUNDED combined score: rounded display indices must not cause arbitrary ties.
+  const allIndices=candidates.map((_,i)=>i).sort((a,b)=>combined[b]-combined[a]||candidates[a].localeCompare(candidates[b]));
+  const diverse=[];
+  for(const idx of allIndices){
+    const n=candidates[idx];
+    if(diverse.every(other=>[0,1,2,3].filter(p=>n[p]!==other[p]).length>=2))diverse.push(n);
+    if(diverse.length===20)break;
+  }
+  // Diversity is a presentation constraint, not an improvement to a fair draw's odds.
+  // All diagnostic modules use the same historical window and never boost pick scores.
+  const recentChi=chiSquare(nums), mom=momentumFnSafe(recent);
+  const reps=findRepeats(recent),sz=digitSumZone(recent),streaks=streakDetect(recent);
+  const mirror=new Set((recent[0]?.top3||[]).filter(is4D).map(n=>n.split('').reverse().join('')));
+  const eliminated=[new Set(),new Set(),new Set(),new Set()]; // Never discard valid outcomes.
+  const analysis={chi:recentChi,mom,sz,reps,mirrors:[...mirror],crossOp:0,dayCount:weekday.length,eliminated,
+    streaks:streaks.slice(0,5),recycled:recyclingDetector(recent),entropy:entropyScoring(recent),gaTop:[],
+    notes:'Chi-square, entropy, Markov, Monte Carlo, mirrors, repeats, cold digits, streaks and genetic search are descriptive/diagnostic only. No proven predictive advantage.'};
+  const predictions=diverse.map(n=>[n,allScores[n]]);
+  return{predictions,predsWithConf:predictions.map(([num,score])=>({num,score,confidence:score})),allScores,analysis,
+    drawsAnalyzed:recent.length,eligiblePrizeEntries:nums.length,selectionModel:'full 10000 / smoothed positional and pair frequency',
+    oddsNotice:'All exact 4-digit combinations have equal winning odds in a fair independent draw.'};
 }
+// Keep original momentum diagnostics intact without shadowing local variables.
+function momentumFnSafe(draws){return momentum(draws);}
+
+
 
 // ============================================================
 // SELF-LEARNING: Adjust weights based on check results
 // ============================================================
 function adjustWeights(predictions,actualNums){
-  // Find which predictions hit
-  const predNums=predictions.map(([n])=>n);
-  const hits=predNums.filter(n=>actualNums.includes(n));
-  
-  if(hits.length>0){
-    // Boost all weights slightly (the engine is working)
-    Object.keys(moduleWeights).forEach(k=>{moduleWeights[k]=Math.min(moduleWeights[k]*1.05,3)});
-  }else{
-    // Check if any permutations hit
-    let permHit=false;
-    predNums.slice(0,5).forEach(n=>{
-      getPerms(n).forEach(p=>{if(actualNums.includes(p))permHit=true;});
-    });
-    if(permHit){
-      // Slight boost — close but not exact
-      Object.keys(moduleWeights).forEach(k=>{moduleWeights[k]=Math.min(moduleWeights[k]*1.02,3)});
-    }else{
-      // Slight penalty — reduce dominant weights toward 1
-      Object.keys(moduleWeights).forEach(k=>{
-        if(moduleWeights[k]>1)moduleWeights[k]=Math.max(moduleWeights[k]*0.97,0.5);
-        else moduleWeights[k]=Math.min(moduleWeights[k]*1.01,3);
-      });
-    }
-  }
-  save(KEYS.weights,moduleWeights);
-  return hits;
+  // Disabled: boosting every feature on a lucky hit and penalizing every feature
+  // on a miss is not statistical learning and distorts future ranking.
+  // Preserve settings, allow evaluation through held-out chronological tests.
+  return (predictions||[]).map(x=>x[0]).filter(n=>(actualNums||[]).includes(n));
 }
+
 
 // ============================================================
 // UI NAVIGATION
@@ -1461,6 +1336,7 @@ function renderPredict(){
   <div class="ctrl-group" style="max-width:90px"><label>Budget (RM)</label><input type="number" id="budgetInput" min="5" max="500" value="${localStorage.getItem('b4d_budget')||'50'}" style="text-align:center;font-weight:700" onchange="localStorage.setItem('b4d_budget',this.value)"></div>
   <button class="btn btn-fire" onclick="runBeast()" id="runBtn">🔥 RUN</button></div>`;
   
+  h+=`<div style="font-size:9px;margin:6px 0 12px;color:var(--dim2);line-height:1.6">🔬 v4.16 Research Edition: all 10,000 outcomes are evaluated. No model has demonstrated a reliable edge over independent random draws. Historical score ≠ winning probability. Data stays on this device.</div>`;
   // Op tabs
   // Operator logo SVGs - styled after original brand identities
   const opLogos={
@@ -1544,9 +1420,10 @@ function renderPredict(){
       }
     }
     
+    h+=`<div class="card" style="border-color:var(--border);font-size:10px;line-height:1.5;color:var(--dim2)">🔬 <b>Research mode:</b> Pattern index /100 is NOT winning probability. Exact 4D chance is 0.01% for first prize, approximately 0.23% across 23 distinct Big-prize results. No validated advantage over random selection.</div>`;
     h+=`<div class="section-title" style="color:${op.color}">🏆 ${op.name} — Predictions <span style="font-size:9px;color:var(--dim2)">(${tDay})</span></div>`;
     
-    const predsConf=res.predsWithConf||res.predictions.slice(0,10).map(([n,s])=>({num:n,score:s,confidence:50}));
+    const predsConf=res.predsWithConf||res.predictions.slice(0,10).map(([n,s])=>({num:n,score:s,confidence:s}));
     predsConf.slice(0,10).forEach((pred,i)=>{
       const num=pred.num,score=pred.score,conf=pred.confidence;
       const isTop=i<3;const pct=Math.round((score/maxS)*100);
@@ -1579,12 +1456,12 @@ function renderPredict(){
           <div class="nm" style="color:${isTop?'#fff':'#ccc'}">${num}</div>
           <div style="display:flex;gap:6px;align-items:center;margin-top:2px">
             <div class="conf-bar" style="width:70px"><div class="fill" style="width:${pct}%;background:${op.color}"></div></div>
-            <span style="font-size:10px;font-weight:800;color:${confColor}">${conf}%</span>
+            <span style="font-size:10px;font-weight:800;color:${confColor}">${conf}/100</span>
             <span style="font-size:7px;color:var(--dim3);background:#1a1a2e;padding:1px 4px;border-radius:3px">${ibox.perms<=6?'iBox':''}${ibox.perms}P</span>
           </div>
         </div>
         <div style="display:flex;gap:2px;flex-wrap:wrap;max-width:90px">${signals.map(([t,c])=>`<span class="badge" style="background:${c==='repeat'?'#c33':c==='mirror'?'#83a':c==='hot'?'#c60':c==='ga'?'#6366f1':c==='allops'?'#ff6633':'#263'}">${t}</span>`).join('')}</div>
-        <div class="sc"><div class="l">Score</div><div class="v" style="color:${isTop?op.color:'#aaa'}">${score.toFixed(1)}</div></div>
+        <div class="sc"><div class="l">Pattern</div><div class="v" style="color:${isTop?op.color:'#aaa'}">${score.toFixed(1)}</div></div>
       </div>
       <div class="perms-row" id="pm_${num}" style="display:${showPermsMap[num]?'block':'none'}">
         ${(()=>{
@@ -1630,7 +1507,7 @@ function renderPredict(){
     // Recycling alerts
     if(res.analysis.recycled&&res.analysis.recycled.length>0){
       h+=`<div class="alert-box" style="border-color:#226633;background:linear-gradient(135deg,rgba(34,197,94,0.05),rgba(34,197,94,0.02))"><div class="at" style="color:var(--green)">♻️ Recycled Numbers</div>
-        <div style="font-size:9px;color:var(--dim2);margin-bottom:6px">Past winners that reappeared (likely to recycle again):</div>
+        <div style="font-size:9px;color:var(--dim2);margin-bottom:6px">Historical repeats (not a prediction of future repeats):</div>
         ${res.analysis.recycled.slice(0,6).map(r=>`<div class="ai"><span class="anum">${r.number}</span><span style="font-size:8px;color:var(--dim)">${r.firstDate}</span><span class="arrow" style="color:var(--green)">→</span><span style="font-size:8px;color:var(--dim)">${r.secondDate}</span><span class="badge" style="background:${r.category==='TOP3'?'#c90':r.category==='SPECIAL'?'#36a':'#555'};font-size:7px">${r.category}</span><span style="font-size:8px;color:var(--dim3)">gap:${r.gap}</span></div>`).join('')}
       </div>`;
     }
@@ -1640,69 +1517,11 @@ function renderPredict(){
       h+=`<button class="btn" style="width:100%;margin-top:12px;margin-bottom:4px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;font-size:13px;font-weight:800;padding:14px;border-radius:10px;letter-spacing:0.5px" onclick="openModal('modalAI')">🤖 Ask Beast AI Advisor</button>`;
     }
     
-    // BUY LIST
-    if(lastResults&&Object.keys(lastResults).length===operators.length){
-      const userBudget=parseInt(document.getElementById('budgetInput')?.value||localStorage.getItem('b4d_budget')||'50');
-      const buyList=generateBuyList(lastResults,userBudget);
-      const opColors={MAGNUM:'#D4A017',TOTO:'#DC2626',DAMACAI:'#2563EB'};
-      const dayName={Sat:'SATURDAY',Sun:'SUNDAY',Wed:'WEDNESDAY',Tue:'TUESDAY'}[document.getElementById('tDay')?.value||'Sat']||'DRAW';
-      h+=`<div class="buy-section"><h3>🛒 Ready-to-Buy List <span style="font-size:10px;font-weight:400;color:var(--dim)">RM${userBudget} budget</span></h3>
-      <div style="font-size:8px;color:#ff9966;margin-bottom:10px">💡 iBox recommended for 4-unique-digit numbers • Play hot numbers across ALL operators</div>`;
-      ["MAGNUM","TOTO","DAMACAI"].forEach(opName=>{
-        const opItems=buyList.filter(b=>b.op===opName);
-        if(opItems.length===0)return;
-        h+=`<div class="buy-op"><div class="op-header"><span class="dot" style="background:${opColors[opName]}"></span>${opName}</div>`;
-        opItems.forEach(item=>{
-          const typeColor=item.type==='IBOX'?'#6366f1':item.type==='STRAIGHT'?opColors[opName]:'#555';
-          const allOpsTag=item.playAllOps?'<span style="font-size:7px;background:#c33;color:#fff;padding:1px 3px;border-radius:3px;margin-left:3px">ALL OPS</span>':'';
-          const crossTag=item.crossOp?'<span style="font-size:7px;background:#6366f1;color:#fff;padding:1px 3px;border-radius:3px;margin-left:3px">CROSS</span>':'';
-          h+=`<div class="buy-row"><span class="bnum" style="color:${item.isTop?'#fff':'#aaa'}">${item.num}</span><span class="btag" style="background:${typeColor}">${item.type}</span>${allOpsTag}${crossTag}<span class="btype">${item.betType}</span><span class="bamt" style="color:${opColors[opName]}">RM${item.amount}</span></div>`;
-        });
-        h+=`</div>`;
-      });
-      const total=buyList.reduce((a,b)=>a+b.amount,0);
-      h+=`<div class="buy-total"><span>${dayName} TOTAL</span><span>RM${total}</span></div>`;
-      if(total<userBudget)h+=`<div style="font-size:9px;color:var(--dim2);margin-top:4px;text-align:center">💰 RM${userBudget-total} reserved for next draw</div>`;
-      h+=`</div>`;
-      
-      // CROSS-OPERATOR HOT NUMBERS
-      const crossOp=crossOperatorFusion(lastResults);
-      if(crossOp.playAllOps.length>0){
-        h+=`<div class="alert-box" style="margin-top:12px;border-color:#6366f1;background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(139,92,246,0.04))">
-          <div class="at" style="color:#a78bfa">🌐 Cross-Operator Hot Numbers</div>
-          <div style="font-size:9px;color:var(--dim2);margin-bottom:8px">These digit sets scored high across multiple operators — play iBox on ALL operators for maximum coverage!</div>`;
-        crossOp.playAllOps.slice(0,8).forEach(p=>{
-          const opC={MAGNUM:'#D4A017',TOTO:'#DC2626',DAMACAI:'#2563EB'};
-          h+=`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #1a1a3a">
-            <span style="font-family:monospace;font-size:16px;font-weight:800;color:#fff;letter-spacing:2px;min-width:55px">${p.num}</span>
-            <span style="font-size:7px;background:${opC[p.originOp]};color:#fff;padding:1px 4px;border-radius:3px">${p.originOp}</span>
-            <span style="font-size:9px;color:var(--dim3)">→ also hot in</span>
-            ${p.alsoHotIn.map(op=>`<span style="font-size:7px;background:${opC[op]};color:#fff;padding:1px 4px;border-radius:3px">${op}</span>`).join('')}
-            <span style="font-size:8px;color:var(--dim3);margin-left:auto">${p.ibox.perms}P iBox</span>
-          </div>`;
-        });
-        h+=`<div style="font-size:8px;color:#a78bfa;margin-top:8px;text-align:center">💡 Tip: Play these as iBox on ALL 3 operators for best coverage</div></div>`;
-      }
-      
-      // HOT DIGIT SETS (permutation groups)
-      if(crossOp.hotSets.length>0){
-        h+=`<div class="alert-box" style="margin-top:8px;border-color:#059669;background:linear-gradient(135deg,rgba(5,150,105,0.08),rgba(16,185,129,0.04))">
-          <div class="at" style="color:var(--green)">🔀 Hot Digit Sets (Permutation Groups)</div>
-          <div style="font-size:9px;color:var(--dim2);margin-bottom:6px">Same digits scored high in ${'>'}1 operator — any permutation could win!</div>`;
-        crossOp.hotSets.slice(0,6).forEach(s=>{
-          const opC={MAGNUM:'#D4A017',TOTO:'#DC2626',DAMACAI:'#2563EB'};
-          h+=`<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid #0a2a1a">
-            <span style="font-family:monospace;font-size:13px;font-weight:700;color:var(--green);letter-spacing:3px;min-width:50px">{${s.digitSet}}</span>
-            ${s.ops.map(op=>`<span style="font-size:7px;background:${opC[op]};color:#fff;padding:1px 3px;border-radius:3px">${op}</span>`).join('')}
-            <span style="font-size:8px;color:var(--dim3);margin-left:auto">best: ${s.bestNum}</span>
-          </div>`;
-        });
-        h+=`</div>`;
-      }
-    }
+    // v4.16 removes the automatic stake-allocation and "play all operators" prompts.
+    // Historical rankings are shown above; bet sizing should not depend on uncalibrated scores.
   }else if(!lastResults){
     const emptyZodiac=getZodiacDay(new Date());
-    h+=`<div style="text-align:center;padding:40px 0;color:var(--dim3)"><div style="font-size:64px;margin-bottom:6px;filter:drop-shadow(0 0 12px ${emptyZodiac.color}66)">${emptyZodiac.emoji}</div><div style="font-size:10px;color:${emptyZodiac.color};font-weight:700;margin-bottom:6px">Today is ${emptyZodiac.cn} ${emptyZodiac.en} Day</div><div style="font-size:12px;color:var(--dim2)">Hit 🔥 RUN to generate predictions</div><div style="font-size:9px;margin-top:4px">16 modules • Sniper Mode • Cross-Operator • iBox Strategy</div>
+    h+=`<div style="text-align:center;padding:40px 0;color:var(--dim3)"><div style="font-size:64px;margin-bottom:6px;filter:drop-shadow(0 0 12px ${emptyZodiac.color}66)">${emptyZodiac.emoji}</div><div style="font-size:10px;color:${emptyZodiac.color};font-weight:700;margin-bottom:6px">Today is ${emptyZodiac.cn} ${emptyZodiac.en} Day</div><div style="font-size:12px;color:var(--dim2)">Hit 🔥 RUN to generate historical pattern rankings</div><div style="font-size:9px;margin-top:4px">10,000 candidates • Smoothed historical features • Backtesting</div>
     <div style="margin-top:30px;padding-top:16px;border-top:1px solid #1a1a2e">
       <div style="font-size:8px;color:#444;letter-spacing:1px;margin-bottom:6px">POWERED BY</div>
       <div style="font-size:11px;color:#6366f1;font-weight:700;letter-spacing:0.5px">🤖 DeepSeek AI — Reasoner V3.2</div>
@@ -3117,7 +2936,7 @@ function runOracle(){
       Object.entries(results).forEach(([opName,res])=>{
         // TIER 1: Primary Oracle picks (5 high-consensus numbers)
         history.push({
-          date:now,generatedAt:new Date().toISOString(),
+          date:nextTargetDateMYT(tDay)||now,targetDate:nextTargetDateMYT(tDay)||null,generatedAt:new Date().toISOString(),
           operator:'ORACLE',
           subOperator:opName,
           targetDay:tDay,
@@ -3133,7 +2952,7 @@ function runOracle(){
         // TIER 2: Operator Dodge Variants (counter hot→cold digit swap)
         if(res.dodgeVariants&&res.dodgeVariants.length>0){
           history.push({
-            date:now,generatedAt:new Date().toISOString(),
+            date:nextTargetDateMYT(tDay)||now,targetDate:nextTargetDateMYT(tDay)||null,generatedAt:new Date().toISOString(),
             operator:'DODGE',
             subOperator:opName,
             targetDay:tDay,
@@ -3152,7 +2971,7 @@ function runOracle(){
         // TIER 3: Cross-Op Migration candidates (digit sets moving between operators)
         if(res.crossOp&&res.crossOp.candidates&&res.crossOp.candidates.length>0){
           history.push({
-            date:now,generatedAt:new Date().toISOString(),
+            date:nextTargetDateMYT(tDay)||now,targetDate:nextTargetDateMYT(tDay)||null,generatedAt:new Date().toISOString(),
             operator:'CROSSOP',
             subOperator:opName,
             targetDay:tDay,
@@ -3178,7 +2997,7 @@ function runOracle(){
       const oracleSnipers=computeOracleSniper();
       if(oracleSnipers.length>0){
         history.push({
-          date:now,generatedAt:new Date().toISOString(),
+          date:nextTargetDateMYT(tDay)||now,targetDate:nextTargetDateMYT(tDay)||null,generatedAt:new Date().toISOString(),
           operator:'ORACLE_SNIPER',
           targetDay:tDay,
           predictions:oracleSnipers.map(s=>s.displayNum),
@@ -3781,7 +3600,7 @@ function saveDeepLearnPicks(tDay){
     const dup=history.some(e=>e.operator==='DEEPLEARN'&&e.subOperator===opN&&e.date===now&&!e.checked);
     if(dup)return;
     history.push({
-      date:now,generatedAt:new Date().toISOString(),
+      date:nextTargetDateMYT(tDay)||now,targetDate:nextTargetDateMYT(tDay)||null,generatedAt:new Date().toISOString(),
       operator:'DEEPLEARN',
       subOperator:opN,
       targetDay:tDay,
@@ -3800,7 +3619,7 @@ function saveDeepLearnPicks(tDay){
     const controlNums=[];
     while(controlNums.length<5){const r=randomFourDigit();if(!controlNums.includes(r))controlNums.push(r);}
     history.push({
-      date:now,generatedAt:new Date().toISOString(),
+      date:nextTargetDateMYT(tDay)||now,targetDate:nextTargetDateMYT(tDay)||null,generatedAt:new Date().toISOString(),
       operator:'CONTROL',
       subOperator:opN,
       targetDay:tDay,
@@ -3988,7 +3807,7 @@ function renderEngines(){
     
     // Disclaimer (important for honest framing)
     h+=`<div style="background:#1a0f00;border:1px dashed #f59e0b66;border-radius:6px;padding:8px;font-size:8px;color:#fbbf24;line-height:1.5">
-      ⚠️ <b>Honest note:</b> Score reflects engine agreement, NOT win probability. Engines share data sources, so high agreement is correlated, not independent. Use as <i>directional guide</i> — don't bet more just because score is high. Stick to your normal bet size.
+      ⚠️ <b>Honest note:</b> Score reflects uncalibrated historical pattern fit, NOT win probability. Engines share data sources, so high agreement is correlated, not independent. Use as <i>directional guide</i> — don't bet more just because score is high. Stick to your normal bet size.
     </div>`;
     
     h+=`</div>`;
@@ -4224,7 +4043,7 @@ function runHotHand(){
       
       if(magnumResult&&magnumResult.picks.length>0){
         history.push({
-          date:now,generatedAt:new Date().toISOString(),operator:'HOTHAND',subOperator:'MAGNUM',targetDay:tDay,
+          date:nextTargetDateMYT(tDay)||now,targetDate:nextTargetDateMYT(tDay)||null,generatedAt:new Date().toISOString(),operator:'HOTHAND',subOperator:'MAGNUM',targetDay:tDay,
           predictions:magnumResult.picks.slice(0,3).map(p=>p.num),
           checked:false,hits:[],permHits:0,
           hotHandMeta:{lane:'MAGNUM',windowSize,drawsAnalyzed:magnumResult.drawsAnalyzed,primary:magnumResult.primary.map(p=>p.digit).join(','),stars:magnumResult.picks.slice(0,3).map(p=>({num:p.num,stars:p.stars}))}
@@ -4235,7 +4054,7 @@ function runHotHand(){
         // Both should be checked independently (either op hitting = win)
         ['TOTO','DAMACAI'].forEach(opName=>{
           history.push({
-            date:now,generatedAt:new Date().toISOString(),operator:'HOTHAND',subOperator:opName,targetDay:tDay,
+            date:nextTargetDateMYT(tDay)||now,targetDate:nextTargetDateMYT(tDay)||null,generatedAt:new Date().toISOString(),operator:'HOTHAND',subOperator:opName,targetDay:tDay,
             predictions:totoDmcResult.picks.slice(0,3).map(p=>p.num),
             checked:false,hits:[],permHits:0,
             hotHandMeta:{lane:'TOTO+DMC',windowSize:windowSize*2,drawsAnalyzed:totoDmcResult.drawsAnalyzed,primary:totoDmcResult.primary.map(p=>p.digit).join(','),stars:totoDmcResult.picks.slice(0,3).map(p=>({num:p.num,stars:p.stars}))}
@@ -4248,7 +4067,7 @@ function runHotHand(){
       if(allFusionNums.length>0){
         ['MAGNUM','TOTO','DAMACAI'].forEach(opName=>{
           history.push({
-            date:now,generatedAt:new Date().toISOString(),operator:'FUSION',subOperator:opName,targetDay:tDay,
+            date:nextTargetDateMYT(tDay)||now,targetDate:nextTargetDateMYT(tDay)||null,generatedAt:new Date().toISOString(),operator:'FUSION',subOperator:opName,targetDay:tDay,
             predictions:allFusionNums,
             checked:false,hits:[],permHits:0,
             fusionMeta:{fromOracle:allFusionNums.map(n=>{const s=oracleAllSets.get(digitSetKey(n));return s?s.op:'?';}),hhLanes:allFusionNums.map(n=>fusionMagnum.includes(n)&&fusionPool.includes(n)?'BOTH':fusionMagnum.includes(n)?'MAGNUM':'TOTO+DMC')}
@@ -4456,7 +4275,7 @@ function renderDashboard(){
     <div class="stat-card"><div class="num" style="color:var(--amber)">${liveStats.specialTotal}</div><div class="lbl">Special Hits</div></div>
     <div class="stat-card"><div class="num">${liveStats.consolationTotal}</div><div class="lbl">Consolation Hits</div></div>
     <div class="stat-card"><div class="num" style="color:var(--green)">${straightDraws}</div><div class="lbl">Straight Wins</div></div>
-    <div class="stat-card"><div class="num" style="color:#f59200">${liveStats.permTotal}</div><div class="lbl">Perm Wins</div></div>
+    <div class="stat-card"><div class="num" style="color:#f59200">${liveStats.permTotal}</div><div class="lbl">Permutation matches</div></div>
     <div class="stat-card"><div class="num" style="color:#a78bfa">${liveStats.straightTotal+liveStats.permTotal}</div><div class="lbl">Total All Wins</div></div>
     <div class="stat-card"><div class="num">${history.length}</div><div class="lbl">Predictions Made</div></div>
     <div class="stat-card"><div class="num">${totalNums}</div><div class="lbl">Draws in Database</div></div>
@@ -5028,7 +4847,7 @@ function scorePicksAgainstDraw(picks,draw){
     if(actualSet.has(n)){straight++;if(t3Set.has(n))top3++;}
     else{const wp=getPerms(n).find(p=>actualSet.has(p));if(wp){perm++;if(t3Set.has(wp))top3++;}}
   });
-  return{straight,perm,top3,anyHit:(straight+perm)>0?1:0};
+  return{straight,perm,top3,anyHit:straight>0?1:0};
 }
 
 // Run the backtest for one operator over a window of test draws.
@@ -5253,13 +5072,13 @@ function renderData(){
   h+=`<div class="section-title">🤖 Beast AI (DeepSeek)</div>
   <div class="card" style="border-left:3px solid #6366f1;padding:10px 12px;margin-bottom:12px">
     <div style="font-size:11px;font-weight:700;color:#a78bfa;margin-bottom:6px">DeepSeek Reasoner API Key</div>
-    <input type="password" id="dsApiKey" value="${localStorage.getItem('b4d_dskey')||''}" placeholder="Enter your DeepSeek API key" style="width:100%;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px;font-size:11px;font-family:monospace;box-sizing:border-box" onchange="localStorage.setItem('b4d_dskey',this.value)">
+    <input type="password" id="dsApiKey" value="${escapeHtml(localStorage.getItem('b4d_dskey')||'')}" placeholder="Enter your DeepSeek API key" style="width:100%;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px;font-size:11px;font-family:monospace;box-sizing:border-box" onchange="localStorage.setItem('b4d_dskey',this.value)">
     <div style="font-size:8px;color:var(--dim3);margin-top:4px">Using <b style="color:#a78bfa">DeepSeek-Reasoner (V3.2)</b> — their most intelligent model with deep thinking. Get key at <b style="color:var(--dim)">platform.deepseek.com</b></div>
   </div>`;
   
   h+=`<div class="section-title" style="color:var(--toto)">⚠️ Danger Zone</div>
   <button class="btn btn-outline" onclick="var r=deduplicateAll();if(!r)toast('✅ No duplicates found')" style="width:100%;margin-bottom:8px;border-color:#333366;color:#8888cc">🧹 Scan & Remove Duplicates</button>
-  <button class="btn btn-outline" onclick="if(confirm('Rebuild stat counters from your actual prediction records?\n\nThis wipes the old inflated Perm Wins / Total Wins and replaces them with correct figures. Safe to re-run anytime.'))resetStatsCounters()" style="width:100%;margin-bottom:8px;border-color:#7c3aed;color:#a78bfa">🔧 Rebuild Stat Counters (fix inflated wins)</button>
+  <button class="btn btn-outline" onclick="if(confirm('Rebuild stat counters from your actual prediction records?\n\nThis wipes the old inflated Permutation matches / Total Wins and replaces them with correct figures. Safe to re-run anytime.'))resetStatsCounters()" style="width:100%;margin-bottom:8px;border-color:#7c3aed;color:#a78bfa">🔧 Rebuild Stat Counters (fix inflated wins)</button>
   <button class="btn btn-outline" onclick="if(confirm('Reset module weights to default?')){moduleWeights=JSON.parse(JSON.stringify(DEFAULT_WEIGHTS));save(KEYS.weights,moduleWeights);toast('Weights reset');render()}" style="width:100%;margin-bottom:8px;border-color:#441111;color:#884444">🔄 Reset Module Weights</button>
   <button class="btn btn-outline" onclick="if(confirm('Delete ALL data including draws, predictions, and stats? This cannot be undone.')){localStorage.clear();location.reload()}" style="width:100%;border-color:#441111;color:#884444">🗑️ Factory Reset</button>`;
   
@@ -5271,60 +5090,50 @@ function renderData(){
 // ============================================================
 function togglePerm(num){showPermsMap[num]=!showPermsMap[num];const el=document.getElementById('pm_'+num);if(el)el.style.display=showPermsMap[num]?'block':'none';}
 
-function runBeast(){
-  const btn=document.getElementById('runBtn');
-  if(!btn)return;
-  btn.classList.add('loading');btn.textContent='⏳ ANALYZING...';btn.disabled=true;
-  
-  setTimeout(()=>{
-    const tDay=document.getElementById('tDay')?.value||'Sat';
-    const allOps=operators.map(op=>({name:op.name,draws:op.draws}));
-    lastResults={};
-    // Each operator uses its OWN module settings
-    operators.forEach(op=>{
-      const opToggles=getToggles(op.name);
-      lastResults[op.name]=masterFusion(op.draws,tDay,allOps,moduleWeights,opToggles);
-    });
-    
-    // Save predictions to history with each op's active modules
-    const now=new Date().toISOString().slice(0,10);
-    operators.forEach(op=>{
-      const opToggles=getToggles(op.name);
-      const preds=lastResults[op.name].predictions.slice(0,10).map(([n])=>n);
-      const activeModules=Object.entries(opToggles).filter(([,v])=>v!==false).map(([k])=>k);
-      history.push({date:now,generatedAt:new Date().toISOString(),operator:op.name,targetDay:tDay,predictions:preds,checked:false,hits:[],permHits:0,modules:activeModules});
-    });
-    
-    // Save SNIPER MODE predictions as a special entry
-    if(Object.keys(lastResults).length>=2){
-      const crossOp=crossOperatorFusion(lastResults);
-      if(crossOp.playAllOps.length>0){
-        const sniperNums=crossOp.playAllOps.slice(0,6).map(p=>p.num);
-        const sniperMeta=crossOp.playAllOps.slice(0,6).map(p=>({num:p.num,origin:p.originOp,alsoHotIn:p.alsoHotIn}));
-        history.push({
-          date:now,generatedAt:new Date().toISOString(),
-          operator:'SNIPER',
-          targetDay:tDay,
-          predictions:sniperNums,
-          sniperMeta:sniperMeta,
-          checked:false,
-          hits:[],
-          permHits:0,
-          modules:['cross-operator-fusion']
-        });
-      }
-    }
-    
-    saveAll();
-    
-    stats.totalPredictions+=operators.length;save(KEYS.stats,stats);
-    
-    btn.classList.remove('loading');btn.textContent='🔥 RUN';btn.disabled=false;
-    showPermsMap={};
-    render();
-    toast('Beast Mode complete! Predictions saved.');
-  },200);
+function nextTargetDateMYT(day){
+  const weekday={Sun:0,Wed:3,Sat:6,Tue:2}[day]; if(weekday===undefined)return null;
+  const now=new Date(Date.now()+8*3600000);const today=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate()));
+  let target=null;
+  for(let n=0;n<15;n++){
+    const d=new Date(today.getTime()+n*86400000);
+    if(d.getUTCDay()!==weekday)continue;
+    const iso=d.toISOString().slice(0,10);
+    if(day==='Tue'&&!SPECIAL_DRAWS_2026.includes(iso))continue;
+    if(n===0&&(now.getUTCHours()>19||(now.getUTCHours()===19)))continue;
+    target=iso;break;
+  }
+  return target;
 }
+
+function runBeast(){
+  const btn=document.getElementById('runBtn');if(!btn)return;
+  const targetDay=document.getElementById('tDay')?.value||selectedDay||'Sat';
+  const targetDate=nextTargetDateMYT(targetDay);
+  if(!targetDate){alert('No verified upcoming draw for that day. Choose Wednesday, Saturday or Sunday.');return;}
+  const ready=operators.filter(op=>op.draws.filter(d=>d.date<targetDate).length>=30&&
+    ['position','pairs','daySpecific','momentum','digitSum','oddEven'].some(k=>getToggles(op.name)[k]!==false&&(+moduleWeights[k]||0)>0));
+  if(!ready.length){alert('Need at least 30 historical draws before the target date. Import complete verified results in Data → Import.');return;}
+  btn.disabled=true;btn.textContent='⏳ ANALYZING...';
+  setTimeout(()=>{
+    try{
+      const dated=operators.map(op=>({...op,draws:op.draws.filter(d=>d.date<targetDate)}));
+      lastResults={};
+      ready.forEach(op=>{
+        const historic=dated.find(d=>d.name===op.name).draws;
+        lastResults[op.name]=masterFusion(historic,targetDay,dated,moduleWeights,getToggles(op.name));
+        const picks=lastResults[op.name].predictions.slice(0,10).map(([n])=>n);
+        history.push({date:targetDate,targetDate,createdDate:new Date().toISOString().slice(0,10),generatedAt:new Date().toISOString(),operator:op.name,targetDay,
+          predictions:picks,checked:false,hits:[],permHits:0,modules:Object.keys(getToggles(op.name)).filter(k=>getToggles(op.name)[k]!==false),
+          scoringVersion:'4.16'});
+      });
+      stats.totalPredictions+=ready.length;
+      saveAll();showPermsMap={};render();
+      toast(`Historical scores generated for ${ready.length} operators — target ${targetDate}.`);
+    }catch(err){console.error('BEAST error',err);alert('Analysis error: '+(err?.message||String(err)));}
+    finally{const b=document.getElementById('runBtn');if(b){b.disabled=false;b.textContent='🔥 RUN';}}
+  },50);
+}
+
 
 // ============================================================
 // AUTO-FETCH FROM WEB
@@ -5363,163 +5172,18 @@ function formatDateForFetch(dateStr){
 }
 
 async function autoFetchResults(){
-  const dateInput=document.getElementById('fetchDate');
-  const statusEl=document.getElementById('fetchStatus');
-  const btn=document.getElementById('fetchBtn');
-  const date=dateInput.value;
-  
-  if(!date){statusEl.innerHTML=`<div class="fetch-status error">⚠️ Please select a date first</div>`;return;}
-  
-  btn.disabled=true;btn.textContent='⏳ Fetching...';
-  statusEl.innerHTML=`<div class="fetch-status loading">🔍 Searching results for ${date}...</div>`;
-  
-  const fmt=formatDateForFetch(date);
-  const results={MAGNUM:null,TOTO:null,DAMACAI:null};
-  let fetched=false;
-  
-  // Year numbers to EXCLUDE from results (these are dates, not 4D numbers)
-  const dateYear=date.slice(0,4);
-  const excludeNums=new Set(['2024','2025','2026','2027','2028',dateYear]);
-  
-  // Filter: only keep valid 4D numbers (exclude years, dates, draw numbers)
-  function cleanNums(nums){
-    return nums.filter(n=>n.length===4 && !excludeNums.has(n) && !/^(19|20)\d{2}$/.test(n) && !/^0{3,}/.test(n));
-  }
-  
-  const sources=[
-    {url:`https://gd4d.co/en/past-results-history/${fmt.ddmmyyyy}`,name:'GD4D'},
-    {url:`https://4dno.org/en/past-results/${fmt.ddmmyyyy}`,name:'4DNO'},
-    {url:`https://www.check4d.org/4d-result-${fmt.ddmmyyyy}/`,name:'Check4D'},
-    {url:`https://www.like4d.com/past-results/${fmt.ddmmyyyy}`,name:'Like4D'},
-    {url:`https://4dcombo.com/en/past-results/${fmt.ddmmyyyy}`,name:'4DCombo'}
-  ];
-  
-  for(const src of sources){
-    statusEl.innerHTML=`<div class="fetch-status loading">🔍 Trying ${src.name}...</div>`;
-    try{
-      const html=await fetchWithProxy(src.url);
-      if(!html||html.length<500)continue;
-      
-      // Strategy: Find operator sections, then extract numbers within bounded regions
-      const text=html.replace(/<!--[\s\S]*?-->/g,''); // Remove comments
-      
-      // Try to find structured data first (tables, divs with operator names)
-      const opMarkers=[
-        {name:'MAGNUM',patterns:['magnum','Magnum 4D','MAGNUM 4D','magnum4d']},
-        {name:'TOTO',patterns:['toto','Sports Toto','SportsToto','SPORTS TOTO','Toto 4D','toto4d']},
-        {name:'DAMACAI',patterns:['damacai','Damacai','DaMaCai','DAMACAI','Da Ma Cai','1+3D','pmp']}
-      ];
-      
-      for(const op of opMarkers){
-        if(results[op.name])continue; // Already found
-        
-        for(const pattern of op.patterns){
-          // Find the operator section in HTML
-          const regex=new RegExp(pattern,'gi');
-          let match;
-          while((match=regex.exec(text))!==null){
-            // Get a bounded chunk after the operator marker (not too much, not too little)
-            const startIdx=match.index;
-            
-            // Find the end boundary: next operator marker or 6000 chars
-            // Minimum 2000 chars guaranteed so all 23 numbers (top3+special+consolation) are captured
-            let endIdx=startIdx+6000;
-            const minEndIdx=startIdx+2000;
-            for(const otherOp of opMarkers){
-              if(otherOp.name===op.name)continue;
-              for(const otherPat of otherOp.patterns){
-                const otherIdx=text.toLowerCase().indexOf(otherPat.toLowerCase(),startIdx+pattern.length+100);
-                if(otherIdx>minEndIdx&&otherIdx<endIdx)endIdx=otherIdx;
-              }
-            }
-            
-            const chunk=text.substring(startIdx,endIdx);
-            // Strip all HTML tags
-            const cleanText=chunk.replace(/<[^>]*>/g,' ').replace(/&\w+;/g,' ').replace(/\s+/g,' ');
-            
-            // Extract all 4-digit numbers
-            const rawNums=[...cleanText.matchAll(/\b(\d{4})\b/g)].map(m=>m[1]);
-            const nums=cleanNums(rawNums);
-            
-            if(nums.length>=3){
-              let startFrom=0;
-              const beforeNums=cleanText.substring(0,cleanText.indexOf(nums[0])||100).toLowerCase();
-              if(/draw|round|cabutan|#|no\.|nombor/.test(beforeNums)&&nums.length>23){
-                startFrom=1;
-              }
-              const dateNums=date.replace(/-/g,'').match(/\d{4}/g)||[];
-              const filtered=nums.filter(n=>!dateNums.includes(n));
-              const useNums=filtered.length>=3?filtered:nums;
-              
-              const top3=useNums.slice(startFrom,startFrom+3);
-              const special=useNums.slice(startFrom+3,startFrom+13);
-              const consolation=useNums.slice(startFrom+13,startFrom+23);
-              
-              if(top3[0]!==top3[1]||top3[1]!==top3[2]){
-                results[op.name]={top3,special,consolation};
-                break;
-              }
-            }
-          }
-          if(results[op.name])break;
-        }
-      }
-      
-      if(results.MAGNUM||results.TOTO||results.DAMACAI){fetched=true;break;}
-    }catch(e){continue;}
-  }
-  
-  btn.disabled=false;btn.textContent='⚡ Fetch';
-  
-  if(fetched){
-    const opName=operators[addOpIdx].name;
-    const r=results[opName];
-    
-    // Auto-fill date and day
-    document.getElementById('mDate').value=date;
-    const dayOfWeek=new Date(date).getDay();
-    const dayMap={0:'Sun',1:'Mon',2:'Tue',3:'Wed',4:'Thu',5:'Fri',6:'Sat'};
-    document.getElementById('mDay').value=dayMap[dayOfWeek]||'Sat';
-    
-    if(r){
-      document.getElementById('mP1').value=r.top3[0]||'';
-      document.getElementById('mP2').value=r.top3[1]||'';
-      document.getElementById('mP3').value=r.top3[2]||'';
-      const sp=r.special||[]; const cn=r.consolation||[];
-      for(let i=0;i<10;i++){
-        const sEl=document.getElementById('mSp'+(i+1));
-        const cEl=document.getElementById('mCn'+(i+1));
-        if(sEl)sEl.value=sp[i]||'';
-        if(cEl)cEl.value=cn[i]||'';
-      }
-      
-      statusEl.innerHTML=`<div class="fetch-status success">✅ ${opName} results found and auto-filled!</div>`;
-      
-      // Offer other operators
-      const others=Object.entries(results).filter(([k,v])=>v&&k!==opName);
-      if(others.length>0){
-        statusEl.innerHTML+=`<div style="margin-top:8px;display:flex;gap:8px">${others.map(([k])=>{
-          const c=k==='MAGNUM'?'#D4A017':k==='TOTO'?'#DC2626':'#2563EB';
-          return`<button class="btn btn-sm" style="flex:1;background:${c};color:#fff;text-align:center;padding:10px 0;font-size:12px;border-radius:8px" onclick="quickAddFetched('${k}','${date}')">+ Add ${k}</button>`;
-        }).join('')}</div>`;
-        // Store fetched results globally for quick-add
-        window._fetchedResults=results;
-      }
-    }else{
-      const found=Object.entries(results).filter(([,v])=>v).map(([k])=>k);
-      statusEl.innerHTML=`<div class="fetch-status success">✅ Found results for ${found.join(', ')} but not ${opName}.</div>`;
-    }
-  }else{
-    statusEl.innerHTML=`<div class="fetch-status error">❌ Could not fetch results for ${date}. Please enter manually.</div>`;
-  }
+  const el=document.getElementById('fetchStatus');
+  if(el)el.innerHTML='<div class="fetch-status error">Automated scraping is disabled: loose HTML-number matching can import incorrect results. Use verified operator results manually or import a validated JSON historical dataset.</div>';
+  const btn=document.getElementById('fetchBtn');if(btn)btn.disabled=false;
 }
+
 
 function quickAddFetched(opName,date){
   const data=window._fetchedResults?.[opName];
   if(!data){toast('⚠️ No data available');return;}
   const opIdx=operators.findIndex(o=>o.name===opName);
   if(opIdx<0)return;
-  const dayOfWeek=new Date(date).getDay();
+  const dayOfWeek=new Date(date+'T00:00:00Z').getUTCDay();
   const dayMap={0:'Sun',1:'Mon',2:'Tue',3:'Wed',4:'Thu',5:'Fri',6:'Sat'};
   
   // Check duplicate
@@ -5572,15 +5236,15 @@ function resetStatsCounters(){
   stats.anyHits=anyHits;stats.permWins=live.permTotal;stats.drawsWithPermWin=drawsWithPermWin;
   saveAll();
   const newTotal=anyHits+live.permTotal;
-  alert(`✅ STAT COUNTERS REBUILT\n${'='.repeat(34)}\n\n  Top 3 Hits:    ${live.top3Total}  (${live.top3Straight} straight + ${live.top3Perm} perm)\n  Special Hits:  ${live.specialTotal}  (${live.specialStraight}+${live.specialPerm})\n  Consol. Hits:  ${live.consolationTotal}  (${live.consolationStraight}+${live.consolationPerm})\n  Straight Wins: ${anyHits}\n  Perm Wins:     ${live.permTotal}   (was ${oldPerm})\n  Total Wins:    ${newTotal}   (was ${oldTotal})\n\nStored counters now match the dashboard.`);
+  alert(`✅ STAT COUNTERS REBUILT\n${'='.repeat(34)}\n\n  Top 3 Hits:    ${live.top3Total}  (${live.top3Straight} straight + ${live.top3Perm} perm)\n  Special Hits:  ${live.specialTotal}  (${live.specialStraight}+${live.specialPerm})\n  Consol. Hits:  ${live.consolationTotal}  (${live.consolationStraight}+${live.consolationPerm})\n  Straight Wins: ${anyHits}\n  Permutation matches:     ${live.permTotal}   (was ${oldPerm})\n  Total Wins:    ${newTotal}   (was ${oldTotal})\n\nStored counters now match the dashboard.`);
   render();
 }
 
 function saveDraw(){
   const date=document.getElementById('mDate').value;
   const day=document.getElementById('mDay').value;
-  const p=[document.getElementById('mP1').value,document.getElementById('mP2').value,document.getElementById('mP3').value].map(v=>v.replace(/\D/g,'').padStart(4,'0'));
-  if(!date||p.some(n=>n.length!==4||n==='0000')){alert('Fill in date and all 3 prizes');return;}
+  const p=[document.getElementById('mP1').value,document.getElementById('mP2').value,document.getElementById('mP3').value].map(v=>v.trim());
+  if(!date||p.some(n=>!is4D(n))){alert('Fill in date and all 3 prizes');return;}
   const sp=[],cn=[];
   for(let i=1;i<=10;i++){
     const sv=(document.getElementById('mSp'+i)?.value||'').trim();
@@ -5625,7 +5289,7 @@ function startBacktest(){
   progress.style.display='block';
   results.innerHTML='';
   bar.style.width='0%';
-  status.textContent=`Testing ${numDraws} draws with 16 modules each (${numDraws*33} total simulations)...`;
+  status.textContent=`Testing ${numDraws} historical draws (full model plus independent random control)...`;
   
   // Run async in chunks so UI doesn't freeze
   setTimeout(()=>{
@@ -5652,12 +5316,12 @@ function displayBacktestResults(r){
   
   let html=`<div style="background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(139,92,246,0.05));border:1px solid #333366;border-radius:10px;padding:12px;margin-bottom:10px">
     <div style="font-size:13px;font-weight:800;color:#a78bfa;margin-bottom:8px">🏆 ${r.opName} Backtest Results</div>
-    <div style="font-size:10px;color:var(--dim);margin-bottom:10px">Tested ${r.testedDraws} historical draws with walk-forward validation</div>
+    <div style="font-size:10px;color:var(--dim);margin-bottom:10px">Tested ${r.testedDraws} draws chronologically; exploratory, not a statistically validated prediction edge</div>
     
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
       <div style="background:rgba(34,197,94,0.1);border:1px solid #22c55e33;border-radius:6px;padding:8px;text-align:center">
         <div style="font-size:18px;font-weight:900;color:var(--green)">${r.baseline.any}</div>
-        <div style="font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:0.5px">Total Wins (All Modules)</div>
+        <div style="font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:0.5px">Draws with exact hit</div>
       </div>
       <div style="background:rgba(245,146,0,0.1);border:1px solid #f5920033;border-radius:6px;padding:8px;text-align:center">
         <div style="font-size:18px;font-weight:900;color:var(--amber)">${r.baseline.straight}</div>
@@ -5665,13 +5329,14 @@ function displayBacktestResults(r){
       </div>
     </div>
     
-    <div style="font-size:10px;color:var(--dim);margin-bottom:6px">Hit rate: <b style="color:#fff">${((r.baseline.any/r.testedDraws)*100).toFixed(1)}% of draws had at least one hit</b></div>
+    <div style="font-size:10px;color:var(--dim);margin-bottom:6px">Exact-hit draw rate: <b style="color:#fff">${((r.baseline.any/r.testedDraws)*100).toFixed(1)}% of draws had at least one hit</b></div>
   </div>`;
   
-  // Module impact table
+  html+=`<div class="card" style="font-size:11px;line-height:1.7">Random control: <b>${r.randomBaseline?.drawHits??'n/a'}</b> matching draws; fair-draw expectation: <b>${(r.randomExpectation||0).toFixed(2)}</b> matching draws. Exact hits only; permutation matches (${r.baseline.perm}) are NOT counted as wins. This short test cannot justify tuning weights.</div>`;
+  // Module impact table (now informational; no automatic overfitting)
   html+=`<div style="background:#0a0a20;border-radius:10px;padding:10px;border:1px solid #1a1a3a">
-    <div style="font-size:12px;font-weight:700;color:#a78bfa;margin-bottom:8px">📊 Module Impact Analysis</div>
-    <div style="font-size:8px;color:var(--dim3);margin-bottom:10px">Delta = difference in total wins when module is ON vs OFF. Positive = helps, Negative = hurts.</div>`;
+    <div style="font-size:12px;font-weight:700;color:#a78bfa;margin-bottom:8px">📊 Experimental module comparison</div>
+    <div style="font-size:8px;color:var(--dim3);margin-bottom:10px">Small-sample exact-hit differences. These are exploratory, not evidence of a repeatable improvement.</div>`;
   
   r.moduleImpact.forEach(m=>{
     const color=m.delta>0?'#22c55e':m.delta<0?'#ef4444':'#888';
@@ -5690,8 +5355,8 @@ function displayBacktestResults(r){
   html+=`</div>`;
   
   // Recommendations
-  const helpers=r.moduleImpact.filter(m=>m.delta>0);
-  const hurters=r.moduleImpact.filter(m=>m.delta<0);
+  const helpers=[]; // disabled: choosing settings from holdout noise overfits
+  const hurters=[];
   
   if(helpers.length>0||hurters.length>0){
     html+=`<div style="background:rgba(255,102,51,0.05);border:1px solid rgba(255,102,51,0.3);border-radius:10px;padding:10px;margin-top:10px">
@@ -5793,7 +5458,7 @@ function autoFillCheck(){
 function checkResults(){
   const date=document.getElementById('chkDate').value;
   const opName=document.getElementById('chkOp').value;
-  const t3=[document.getElementById('chk1').value,document.getElementById('chk2').value,document.getElementById('chk3').value].map(v=>v.replace(/\D/g,'').padStart(4,'0'));
+  const t3=[document.getElementById('chk1').value,document.getElementById('chk2').value,document.getElementById('chk3').value].map(v=>v.trim());
   const sp=[],cn=[];
   for(let i=1;i<=10;i++){
     const sv=(document.getElementById('chkSp'+i)?.value||'').trim();
@@ -5802,16 +5467,25 @@ function checkResults(){
     if(cv.length===4&&/^\d{4}$/.test(cv))cn.push(cv);
   }
   
-  if(!date||t3.some(n=>n==='0000')){alert('Fill in date and top 3 prizes');return;}
+  if(!date||t3.some(n=>!is4D(n))){alert('Fill in date and top 3 prizes');return;}
   
   const allActual=[...t3,...sp,...cn];
   
+  // A check is valid only if a prediction was recorded FOR this exact target draw.
+  if(stats.checksLog?.some(e=>e.date===date&&e.operator===opName)){
+    alert('Results for this operator and target date were already checked. Use Revert Last Check if a correction is needed.');return;
+  }
+  const eligible=history.some(entry=>!entry.checked&&entry.targetDate===date&&(
+    entry.operator===opName||entry.subOperator===opName||['SNIPER','ORACLE_SNIPER'].includes(entry.operator)));
+  if(!eligible){
+    alert('No recorded predictions for this exact target draw date. Past predictions without a recorded target date cannot be scored fairly. Add the draw as data instead.');return;
+  }
   // Find matching predictions in history
   let totalHits=0,permHitsTotal=0,t3Hits=0,spHits=0,cnHits=0;
   
   history.forEach(entry=>{
     // Check regular operator entries
-    if(entry.operator===opName&&!entry.checked){
+    if(entry.operator===opName&&!entry.checked&&entry.targetDate===date){
       const hits=entry.predictions.filter(n=>allActual.includes(n));
       let permHits=0;
       let permWinDetails=[];
@@ -5846,7 +5520,7 @@ function checkResults(){
     }
     
     // Check SNIPER and ORACLE_SNIPER entries against ALL operators' actual results
-    if((entry.operator==='SNIPER'||entry.operator==='ORACLE_SNIPER')&&!entry.checked){
+    if((entry.operator==='SNIPER'||entry.operator==='ORACLE_SNIPER')&&!entry.checked&&entry.targetDate===date){
       // Gather actual numbers from all 3 operators for the same date
       const allOpsActual=[];
       const t3ByOp={};
@@ -5890,7 +5564,7 @@ function checkResults(){
     }
     
     // Check ORACLE entries — only match when subOperator equals the operator being checked
-    if(entry.operator==='ORACLE'&&entry.subOperator===opName&&!entry.checked){
+    if(entry.operator==='ORACLE'&&entry.subOperator===opName&&!entry.checked&&entry.targetDate===date){
       const oracleHits=entry.predictions.filter(n=>allActual.includes(n));
       let oraclePermHits=0;
       let oraclePermDetails=[];
@@ -5924,7 +5598,7 @@ function checkResults(){
     }
     
     // Check DODGE entries — Operator Dodge Variants (hot→cold swap counters)
-    if(entry.operator==='DODGE'&&entry.subOperator===opName&&!entry.checked){
+    if(entry.operator==='DODGE'&&entry.subOperator===opName&&!entry.checked&&entry.targetDate===date){
       const dodgeHits=entry.predictions.filter(n=>allActual.includes(n));
       let dodgePermHits=0;
       let dodgePermDetails=[];
@@ -5946,7 +5620,7 @@ function checkResults(){
     }
     
     // Check CROSSOP entries — Cross-Op Migration candidates
-    if(entry.operator==='CROSSOP'&&entry.subOperator===opName&&!entry.checked){
+    if(entry.operator==='CROSSOP'&&entry.subOperator===opName&&!entry.checked&&entry.targetDate===date){
       const coHits=entry.predictions.filter(n=>allActual.includes(n));
       let coPermHits=0;
       let coPermDetails=[];
@@ -5968,7 +5642,7 @@ function checkResults(){
     }
     
     // Check HOTHAND entries — Short-term streak picks (Grok method)
-    if(entry.operator==='HOTHAND'&&entry.subOperator===opName&&!entry.checked){
+    if(entry.operator==='HOTHAND'&&entry.subOperator===opName&&!entry.checked&&entry.targetDate===date){
       const hhHits=entry.predictions.filter(n=>allActual.includes(n));
       let hhPermHits=0;
       let hhPermDetails=[];
@@ -5990,7 +5664,7 @@ function checkResults(){
     }
     
     // Check FUSION entries — numbers confirmed by BOTH engines
-    if(entry.operator==='FUSION'&&entry.subOperator===opName&&!entry.checked){
+    if(entry.operator==='FUSION'&&entry.subOperator===opName&&!entry.checked&&entry.targetDate===date){
       const fHits=entry.predictions.filter(n=>allActual.includes(n));
       let fPermHits=0;
       let fPermDetails=[];
@@ -6012,7 +5686,7 @@ function checkResults(){
     }
     
     // Check DEEPLEARN entries — experimental Top 5 generator (v4.13)
-    if(entry.operator==='DEEPLEARN'&&entry.subOperator===opName&&!entry.checked){
+    if(entry.operator==='DEEPLEARN'&&entry.subOperator===opName&&!entry.checked&&entry.targetDate===date){
       const dlHits=entry.predictions.filter(n=>allActual.includes(n));
       let dlPermHits=0;
       let dlPermDetails=[];
@@ -6041,7 +5715,7 @@ function checkResults(){
     }
     
     // Check CONTROL entries — random baseline for the DEEP LEARN experiment
-    if(entry.operator==='CONTROL'&&entry.subOperator===opName&&!entry.checked){
+    if(entry.operator==='CONTROL'&&entry.subOperator===opName&&!entry.checked&&entry.targetDate===date){
       const cHits=entry.predictions.filter(n=>allActual.includes(n));
       let cPermHits=0;
       let cPermDetails=[];
@@ -6081,7 +5755,7 @@ function checkResults(){
     const exists=operators[opIdx].draws.find(d=>d.date===date);
     if(!exists){
       const dayMap={'0':'Sun','1':'Mon','2':'Tue','3':'Wed','4':'Thu','5':'Fri','6':'Sat'};
-      const dayOfWeek=dayMap[new Date(date).getDay()];
+      const dayOfWeek=dayMap[new Date(date+'T00:00:00Z').getUTCDay()];
       operators[opIdx].draws.unshift({date,day:dayOfWeek,top3:t3,special:sp,consolation:cn});
       operators[opIdx].draws.sort((a,b)=>b.date.localeCompare(a.date));
     }
@@ -6090,24 +5764,35 @@ function checkResults(){
   saveAll();closeModal('modalCheck');render();
   
   if(totalHits>0){
-    toast(`🎉 ${totalHits} HIT(S)! ${permHitsTotal>0?`+${permHitsTotal} perm hits!`:''} Weights updated.`);
+    toast(`🎉 ${totalHits} HIT(S)! ${permHitsTotal>0?`+${permHitsTotal} perm hits!`:''} Scores unchanged.`);
     celebrateWin(`${totalHits} STRAIGHT HIT${totalHits>1?'S':''}!${permHitsTotal>0?' + '+permHitsTotal+' PERM':''}`);
   } else if(permHitsTotal>0){
-    toast(`Close! ${permHitsTotal} permutation hit(s). Weights adjusted.`);
-    celebrateWin(`${permHitsTotal} PERM WIN${permHitsTotal>1?'S':''}!`);
+    toast(`Found ${permHitsTotal} matching permutation(s); not straight wins.`);
+    // Different permutations are not straight wins; treat as descriptive near matches.
   } else {
-    toast('No hits this round. Weights adjusted for next prediction.');
+    toast('No hits this round. Historical scores are unchanged.');
   }
 }
 
 function exportData(){
-  const data={version:'2.1',exported:new Date().toISOString(),operators,history,moduleWeights,stats,winsLog};
+  const data={version:'4.16',exported:new Date().toISOString(),operators,history,moduleWeights,moduleToggles,moduleTogglesPerOp,stats,winsLog};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;a.download=`beast4d-backup-${new Date().toISOString().slice(0,10)}.json`;
   document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
   toast('Data exported successfully!');
 }
+
+function validDraw(d){
+  return d&&typeof d.date==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(d.date)&&!Number.isNaN(Date.parse(d.date+'T00:00:00Z'))
+    &&Array.isArray(d.top3)&&d.top3.length===3&&d.top3.every(is4D)
+    &&(d.special===undefined||(Array.isArray(d.special)&&d.special.length<=10&&d.special.every(is4D)))
+    &&(d.consolation===undefined||(Array.isArray(d.consolation)&&d.consolation.length<=10&&d.consolation.every(is4D)));
+}
+function validOperatorData(o){return o&&['MAGNUM','TOTO','DAMACAI'].includes(o.name)&&Array.isArray(o.draws)&&o.draws.every(validDraw);}
+function normalizeDraws(draws){const seen=new Set();return draws.slice().sort((a,b)=>b.date.localeCompare(a.date)).filter(d=>{if(seen.has(d.date))return false;seen.add(d.date);return true;}).map(d=>({
+ date:d.date,day:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(d.date+'T00:00:00Z').getUTCDay()],top3:[...d.top3],special:[...(d.special||[])],consolation:[...(d.consolation||[])]
+}));}
 
 function importData(event){
   const file=event.target.files[0];if(!file)return;
@@ -6123,9 +5808,12 @@ function importData(event){
       }
       
       // Regular full backup import
-      if(!data.operators){alert('Invalid file format. Expected backup or operator data file.');return;}
+      if(!Array.isArray(data.operators)||!data.operators.every(validOperatorData)){alert('Invalid file: operator records must contain valid dates and 4-digit numbers.');return;}
       if(!confirm('Replace ALL current data with this backup?'))return;
-      operators=data.operators;history=data.history||[];moduleWeights=data.moduleWeights||DEFAULT_WEIGHTS;stats=data.stats||stats;
+      operators=data.operators.map(o=>({...o,draws:normalizeDraws(o.draws)}));
+      history=Array.isArray(data.history)?data.history:[];
+      moduleWeights={...DEFAULT_WEIGHTS};moduleToggles={...DEFAULT_TOGGLES};moduleTogglesPerOp={};
+      stats=(data.stats&&typeof data.stats==='object')?data.stats:stats;
       // v4.13: restore permanent wins log, then harvest any wins from the
       // imported history that aren't already logged (covers older backups
       // exported before the wins log existed).
@@ -6143,7 +5831,8 @@ function mergeOperatorData(data){
   if(opIdx<0){alert(`Operator "${opName}" not found in app.`);return;}
   
   const existingDates=new Set(operators[opIdx].draws.map(d=>d.date));
-  const newDraws=data.draws.filter(d=>!existingDates.has(d.date));
+  if(!Array.isArray(data.draws)||!data.draws.every(validDraw)){alert('Invalid draw data. Check dates and four-digit prize fields.');return;}
+  const newDraws=normalizeDraws(data.draws).filter(d=>!existingDates.has(d.date));
   const duplicates=data.draws.length-newDraws.length;
   
   if(!confirm(`Import ${opName} data:\n\n• ${data.total_draws} total draws in file\n• ${newDraws.length} new draws to add\n• ${duplicates} duplicates (will be skipped)\n• Date range: ${data.date_range}\n\nProceed?`))return;
@@ -6238,133 +5927,8 @@ document.querySelectorAll('.num-in').forEach(el=>{el.addEventListener('input',e=
 // ============================================================
 // BEAST AI ADVISOR (DeepSeek Integration)
 // ============================================================
-async function askBeastAI(){
-  const input=document.getElementById('aiInput');
-  const chat=document.getElementById('aiChat');
-  const question=input.value.trim();
-  if(!question)return;
-  
-  const apiKey=localStorage.getItem('b4d_dskey');
-  if(!apiKey){chat.innerHTML+=`<div style="color:#ff6633;margin:8px 0">⚠️ Set your DeepSeek API key in Data tab first.</div>`;return;}
-  
-  // Show user message
-  chat.innerHTML+=`<div style="margin:10px 0;text-align:right"><span style="background:#1a1a3e;padding:6px 10px;border-radius:8px;color:#fff;display:inline-block;max-width:80%;text-align:left">${question}</span></div>`;
-  input.value='';
-  
-  // Build context from app data
-  const budget=localStorage.getItem('b4d_budget')||'50';
-  const tDay=selectedDay;
-  const dayFull={Sat:'Saturday',Sun:'Sunday',Wed:'Wednesday',Tue:'Tuesday'}[tDay]||tDay;
-  
-  // Get current predictions
-  let predContext='';
-  if(lastResults){
-    Object.entries(lastResults).forEach(([op,res])=>{
-      if(res&&res.predsWithConf){
-        const top5=res.predsWithConf.slice(0,5);
-        predContext+=`\n${op} top 5: ${top5.map(p=>`${p.num}(${p.confidence}%)`).join(', ')}`;
-      }
-    });
-  }
-  
-  // Performance stats — authoritative recompute, not stale counters
-  const _live=recomputeHitStats();
-  const permWins=_live.permTotal;
-  let _ah=0;history.forEach(e=>{if(e.checked&&Array.isArray(e.hits)&&e.hits.length>0)_ah++;});
-  const totalWins=_ah+permWins;
-  
-  // Recent draws
-  let recentDraws='';
-  operators.forEach(op=>{
-    if(op.draws.length>0){
-      const last3=op.draws.slice(0,3);
-      recentDraws+=`\n${op.name} last 3: ${last3.map(d=>`${d.date}: ${d.top3.join(',')}`).join(' | ')}`;
-    }
-  });
-
-  const systemPrompt=`You are BEAST AI, an elite Malaysian 4D lottery analysis advisor built into the Beast Mode 4D app. You speak like a confident, intelligent advisor - sharp, precise, and strategic. You are NOT generic AI - you are a specialized 4D prediction strategist.
-
-CURRENT APP DATA:
-- Target day: ${dayFull}
-- Budget: RM${budget}
-- Database: ${operators.map(o=>`${o.name}: ${o.draws.length} draws`).join(', ')}
-- Performance: ${stats.totalChecks} checks, ${_ah} straight wins, ${permWins} perm wins, ${totalWins} total wins
-- Win rate: ${stats.totalChecks>0?Math.round(totalWins/stats.totalChecks*100):0}%
-${predContext?`\nCURRENT PREDICTIONS:${predContext}`:''}
-${recentDraws?`\nRECENT DRAWS:${recentDraws}`:''}
-
-RULES:
-1. Always give specific 4-digit numbers when asked for recommendations
-2. Explain WHY you recommend each number (which pattern/signal supports it)
-3. Always include iBox vs straight recommendation
-4. Consider cross-operator patterns
-5. Factor in the user's budget
-6. Be confident but honest - never promise wins
-7. Keep responses concise and actionable
-8. Use the actual prediction data above when available
-9. If asked about strategy, reference the sniper mode cross-operator approach
-10. Malaysian 4D context: Magnum, Sports Toto, Damacai, Big/Small bets, iBox/mBox`;
-
-  // Show loading
-  const loadingId='ai_loading_'+Date.now();
-  chat.innerHTML+=`<div id="${loadingId}" style="margin:10px 0"><span style="color:#a78bfa">🤖 Analyzing...</span></div>`;
-  chat.scrollTop=chat.scrollHeight;
-  
-  try{
-    const resp=await fetch('https://api.deepseek.com/chat/completions',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':`Bearer ${apiKey}`},
-      body:JSON.stringify({
-        model:'deepseek-reasoner',
-        messages:[
-          {role:'system',content:systemPrompt},
-          {role:'user',content:question}
-        ],
-        max_tokens:2000,
-      })
-    });
-    
-    const data=await resp.json();
-    const loading=document.getElementById(loadingId);
-    
-    if(data.error){
-      loading.innerHTML=`<div style="color:#ff4444;padding:6px">❌ ${data.error.message||'API error. Check your key.'}</div>`;
-    }else if(data.choices&&data.choices[0]){
-      const msg=data.choices[0].message;
-      const thinking=msg.reasoning_content||'';
-      const reply=msg.content||'';
-      
-      let html='';
-      // Show thinking process (collapsible)
-      if(thinking){
-        const thinkFormatted=thinking
-          .replace(/\*\*(.*?)\*\*/g,'<b>$1</b>')
-          .replace(/\n/g,'<br>')
-          .replace(/(\d{4})/g,'<span style="color:#8b5cf6;font-weight:600">$1</span>');
-        html+=`<div style="margin-bottom:8px">
-          <button onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.textContent=this.textContent.includes('Show')?'🧠 Hide reasoning':'🧠 Show reasoning'" style="background:none;border:1px solid #333366;color:#8b5cf6;font-size:9px;padding:4px 8px;border-radius:4px;cursor:pointer;font-family:inherit">🧠 Show reasoning</button>
-          <div style="display:none;margin-top:6px;padding:8px;background:#0a0a20;border-radius:6px;font-size:10px;color:#888;line-height:1.5;max-height:200px;overflow-y:auto;border:1px solid #1a1a3a">${thinkFormatted}</div>
-        </div>`;
-      }
-      
-      // Show final answer
-      const formatted=reply
-        .replace(/\*\*(.*?)\*\*/g,'<b style="color:#fff">$1</b>')
-        .replace(/\n/g,'<br>')
-        .replace(/(\d{4})/g,'<span style="font-family:monospace;color:#f59200;font-weight:700">$1</span>');
-      html+=`<div style="color:#ccc">${formatted}</div>`;
-      
-      loading.innerHTML=`<div style="background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(139,92,246,0.05));border:1px solid #6366f133;border-radius:8px;padding:10px"><span style="color:#a78bfa;font-weight:700">🤖 Beast AI (Reasoner):</span><br>${html}</div>`;
-    }else{
-      loading.innerHTML=`<div style="color:#ff4444">❌ Unexpected response format</div>`;
-    }
-  }catch(e){
-    const loading=document.getElementById(loadingId);
-    if(loading)loading.innerHTML=`<div style="color:#ff4444">❌ Network error: ${e.message}</div>`;
-  }
-  
-  chat.scrollTop=chat.scrollHeight;
-}
+// HTML encode all external/user-supplied strings before rendering in chat.
+function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
 // ============================================================
 // BEAST AI ADVISOR (DeepSeek Integration)
@@ -6379,7 +5943,7 @@ async function askBeastAI(){
   if(!apiKey){chat.innerHTML+=`<div style="color:#ff4444;margin-top:8px">⚠️ No API key set. Go to Data tab → Beast AI section to add your DeepSeek key.</div>`;return;}
   
   // Show user message
-  chat.innerHTML+=`<div style="margin-top:10px;padding:8px;background:#1a1a3a;border-radius:8px;color:#fff"><b>You:</b> ${question}</div>`;
+  chat.innerHTML+=`<div style="margin-top:10px;padding:8px;background:#1a1a3a;border-radius:8px;color:#fff"><b>You:</b> ${escapeHtml(question)}</div>`;
   chat.innerHTML+=`<div style="margin-top:6px;color:#a78bfa" id="aiLoading">🤖 Beast AI is thinking...</div>`;
   chat.scrollTop=chat.scrollHeight;
   input.value='';
@@ -6392,7 +5956,7 @@ async function askBeastAI(){
   // v4.13: authoritative recompute
   const _ls=recomputeHitStats();let _ah2=0;history.forEach(e=>{if(e.checked&&Array.isArray(e.hits)&&e.hits.length>0)_ah2++;});
   const _pw2=_ls.permTotal,_tw2=_ah2+_pw2;
-  let context=`You are Beast AI, an intelligent 4D lottery advisor inside the Beast Mode 4D prediction app. You speak like Jarvis - professional, confident, and helpful. You analyze Malaysian 4D lottery data (Magnum, Sports Toto, Damacai).
+  let context=`You are Beast AI, an intelligent 4D lottery advisor inside the Beast Mode 4D prediction app. Be professional, careful, and transparent about uncertainty. You analyze Malaysian 4D lottery data (Magnum, Sports Toto, Damacai).
 
 CURRENT APP STATE:
 - Target day: ${dayNames[tDay]||tDay}
@@ -6408,7 +5972,7 @@ CURRENT APP STATE:
     Object.entries(lastResults).forEach(([opName,res])=>{
       if(res&&res.predsWithConf){
         const top5=res.predsWithConf.slice(0,5);
-        context+=`${opName}: ${top5.map(p=>`${p.num}(${p.confidence}%)`).join(', ')}\n`;
+        context+=`${opName}: ${top5.map(p=>`${p.num}(pattern index ${p.confidence}/100)`).join(', ')}\n`;
       }
     });
   }
@@ -6433,13 +5997,13 @@ CURRENT APP STATE:
   }
   
   context+=`\nRULES:
-- Always recommend iBox for 4-unique-digit numbers
-- Recommend playing hot numbers across ALL 3 operators
+- Do not equate pattern scores with winning probability
+- Do not recommend extra spending based on hot numbers
 - Be specific with number recommendations
 - Calculate exact costs based on user's budget
 - Malaysian 4D: Big bet covers all 23 prizes, Small covers top 3 only
 - iBox covers all permutations at proportionally reduced payout
-- Be confident and decisive like Jarvis, not wishy-washy
+- Be precise about uncertainty and historical pattern limitations
 - Give specific numbers and exact RM amounts
 - If asked for picks, analyze the data and give your best recommendations with reasoning`;
 
@@ -6462,7 +6026,7 @@ CURRENT APP STATE:
     if(loading)loading.remove();
     
     if(data.error){
-      chat.innerHTML+=`<div style="margin-top:6px;color:#ff4444">❌ Error: ${data.error.message||'API error'}</div>`;
+      chat.innerHTML+=`<div style="margin-top:6px;color:#ff4444">❌ Error: ${escapeHtml(data.error.message||'API error')}</div>`;
     }else{
       const msg=data.choices?.[0]?.message||{};
       const thinking=msg.reasoning_content||'';
@@ -6470,14 +6034,14 @@ CURRENT APP STATE:
       
       let html='';
       if(thinking){
-        const thinkFmt=thinking.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>').replace(/(\d{4})/g,'<span style="color:#8b5cf6;font-weight:600">$1</span>');
+        const thinkFmt=escapeHtml(thinking).replace(/\*\*(.*?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>').replace(/(\d{4})/g,'<span style="color:#8b5cf6;font-weight:600">$1</span>');
         html+=`<div style="margin-bottom:6px">
           <button onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.textContent=this.textContent.includes('Show')?'🧠 Hide reasoning':'🧠 Show reasoning'" style="background:none;border:1px solid #333366;color:#8b5cf6;font-size:9px;padding:3px 6px;border-radius:4px;cursor:pointer;font-family:inherit">🧠 Show reasoning</button>
           <div style="display:none;margin-top:4px;padding:6px;background:#0a0a20;border-radius:6px;font-size:9px;color:#888;line-height:1.4;max-height:150px;overflow-y:auto;border:1px solid #1a1a3a">${thinkFmt}</div>
         </div>`;
       }
       
-      const formatted=reply
+      const formatted=escapeHtml(reply)
         .replace(/\*\*(.*?)\*\*/g,'<b style="color:#fff">$1</b>')
         .replace(/\n/g,'<br>')
         .replace(/`(.*?)`/g,'<code style="background:#1a1a3a;padding:1px 4px;border-radius:3px;color:#a78bfa">$1</code>')
@@ -6489,7 +6053,7 @@ CURRENT APP STATE:
   }catch(err){
     const loading=document.getElementById('aiLoading');
     if(loading)loading.remove();
-    chat.innerHTML+=`<div style="margin-top:6px;color:#ff4444">❌ Connection error: ${err.message}. Check your API key and internet.</div>`;
+    chat.innerHTML+=`<div style="margin-top:6px;color:#ff4444">❌ Connection error: ${escapeHtml(err.message)}. Check your API key and internet.</div>`;
   }
   
   chat.scrollTop=chat.scrollHeight;
@@ -6751,7 +6315,7 @@ function setTheme(themeId){
 
 // Init
 applyThemeOnLoad();
-deduplicateAll(); // Auto-scan for duplicates on startup
+// Duplicate cleanup is opt-in from Data tab; no startup mutation of saved results.
 render();
 </script>
 </body>

@@ -1,7 +1,7 @@
 {
-  "name": "Beast Mode 4D Prediction Engine",
+  "name": "Beast Mode 4D \u2014 Research Edition",
   "short_name": "Beast 4D",
-  "description": "AI-Powered 4D Lottery Prediction Engine",
+  "description": "Historical lottery pattern analysis, honest scores and walk-forward evaluation",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
