@@ -1,7 +1,7 @@
 {
-  "name": "BEAST MODE 4D v4.19 — Automatic Historical Archive",
+  "name": "BEAST MODE 4D v4.20 — Permutation Match History",
   "short_name": "Beast 4D",
-  "description": "Up to 2,000 archived draws per lottery, auto imported safely. Historical research, no guaranteed forecasts.",
+  "description": "History shows date-specific exact and permuted four-digit result matches across Magnum, Toto and Da Ma Cai. Observations are not ticket-winning probabilities.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

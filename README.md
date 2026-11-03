@@ -1,3 +1,21 @@
+# BEAST MODE 4D v4.20 — History Digit Match Tracker
+
+- History now includes **Deep Learn** and **Random Control** mode filters alongside Oracle, Hot Hand, Cross-Operator Migration, Sniper, Fusion, Dodge and the existing Repeat modes.
+- Three separate filters cover prediction mode, prediction operator (Magnum, Toto, Da Ma Cai), and result status (exact, permutation, any digit match, same digits at all three).
+- On the **recorded target date only**, the History screen compares every saved four-digit prediction with the complete available prize boards for **each of the three operators**. Matches appear automatically once those results exist in the local or bundled database.
+- **Exact** means same number in the same order; **Permutation** means the same four digits in a different order. Repeated digits count correctly (0700 matches 0070 but not 0078). Match detail shows operator, matched number, and prize tier.
+- Markers for matches at another operator are **cross-operator observations**, not paid ticket wins. Permutation matches are **not straight-number wins**. Ticket payout depends on betting format and which operator was purchased.
+- Entries without a recorded target draw date are never compared retroactively. Results from other dates cannot count.
+- Preserves v4.19 algorithms, approximately 2,000 archived draws per operator, local device data, saved checked results and recorded prediction history. Future results still require importing; no real-time online feed was added.
+- New PWA cache name: `beast-4d-v420-shell`.
+
+## Verification
+Node.js syntax validation and isolated JavaScript rendering tests passed. Tests included 0700 (Magnum), 0007 (Toto), 0070 (Da Ma Cai) across a matching draw date, all-three detection, missing target dates, mode/status/operator filtering, and distinction between exact and permutation results. Full Android UI testing was unavailable; please check the History screen on your phone.
+
+No prediction or permutation pattern has a demonstrated ability to improve winning odds over a fair independent draw.
+
+---
+
 # BEAST MODE v4.19 — 2,000 Draws Per Operator
 
 Automatically adds up to 2,000 verified historical draws per operator on the first load, preserves all existing complete results, predictions, P&L and settings. Repairs partial saved records and falls back to 1,500 or 1,000 per operator if local browser storage is insufficient. The previous 104 learned badge was actually the count of result checks; the badge now displays the number of saved draws and Data reports checks separately. Deep Learn statistical history window increased to 2,000.

@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v4.19 — Research Edition</title>
+<title>Beast Mode 4D v4.20 — Match History</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -414,7 +414,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v4.19</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v4.20</span>
       <div class="sub">Historical Analysis & Walk-Forward Research + DeepSeek</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
@@ -1542,10 +1542,86 @@ function renderPredict(){
   pg.innerHTML=h;
 }
 
+
+// v4.20: Date-locked, three-operator digit-set matching for the History screen.
+// This is a read-only projection of archived results: it never turns a digit
+// permutation or a different operator's number into a paid ticket win.
+const HISTORY_RESULT_OPERATORS=['MAGNUM','TOTO','DAMACAI'];
+function historyDigitKey(n){return is4D(n)?n.split('').sort().join(''):null;}
+function historyEntryTargetOperator(entry){
+  return HISTORY_RESULT_OPERATORS.includes(entry.subOperator)?entry.subOperator:
+    HISTORY_RESULT_OPERATORS.includes(entry.operator)?entry.operator:null;
+}
+function historyResultMatches(entry){
+  const result={byNumber:new Map(),available:[],complete:[],exact:[],perm:[],allThree:[]};
+  const date=entry&&entry.targetDate;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date||'')||date>malaysiaDateISO())return result;
+  const predictions=[...new Set((Array.isArray(entry.predictions)?entry.predictions:[]).filter(is4D))];
+  if(!predictions.length)return result;
+  const predictionKeys=new Map(predictions.map(n=>[n,historyDigitKey(n)]));
+  const target=historyEntryTargetOperator(entry);
+  for(const op of HISTORY_RESULT_OPERATORS){
+    const found=findStoredDraw(op,date);
+    if(!found||!validDraw(found.draw))continue;
+    result.available.push(op);
+    if(isCompletePrizeBoard(found.draw))result.complete.push(op);
+    const draw=found.draw;
+    const prizes=[
+      ...(draw.top3||[]).map((num,i)=>({num,prize:['1st','2nd','3rd'][i]})),
+      ...(draw.special||[]).map((num,i)=>({num,prize:'Special '+(i+1)})),
+      ...(draw.consolation||[]).map((num,i)=>({num,prize:'Consolation '+(i+1)}))
+    ].filter(item=>is4D(item.num));
+    for(const predicted of predictions){
+      const key=predictionKeys.get(predicted);
+      const matches=prizes.filter(item=>historyDigitKey(item.num)===key)
+        .map(item=>({...item,kind:item.num===predicted?'exact':'permutation',operator:op,primary:op===target}));
+      if(!matches.length)continue;
+      const existing=result.byNumber.get(predicted)||[];
+      existing.push(...matches);
+      result.byNumber.set(predicted,existing);
+      for(const match of matches){
+        if(match.kind==='exact')result.exact.push({predicted,...match});
+        else result.perm.push({predicted,...match});
+      }
+    }
+  }
+  for(const [n,matches] of result.byNumber){
+    if(HISTORY_RESULT_OPERATORS.every(op=>matches.some(m=>m.operator===op)))result.allThree.push(n);
+  }
+  return result;
+}
+function historyMatchKind(entry,summary){
+  const target=historyEntryTargetOperator(entry);
+  return summary.exact.some(m=>m.primary)?'exact':summary.perm.some(m=>m.primary)?'perm':
+    summary.exact.length?'crossExact':summary.perm.length?'crossPerm':'none';
+}
+function historyMatchesStatus(entry,status,summary){
+  if(status==='digits')return summary.exact.length>0||summary.perm.length>0;
+  if(status==='exact')return summary.exact.length>0;
+  if(status==='perm')return summary.perm.length>0;
+  if(status==='all3')return summary.allThree.length>0;
+  if(status==='wins')return entry.checked&&Array.isArray(entry.hits)&&entry.hits.length>0;
+  if(status==='checked')return !!entry.checked;
+  if(status==='pending')return !entry.checked;
+  return true;
+}
+function historyMatchesOperator(entry,operator){
+  if(operator==='all')return true;
+  return entry.subOperator===operator||entry.operator===operator||
+    ((entry.operator==='SNIPER'||entry.operator==='ORACLE_SNIPER')&&!entry.subOperator);
+}
+function historyMatchTags(match){
+  const accent=match.kind==='exact'?'#22c55e':'#f59e0b';
+  return `<span style="display:inline-flex;align-items:center;gap:3px;border:1px solid ${accent}66;border-radius:5px;padding:2px 5px;color:${accent};font-size:9px" title="${match.kind==='exact'?'Exact order':'Same digits, different order'}; ${match.primary?'prediction operator':'another operator — not a ticket win'}">${match.kind==='exact'?'✅ Exact':'🔀 Perm'} · ${match.operator} ${match.prize}: <b>${match.num}</b>${match.primary?'':' · cross-op'}</span>`;
+}
+
 function renderHistory(){
   const pg=document.getElementById('pgHistory');
   const histFilter=localStorage.getItem('b4d_histFilter')||'all';
   const histStatus=localStorage.getItem('b4d_histStatus')||'all';
+  const histOperator=localStorage.getItem('b4d_histOperator')||'all';
+  const matchCache=new WeakMap();
+  const matchesFor=e=>{if(!matchCache.has(e))matchCache.set(e,historyResultMatches(e));return matchCache.get(e);};
   const expandedDates=JSON.parse(localStorage.getItem('b4d_histExpanded')||'[]');
   
   let h=`<div class="section-title">📜 Prediction History</div>`;
@@ -1560,18 +1636,19 @@ function renderHistory(){
   const totalCount=history.length;
   const checkedCount=history.filter(e=>e.checked).length;
   const unCheckedCount=totalCount-checkedCount;
-  const winCount=history.filter(e=>e.checked&&(e.hits?.length>0||e.permHits>0)).length;
+  const winCount=history.filter(e=>e.checked&&Array.isArray(e.hits)&&e.hits.length>0).length;
+  const digitMatchCount=history.filter(e=>{const m=matchesFor(e);return m.exact.length||m.perm.length;}).length;
   
   h+=`<div style="background:#0a0a20;border-radius:10px;padding:10px;margin-bottom:12px;border:1px solid #1a1a3a">
     <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--dim2);margin-bottom:8px">
       <span>📊 Total: <b style="color:#fff">${totalCount}</b></span>
       <span>✅ Checked: <b style="color:var(--green)">${checkedCount}</b></span>
-      <span>🏆 Wins: <b style="color:var(--amber)">${winCount}</b></span>
-      <span>⏳ Pending: <b style="color:#a78bfa">${unCheckedCount}</b></span>
+      <span>🏆 Recorded exact: <b style="color:var(--amber)">${winCount}</b></span>
+      <span>🔎 Digit sets matched: <b style="color:#f59e0b">${digitMatchCount}</b></span>
     </div>
     <div style="display:flex;gap:4px;margin-bottom:6px">
       <select onchange="localStorage.setItem('b4d_histFilter',this.value);render()" style="flex:1;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:5px 7px;font-size:10px;font-family:inherit">
-        <option value="all"${histFilter==='all'?' selected':''}>🎯 All Operators</option>
+        <option value="all"${histFilter==='all'?' selected':''}>📋 All Prediction Modes</option>
         <option value="VIP_CROSS"${histFilter==='VIP_CROSS'?' selected':''}>👑 VIP Buy — Cross-Mode (2+ engines)</option>
         <option value="VIP_SUPER"${histFilter==='VIP_SUPER'?' selected':''}>💎 SUPER VIP Buy — 3+ engines agree</option>
         <option value="REPEATS_ALL"${histFilter==='REPEATS_ALL'?' selected':''}>🧲 Repeats — Oracle + Dodge + HotHand</option>
@@ -1585,16 +1662,31 @@ function renderHistory(){
         <option value="CROSSOP"${histFilter==='CROSSOP'?' selected':''}>🔀 Cross-Op Migration Only</option>
         <option value="HOTHAND"${histFilter==='HOTHAND'?' selected':''}>🔥 Hot Hand Only</option>
         <option value="FUSION"${histFilter==='FUSION'?' selected':''}>💎 FUSION Only</option>
-        <option value="MAGNUM"${histFilter==='MAGNUM'?' selected':''}>Magnum Only</option>
-        <option value="TOTO"${histFilter==='TOTO'?' selected':''}>Toto Only</option>
-        <option value="DAMACAI"${histFilter==='DAMACAI'?' selected':''}>Damacai Only</option>
+        <option value="DEEPLEARN"${histFilter==='DEEPLEARN'?' selected':''}>🧠 Deep Learn Only</option>
+        <option value="CONTROL"${histFilter==='CONTROL'?' selected':''}>🎲 Random Control Only</option>
       </select>
       <select onchange="localStorage.setItem('b4d_histStatus',this.value);render()" style="flex:1;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:5px 7px;font-size:10px;font-family:inherit">
         <option value="all"${histStatus==='all'?' selected':''}>📋 All Status</option>
-        <option value="wins"${histStatus==='wins'?' selected':''}>🏆 Wins Only</option>
+        <option value="wins"${histStatus==='wins'?' selected':''}>✅ Recorded Exact Hits</option>
+        <option value="digits"${histStatus==='digits'?' selected':''}>🧲 Any Digit Match</option>
+        <option value="exact"${histStatus==='exact'?' selected':''}>✅ Exact Number Match</option>
+        <option value="perm"${histStatus==='perm'?' selected':''}>🔀 Permutation Match</option>
+        <option value="all3"${histStatus==='all3'?' selected':''}>🌐 Same Digits All 3</option>
         <option value="checked"${histStatus==='checked'?' selected':''}>✅ Checked</option>
         <option value="pending"${histStatus==='pending'?' selected':''}>⏳ Pending</option>
       </select>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;margin:6px 0 8px">
+      <label style="font-size:10px;color:var(--dim2);flex:none">Prediction operator</label>
+      <select onchange="localStorage.setItem('b4d_histOperator',this.value);render()" style="flex:1;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:5px 7px;font-size:11px;font-family:inherit">
+        <option value="all"${histOperator==='all'?' selected':''}>All 3 operators</option>
+        <option value="MAGNUM"${histOperator==='MAGNUM'?' selected':''}>Magnum</option>
+        <option value="TOTO"${histOperator==='TOTO'?' selected':''}>Sports Toto</option>
+        <option value="DAMACAI"${histOperator==='DAMACAI'?' selected':''}>Da Ma Cai</option>
+      </select>
+    </div>
+    <div style="background:#1d1930;border:1px solid #40325c;border-radius:8px;padding:8px;color:#b8add6;font-size:10px;margin-bottom:8px">
+      🧲 Matches are detected automatically from stored results for the <b>recorded target date</b> across Magnum, Toto and Da Ma Cai. <b style="color:#22c55e">Exact</b> = same order; <b style="color:#f59e0b">Perm</b> = same four digits, another order (including repeated digits). Cross-operator matches are <b>not ticket wins</b>. New results must first be stored or imported.
     </div>
     <div style="display:flex;gap:4px">
       <button class="btn btn-sm btn-outline" style="flex:1;font-size:9px;padding:5px" onclick="expandAllHistory()">▼ Expand All</button>
@@ -1822,17 +1914,18 @@ function renderHistory(){
   }
   // ===== END VIP DETECTION =====
   
-  if(histFilter!=='all'&&!histFilter.startsWith('REPEATS_')&&histFilter!=='VIP_CROSS'&&histFilter!=='VIP_SUPER')filtered=filtered.filter(e=>e.operator===histFilter);
-  if(histStatus==='wins')filtered=filtered.filter(e=>e.checked&&(e.hits?.length>0||e.permHits>0));
-  else if(histStatus==='checked')filtered=filtered.filter(e=>e.checked);
-  else if(histStatus==='pending')filtered=filtered.filter(e=>!e.checked);
+  if(histFilter!=='all'&&!histFilter.startsWith('REPEATS_')&&histFilter!=='VIP_CROSS'&&histFilter!=='VIP_SUPER'){
+    filtered=filtered.filter(e=>e.operator===histFilter||
+      (HISTORY_RESULT_OPERATORS.includes(histFilter)&&e.subOperator===histFilter));
+  }
+  filtered=filtered.filter(e=>historyMatchesOperator(e,histOperator)&&historyMatchesStatus(e,histStatus,matchesFor(e)));
   
   // Inject banner before the entries
   if(repeatBanner)h+=repeatBanner;
   if(vipBanner)h+=vipBanner;
   
   if(filtered.length===0){
-    h+=`<div style="text-align:center;padding:30px 0;color:var(--dim3);font-size:11px">No entries match your filters</div>`;
+    h+=`<div style="text-align:center;padding:30px 0;color:var(--dim3);font-size:11px">No entries match these filters. Try All Prediction Modes and All Status.</div>`;
     pg.innerHTML=h;return;
   }
   
@@ -1846,7 +1939,8 @@ function renderHistory(){
   sortedDates.forEach(date=>{
     const entries=byDate[date];
     const isExpanded=expandedDates.includes(date);
-    const dateWins=entries.filter(e=>e.checked&&(e.hits?.length>0||e.permHits>0)).length;
+    const dateWins=entries.filter(e=>e.checked&&(e.hits?.length>0)).length;
+    const dateDigitMatches=entries.filter(e=>{const m=matchesFor(e);return m.exact.length||m.perm.length;}).length;
     const datePending=entries.filter(e=>!e.checked).length;
     const dateChecked=entries.filter(e=>e.checked).length;
     
@@ -1863,7 +1957,8 @@ function renderHistory(){
           <div style="display:flex;gap:8px;font-size:9px;color:var(--dim2);margin-top:3px">
             <span>📋 ${entries.length} entries</span>
             ${dateWins>0?`<span style="color:var(--green)">🏆 ${dateWins} win(s)</span>`:''}
-            ${datePending>0?`<span style="color:#a78bfa">⏳ ${datePending} pending</span>`:''}
+            ${dateDigitMatches>0?`<span style="color:#f59e0b">🧲 ${dateDigitMatches} digit matches</span>`:''}
+            ${datePending>0?`<span style="color:#a78bfa">⏳ ${datePending} unchecked</span>`:''}
           </div>
         </div>
         <div style="display:flex;gap:2px">
@@ -1900,7 +1995,7 @@ function renderHistory(){
         const opColor=opC[opKey]||'#888';
         const opIcon=opKey==='SNIPER'?'🎯':opKey==='ORACLE_SNIPER'?'🎯':opKey==='MAGNUM'?'🟡':opKey==='TOTO'?'🔴':opKey==='DAMACAI'?'🔵':'';
         const opLabel=opKey==='SNIPER'?'Cross-Op Sniper':opKey==='ORACLE_SNIPER'?'Oracle Sniper':opKey;
-        const opWins=opEntries.filter(e=>e.checked&&(e.hits?.length>0||e.permHits>0)).length;
+        const opWins=opEntries.filter(e=>e.checked&&(e.hits?.length>0)).length;
         
         // Operator section header
         h+=`<div style="margin:8px 0 6px 0;padding:5px 10px;background:linear-gradient(90deg,${opColor}22,transparent);border-left:3px solid ${opColor};border-radius:4px;display:flex;align-items:center;gap:6px">
@@ -1924,7 +2019,9 @@ function renderHistory(){
         const opColor=opC[entry.operator]||'#888';
         const permDetails=entry.permWinDetails||[];
         const permWinNums=new Set(permDetails.map(p=>p.predicted));
-        const hasWin=entry.checked&&(entry.hits?.length>0||entry.permHits>0);
+        const foundMatches=matchesFor(entry);
+        const observedMatch=foundMatches.exact.length>0||foundMatches.perm.length>0;
+        const hasWin=entry.checked&&Array.isArray(entry.hits)&&entry.hits.length>0;
         const borderLeft=isSniper?'border-left:3px solid #ff6633':isOracleSniper?'border-left:3px solid #ff3366':isOracle?'border-left:3px solid #c084fc':isDodge?'border-left:3px solid #ef4444':isCrossOp?'border-left:3px solid #f59e0b':isHotHand?'border-left:3px solid #fb923c':isFusion?'border-left:3px solid #eab308':isDeepLearn?'border-left:3px solid #06b6d4':isControl?'border-left:3px solid #64748b':'';
         const fusionExtra=isFusion?';background:linear-gradient(90deg,rgba(234,179,8,0.08),#0a0a15)':'';
         
@@ -1932,16 +2029,21 @@ function renderHistory(){
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
             <div style="display:flex;align-items:center;gap:6px">
               ${isSniper?`<span style="font-size:10px;color:#ff6633;font-weight:800">🎯 RESEARCH MATCH</span>`:isOracleSniper?`<span style="font-size:10px;color:#ff3366;font-weight:800">🎯 ORACLE RESEARCH MATCH</span>`:isOracle?`<span style="font-size:10px;color:#c084fc;font-weight:800">🔮 ORACLE</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isDodge?`<span style="font-size:10px;color:#ef4444;font-weight:800">🎰 DODGE</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isCrossOp?`<span style="font-size:10px;color:#f59e0b;font-weight:800">🔀 CROSS-OP</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isHotHand?`<span style="font-size:10px;color:#fb923c;font-weight:800">🔥 HOT HAND</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>${entry.hotHandMeta?.lane?`<span style="font-size:7px;background:#fb923c22;color:#fb923c;padding:1px 4px;border-radius:3px">${entry.hotHandMeta.lane}</span>`:''}`:isFusion?`<span style="font-size:10px;color:#eab308;font-weight:800">💎 FUSION</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isDeepLearn?`<span style="font-size:10px;color:#06b6d4;font-weight:800">🧠 DEEP LEARN</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isControl?`<span style="font-size:10px;color:#64748b;font-weight:800">🎲 CONTROL</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:`<span style="font-size:10px;font-weight:700;color:${opColor}">${entry.operator}</span>`}
-              <span style="font-size:8px;background:var(--bg2);color:var(--dim2);padding:2px 6px;border-radius:3px">${entry.targetDay}</span>
+              <span style="font-size:8px;background:var(--bg2);color:var(--dim2);padding:2px 6px;border-radius:3px">${entry.targetDay||''} · draw ${entry.targetDate||'unknown'}</span>
               ${entry.generatedAt?`<span style="font-size:7px;color:var(--dim3);font-style:italic" title="${entry.generatedAt}">🕐 ${(()=>{const d=new Date(entry.generatedAt);return d.toLocaleDateString('en-MY',{month:'short',day:'numeric'})+' '+d.toLocaleTimeString('en-MY',{hour:'2-digit',minute:'2-digit',hour12:true});})()}</span>`:''}
             </div>
-            ${hasWin?`<div style="display:flex;align-items:center;gap:6px"><span style="font-size:9px;color:var(--green);font-weight:700">🏆 WIN</span><label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:9px;color:#ef4444" onclick="event.stopPropagation()"><input type="checkbox" ${entry.__delSel?'checked':''} onchange="toggleDeleteSelection('${entry.id}')" style="cursor:pointer;accent-color:#ef4444">🗑️</label></div>`:entry.checked?`<div style="display:flex;align-items:center;gap:6px"><span style="font-size:9px;color:var(--dim3)">✅ No hit</span><label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:9px;color:#ef4444" onclick="event.stopPropagation()"><input type="checkbox" ${entry.__delSel?'checked':''} onchange="toggleDeleteSelection('${entry.id}')" style="cursor:pointer;accent-color:#ef4444">🗑️</label></div>`:`<div style="display:flex;align-items:center;gap:6px"><span style="font-size:9px;color:#a78bfa">⏳ Pending</span><label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:9px;color:#ef4444" onclick="event.stopPropagation()"><input type="checkbox" ${entry.__delSel?'checked':''} onchange="toggleDeleteSelection('${entry.id}')" style="cursor:pointer;accent-color:#ef4444">🗑️</label></div>`}
+            ${hasWin?`<div style="display:flex;align-items:center;gap:6px"><span style="font-size:9px;color:var(--green);font-weight:700">🏆 WIN</span><label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:9px;color:#ef4444" onclick="event.stopPropagation()"><input type="checkbox" ${entry.__delSel?'checked':''} onchange="toggleDeleteSelection('${entry.id}')" style="cursor:pointer;accent-color:#ef4444">🗑️</label></div>`:entry.checked?`<div style="display:flex;align-items:center;gap:6px"><span style="font-size:9px;color:var(--dim3)">✅ No recorded exact hit</span><label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:9px;color:#ef4444" onclick="event.stopPropagation()"><input type="checkbox" ${entry.__delSel?'checked':''} onchange="toggleDeleteSelection('${entry.id}')" style="cursor:pointer;accent-color:#ef4444">🗑️</label></div>`:`<div style="display:flex;align-items:center;gap:6px"><span style="font-size:9px;color:${observedMatch?'#f59e0b':'#a78bfa'}">${observedMatch?'🧲 Result match · not checked':'⏳ Not checked'}</span><label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:9px;color:#ef4444" onclick="event.stopPropagation()"><input type="checkbox" ${entry.__delSel?'checked':''} onchange="toggleDeleteSelection('${entry.id}')" style="cursor:pointer;accent-color:#ef4444">🗑️</label></div>`}
           </div>
           
           <div class="hist-nums" style="margin:6px 0">${entry.predictions.map(n=>{
+            const numberMatches=foundMatches.byNumber.get(n)||[];
+            const anyExact=numberMatches.some(m=>m.kind==='exact');
+            const anyPerm=numberMatches.some(m=>m.kind==='permutation');
             const isHit=entry.checked&&entry.hits?.includes(n);
             const isPermWin=entry.checked&&permWinNums.has(n);
-            const cls=entry.checked?(isHit?'hit':isPermWin?'perm-hit':'miss'):'';
+            const cls=anyExact?'hit':anyPerm?'perm-hit':entry.checked?(isHit?'hit':isPermWin?'perm-hit':'miss'):'';
+            const matchOutline=anyExact?'border:2px solid #22c55e;':anyPerm?'border:2px solid #f59e0b;':'';
+            const matchLabel=numberMatches.length?`<span style="display:block;font-size:7px;margin-top:2px;color:${anyExact?'#22c55e':'#f59e0b'}">${anyExact?'✅ Exact':'🔀 Perm'}${new Set(numberMatches.map(m=>m.operator)).size===3?' · ALL 3':''}</span>`:'';
             // v4.13: VIP badge — per-operator lookup. A number is VIP for THIS entry
             // only if it's VIP for the entry's own subOperator (MAGNUM/TOTO/DAMACAI).
             const opLookup=entry.subOperator&&vipKeysByOpAndNum[entry.subOperator];
@@ -1950,15 +2052,26 @@ function renderHistory(){
               const isSuper=vipInfo.tier==='SUPER';
               const accent=isSuper?'#ec4899':'#a855f7';
               const icon=isSuper?'💎':'👑';
-              return`<span class="hist-num ${cls}" style="background:linear-gradient(135deg,${accent}33,${accent}11);border:2px solid ${accent};color:${accent};box-shadow:0 0 10px ${accent}66;position:relative" title="${isSuper?'SUPER VIP':'VIP'} for ${entry.subOperator} · digit-set {${vipInfo.digitKey}} agreed by ${vipInfo.modes.join('+')}">${n}<span style="position:absolute;top:-8px;right:-8px;background:${accent};color:#fff;font-size:9px;font-weight:800;padding:1px 4px;border-radius:8px;font-family:inherit;letter-spacing:0;line-height:1.2">${icon}${vipInfo.modes.length}</span></span>`;
+              return`<span class="hist-num ${cls}" style="background:linear-gradient(135deg,${accent}33,${accent}11);border:2px solid ${accent};color:${accent};box-shadow:0 0 10px ${accent}66;position:relative" title="${isSuper?'SUPER VIP':'VIP'} for ${entry.subOperator} · digit-set {${vipInfo.digitKey}} agreed by ${vipInfo.modes.join('+')}">${n}<span style="position:absolute;top:-8px;right:-8px;background:${accent};color:#fff;font-size:9px;font-weight:800;padding:1px 4px;border-radius:8px;font-family:inherit;letter-spacing:0;line-height:1.2">${icon}${vipInfo.modes.length}</span>${matchLabel}</span>`;
             }
             // v4.13: highlight repeated numbers when a REPEATS_* filter is active
             const repeatCount=histFilter.startsWith('REPEATS_')&&repeatNumsByMode[entry.operator]?repeatNumsByMode[entry.operator].get(n):null;
             if(repeatCount&&repeatCount>=2){
-              return`<span class="hist-num ${cls}" style="background:linear-gradient(135deg,rgba(245,158,11,0.18),rgba(245,158,11,0.08));border:2px solid #f59e0b;color:#f59e0b;box-shadow:0 0 8px rgba(245,158,11,0.3);position:relative">${n}<span style="position:absolute;top:-7px;right:-7px;background:#f59e0b;color:#fff;font-size:8px;font-weight:800;padding:1px 5px;border-radius:8px;font-family:inherit;letter-spacing:0">×${repeatCount}</span></span>`;
+              return`<span class="hist-num ${cls}" style="background:linear-gradient(135deg,rgba(245,158,11,0.18),rgba(245,158,11,0.08));border:2px solid #f59e0b;color:#f59e0b;box-shadow:0 0 8px rgba(245,158,11,0.3);position:relative">${n}<span style="position:absolute;top:-7px;right:-7px;background:#f59e0b;color:#fff;font-size:8px;font-weight:800;padding:1px 5px;border-radius:8px;font-family:inherit;letter-spacing:0">×${repeatCount}</span>${matchLabel}</span>`;
             }
-            return`<span class="hist-num ${cls}">${n}</span>`;
+            return`<span class="hist-num ${cls}" style="${matchOutline}">${n}${matchLabel}</span>`;
           }).join('')}</div>
+          ${observedMatch?`<div style="margin:7px 0;padding:8px;border-radius:7px;background:#121c1d;border:1px solid #24483d">
+            <div style="font-size:10px;font-weight:800;color:#98dfb9;margin-bottom:6px">🧲 ${foundMatches.exact.length} exact / ${foundMatches.perm.length} permutation result match(es) · draw ${entry.targetDate}</div>
+            ${[...foundMatches.byNumber].map(([predicted,matches])=>`<div style="margin:5px 0;display:flex;flex-wrap:wrap;align-items:center;gap:4px">
+              <span style="font:700 11px monospace;color:#fff;min-width:43px">${predicted}</span>
+              <span style="font-size:10px;color:var(--dim3)">→</span>
+              ${matches.map(historyMatchTags).join('')}
+            </div>`).join('')}
+            ${foundMatches.allThree.length?`<div style="color:#a78bfa;font-weight:700;font-size:9px">🌐 Same digit set matched all 3 operators: ${foundMatches.allThree.join(', ')}</div>`:''}
+            <div style="font-size:8px;color:var(--dim2);margin-top:5px">Historical result observation only. A permutation is not a straight-prize win; an exact match at a different operator is not a win for a ticket bought at another operator. Prize eligibility depends on ticket type.</div>
+          </div>`:''}
+          ${!observedMatch&&foundMatches.available.length>0&&!entry.checked?`<div style="font-size:9px;color:var(--dim3)">🔎 Results available: ${foundMatches.available.join(', ')} — no matching digits on available boards${foundMatches.complete.length<3?' (some results may be incomplete)':''}</div>`:''}
           
           ${isSniper&&entry.sniperMeta?`<div style="margin-top:6px;display:flex;flex-direction:column;gap:2px">${entry.sniperMeta.map(m=>`<div style="font-size:8px;display:flex;align-items:center;gap:4px">
             <span style="font-family:monospace;color:#fff;font-weight:700;min-width:40px">${m.num}</span>
@@ -1969,7 +2082,7 @@ function renderHistory(){
           
           ${entry.checked?`
           ${entry.hits?.length>0?`<div style="margin-top:6px;font-size:9px;color:var(--green)">✅ ${entry.hits.length} STRAIGHT hit(s)</div>`:''}
-          ${entry.permHits>0?`<div style="margin-top:4px;font-size:9px;color:var(--amber)">🔀 ${entry.permHits} PERM win(s)</div>`:''}
+          ${entry.permHits>0?`<div style="margin-top:4px;font-size:9px;color:var(--amber)">🔀 ${entry.permHits} permutation match(es) — not straight wins</div>`:''}
           ${permDetails.length>0?`<div style="margin-top:6px;background:rgba(245,146,0,0.05);border-radius:6px;padding:6px">${permDetails.map(p=>`<div style="font-size:9px;padding:2px 0;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
             <span style="font-family:monospace;color:var(--amber);font-weight:700">${p.predicted}</span>
             <span style="color:var(--dim3)">→</span>
@@ -2036,10 +2149,8 @@ function selectAllPending(){
   const currentFilter=localStorage.getItem('b4d_histFilter')||'all';
   const currentStatus=localStorage.getItem('b4d_histStatus')||'all';
   let filtered=history.slice();
-  if(currentFilter!=='all')filtered=filtered.filter(e=>e.operator===currentFilter);
-  if(currentStatus==='wins')filtered=filtered.filter(e=>e.checked&&(e.hits?.length>0||e.permHits>0));
-  else if(currentStatus==='checked')filtered=filtered.filter(e=>e.checked);
-  else if(currentStatus==='pending')filtered=filtered.filter(e=>!e.checked);
+  if(currentFilter!=='all'&&!currentFilter.startsWith('REPEATS_')&&currentFilter!=='VIP_CROSS'&&currentFilter!=='VIP_SUPER')filtered=filtered.filter(e=>e.operator===currentFilter||(HISTORY_RESULT_OPERATORS.includes(currentFilter)&&e.subOperator===currentFilter));
+  filtered=filtered.filter(e=>historyMatchesOperator(e,localStorage.getItem('b4d_histOperator')||'all')&&historyMatchesStatus(e,currentStatus,historyResultMatches(e)));
   if(filtered.length===0){toast('No entries visible to select');return;}
   filtered.forEach(e=>{
     if(!e.id)e.id='h'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
@@ -2062,7 +2173,7 @@ function deleteSelectedPending(){
   if(selected.length===0){toast('No entries selected for deletion');return;}
   const pendingCount=selected.filter(e=>!e.checked).length;
   const checkedCount=selected.filter(e=>e.checked).length;
-  const winCount=selected.filter(e=>e.checked&&(e.hits?.length>0||e.permHits>0)).length;
+  const winCount=selected.filter(e=>e.checked&&e.hits?.length>0).length;
   let msg=`Delete ${selected.length} selected entries?\n`;
   if(pendingCount>0)msg+=`• ${pendingCount} pending\n`;
   if(checkedCount>0)msg+=`• ${checkedCount} checked`+(winCount>0?` (includes ${winCount} WIN${winCount>1?'s':''})`:'')+`\n`;
@@ -8129,56 +8240,64 @@ function mergeBundledHistory(){
   render();
 }
 
-// Automatic one-time historical archive import (v4.19).
+// v4.19 ONE-TIME automatic archive seed. Deliberately no live website scraping.
+// Existing complete draw boards, checked prediction history and P&L are left untouched.
+// If the browser has limited localStorage, prefer 2,000, then 1,500, then 1,000.
 let archiveSyncStatus='Not checked';
 function archiveMergedOperators(limit){
- let added=0,repaired=0,conflicts=0;
- const proposed=operators.map(op=>{
-  const byDate=new Map((op.draws||[]).map(d=>[d.date,d]));
-  for(const row of (BUNDLED_DRAW_HISTORY[op.name]||[]).slice(0,limit)){
-   const saved=byDate.get(row.date);
-   if(!saved){byDate.set(row.date,row);added++;}
-   else if(!isCompletePrizeBoard(saved)&&isCompletePrizeBoard(row)){byDate.set(row.date,row);repaired++;}
-   else if(isCompletePrizeBoard(saved)&&JSON.stringify([saved.top3,saved.special,saved.consolation])!==JSON.stringify([row.top3,row.special,row.consolation])){conflicts++;}
-  }
-  return {...op,draws:[...byDate.values()].sort((a,b)=>b.date.localeCompare(a.date))};
- });
- return {proposed,added,repaired,conflicts};
+  let added=0,repaired=0,conflicts=0;
+  const proposed=operators.map(op=>{
+    const byDate=new Map((op.draws||[]).map(d=>[d.date,d]));
+    for(const row of (BUNDLED_DRAW_HISTORY[op.name]||[]).slice(0,limit)){
+      const saved=byDate.get(row.date);
+      if(!saved){byDate.set(row.date,row);added++;}
+      else if(!isCompletePrizeBoard(saved)&&isCompletePrizeBoard(row)){
+        byDate.set(row.date,row);repaired++;
+      } else if(isCompletePrizeBoard(saved)&&JSON.stringify([saved.top3,saved.special,saved.consolation])!==JSON.stringify([row.top3,row.special,row.consolation])){
+        // Do not silently overwrite existing user-entered complete draw records.
+        conflicts++;
+      }
+    }
+    return {...op,draws:[...byDate.values()].sort((a,b)=>b.date.localeCompare(a.date))};
+  });
+  return {proposed,added,repaired,conflicts};
 }
 function autoSyncBundledHistory(){
- const flag='b4d_archives_auto_v419';
- try{
-  const existing=localStorage.getItem(flag);
-  if(existing){archiveSyncStatus='Previously synced: '+existing;return;}
-  for(const limit of [2000,1500,1000]){
-   const plan=archiveMergedOperators(limit);
-   try{
-    localStorage.setItem(KEYS.ops,JSON.stringify(plan.proposed));
-    operators=plan.proposed;
-    const status=`${limit} archive draws/operator; +${plan.added} dates; repaired ${plan.repaired} incomplete; ${plan.conflicts} conflicts preserved`;
-    archiveSyncStatus=status;
-    try{localStorage.setItem(flag,status);}catch(ignore){}
-    return;
-   }catch(err){console.warn('Archive storage limit',limit,err);}
-  }
-  archiveSyncStatus='Insufficient storage; existing records preserved. Export a backup and free storage.';
- }catch(err){archiveSyncStatus='Archive sync unavailable; existing records preserved.';console.warn(err);}
-}
-function refreshBundledHistory(){
- const preview=archiveMergedOperators(2000);
- if(!preview.added&&!preview.repaired){toast(`Archive already complete; ${preview.conflicts} conflicting dates preserved.`);return;}
- if(!confirm(`Merge bundled archive through ${BUNDLED_ASOF}?\n\nAdd ${preview.added} dates and complete ${preview.repaired} records. Existing complete data and settings stay unchanged. This is NOT a live internet update.`))return;
- for(const limit of [2000,1500,1000]){
-  const plan=archiveMergedOperators(limit);
+  const flag='b4d_archives_auto_v419';
   try{
-   localStorage.setItem(KEYS.ops,JSON.stringify(plan.proposed));
-   operators=plan.proposed;
-   archiveSyncStatus=`Manual sync: ${limit} archive draws/operator; +${plan.added} dates; ${plan.conflicts} conflicts kept`;
-   toast(`Imported ${plan.added} draws; completed ${plan.repaired} records`);
-   render();return;
-  }catch(err){console.warn('Archive storage limit',limit,err);}
- }
- alert('Not enough browser storage; existing records preserved.');
+    const existing=localStorage.getItem(flag);
+    if(existing){archiveSyncStatus='Previously synced: '+existing;return;}
+    for(const limit of [2000,1500,1000]){
+      const plan=archiveMergedOperators(limit);
+      try{
+        localStorage.setItem(KEYS.ops,JSON.stringify(plan.proposed));
+        operators=plan.proposed;
+        const status=`${limit} archive draws/operator; +${plan.added} dates; repaired ${plan.repaired} incomplete; ${plan.conflicts} conflicts preserved`;
+        archiveSyncStatus=status;
+        try{localStorage.setItem(flag,status);}catch(ignore){}
+        return;
+      }catch(err){console.warn(`Archive could not store ${limit} draws per operator`,err);}
+    }
+    archiveSyncStatus='Storage space insufficient; previous saved results preserved. Export a backup or free storage.';
+  }catch(err){archiveSyncStatus='Archive sync unavailable; previous saved results preserved.';console.warn(err);}
+}
+// Data tab button allows re-sync after a deliberate deletion or new import.
+function refreshBundledHistory(){
+  const preview=archiveMergedOperators(2000);
+  if(!preview.added&&!preview.repaired){toast(`Archive already present; ${preview.conflicts} conflicting complete dates preserved.`);return;}
+  if(!confirm(`Merge bundled archive through ${BUNDLED_ASOF}?\n\nAdd ${preview.added} missing dates, complete ${preview.repaired} partial records.\nExisting complete records, checks and settings remain unchanged.\nNo newer draws are downloaded.`))return;
+  // Check available storage using the same fallback tiers as the first-run migration.
+  for(const limit of [2000,1500,1000]){
+    const plan=archiveMergedOperators(limit);
+    try{
+      localStorage.setItem(KEYS.ops,JSON.stringify(plan.proposed));
+      operators=plan.proposed;
+      archiveSyncStatus=`Manual sync: ${limit} archive draws/operator, +${plan.added} dates, ${plan.conflicts} conflicts kept`;
+      toast(`Imported ${plan.added} draws; incomplete repaired: ${plan.repaired}`);
+      render();return;
+    }catch(err){console.warn('Unable to store archive',limit,err);}
+  }
+  alert('Not enough browser storage; your existing data has not been replaced. Export a backup and free storage.');
 }
 
 function malaysiaDateISO(){
@@ -10575,14 +10694,15 @@ function renderData(){
   <button class="btn btn-outline" onclick="document.getElementById('importFile').click()" style="width:100%;margin-bottom:8px">📤 Import Data (JSON)</button>
   <div style="font-size:9px;color:var(--dim3);margin-bottom:16px">Supports full backups AND operator-specific historical data files. Auto-detects format and merges without duplicates.</div>`;
   
+  // Distinguish draw records from prediction-result checks (old "learned" counter).
   h+=`<div class="card" style="border-left:3px solid #8b5cf6;padding:12px;margin-bottom:12px">
     <div style="font-size:12px;font-weight:700;margin-bottom:6px">📚 Historical Archive — v4.19</div>
-    <div style="font-size:10px;color:var(--dim);line-height:1.7">Archive snapshot: <b>2,000 historical draws per operator</b> through ${BUNDLED_ASOF}, automatically merged once.<br>
-    <b>${stats.totalChecks||0}</b> result checks (formerly called &quot;learned&quot;). Not a training-draw count or accuracy measure.<br>
-    Stored: <b>${totalDraws.toLocaleString('en-MY')}</b> draws across all operators.<br>
+    <div style="font-size:10px;color:var(--dim);line-height:1.7">Archive snapshot: up to <b>2,000 verified draw rows per operator</b> through ${BUNDLED_ASOF}. Loaded into your database automatically once when upgrading.<br>
+    <b>${stats.totalChecks||0}</b> result checks performed (formerly called &quot;learned&quot;). This is <b>not</b> the number of training draws or an accuracy measure.<br>
+    Stored: <b>${totalDraws.toLocaleString('en-MY')}</b> historical draws across three operators.<br>
     <span style="color:var(--dim3)">${escapeHtml(archiveSyncStatus)}</span></div>
     <button class="btn btn-sm btn-outline" onclick="refreshBundledHistory()" style="width:100%;margin-top:8px">🔄 Recheck / Merge Bundled History</button>
-    <div style="font-size:9px;color:var(--dim3);margin-top:6px">New draw results require a verified import or later app release; more data does not guarantee better predictions.</div>
+    <div style="font-size:9px;color:var(--dim3);margin-top:6px">Future draw results require a newer verified archive or an import. More data does not guarantee better predictions.</div>
   </div>`;
 
   // Operator data stats
@@ -11334,7 +11454,7 @@ function checkResults(){
 }
 
 function exportData(){
-  const data={version:'4.19',exported:new Date().toISOString(),operators,history,moduleWeights,moduleToggles,moduleTogglesPerOp,stats,winsLog};
+  const data={version:'4.20',exported:new Date().toISOString(),operators,history,moduleWeights,moduleToggles,moduleTogglesPerOp,stats,winsLog};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;a.download=`beast4d-backup-${new Date().toISOString().slice(0,10)}.json`;
@@ -11874,7 +11994,7 @@ function setTheme(themeId){
 
 // Init
 applyThemeOnLoad();
-// One-time safe archive migration, retaining user history.
+// A one-time non-destructive migration from the full offline archive.
 autoSyncBundledHistory();
 render();
 </script>
