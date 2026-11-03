@@ -1,35 +1,29 @@
-# BEAST MODE 4D v4.16 — Research Edition
+# BEAST MODE 4D v4.17 — Results Lookup Fix
 
-This is a revised version of the supplied v4.15 HTML app, not the original app and not a method guaranteed to win the lottery. Preserve your existing installation and exported JSON backup before making changes.
+This version repairs the **Live** and **Check & Learn → Auto-fill** lookups in the available v4.16 HTML source. It is an offline historical archive, **not a real-time online results service**. Results later than 2026-11-01 must be imported manually from a checked source.
 
-## What changed
-- A new historical scoring engine evaluates all 10,000 exact four-digit numbers. A previously restricted set of 625 candidates plus past outcomes was insufficient.
-- Uses smoothed position and adjacent-pair frequencies, optionally adjusted for historical weekday, momentum, digit sum and odd/even patterns. The default intentionally activates only position and adjacent pairs.
-- Keeps Monte Carlo, entropy, chi-square, repeats, mirror, Markov and cross-operator comparisons out of the voting score unless future testing establishes their value; these remain experimental/diagnostic. Genetic optimization and cold-digit elimination no longer automatically bias or discard numbers.
-- Ranking is computed on unrounded scores; the selected shortlist avoids near-identical four-digit combinations. 0-100 indices show HISTORICAL FIT, not odds or calibrated confidence.
-- Walk-forward backtest uses only older draws and compares exact-match results with a seeded random control. Permutations are not counted as straight wins.
-- No more changing every scoring weight after a lucky outcome or miss. Old preferences are backed up before conservative defaults are applied.
-- Predictions now record the specific MYT target draw date. Result checking requires a match to that date and declines to attribute older un-dated predictions to arbitrary draws.
-- Treats 0000 as a valid number, validates imported JSON and restores leading zeros in the included data. Data import includes module-setting export.
-- Disables unreliable scraping of arbitrary web HTML and removes automatic buy-list stake allocation. Use verified results or JSON imports.
-- Removed duplicate DeepSeek function and HTML-escaped external chat output.
-- Browser localStorage quota errors now warn rather than silently failing.
+## What was wrong
+- Live Fetch searched unrelated HTML webpages and guessed prize numbers from raw text. This can fail on CORS/HTML changes and could silently show unrelated numbers as prizes.
+- Auto-fill searched only the app's stored draws, which were outdated on many installations. It didn't use the historical packs.
+- All three operators could say 'No results found' even though valid historical results existed.
 
-## Installation
-1. Unzip the archive. Put **index.html**, **manifest.json**, **sw.js**, **icon-192.png**, **icon-512.png** in the same folder. If hosted, back up your current files and replace them on the same hosting origin/path to retain that origin's saved settings.
-2. If opening as a new app or local file, existing browser localStorage may not transfer. Export your old app's Data → Export JSON first, then import that backup.
-3. Optionally import BEAST_DATA_MAGNUM_latest1000.json, BEAST_DATA_TOTO_latest1000.json and BEAST_DATA_DAMACAI_latest1000.json one at a time via the Data tab to merge the most recent 1000 known draws per operator. The data merges skip existing dates. Toto's uploaded history ends 28 Oct 2026; the other two end 1 Nov 2026. If the 31 Oct / 1 Nov Toto results are available, add them from an official record.
-4. Set target weekday, click RUN; results are historical-pattern rankings, not forecast probabilities.
-5. Record actual draw results only against the exact saved target date.
+## Improvements
+- Both screens now call `findStoredDraw(operator, date)` and prefer complete saved draws, falling back to complete bundled records. The bundled archive includes 1000 recent draws per operator, ending 2026-11-01, including Sports Toto 2026-10-31 and 2026-11-01.
+- The Live tab clearly labels saved vs bundled results and does not falsely claim a web feed.
+- `Auto-fill` retains four-digit strings such as 0700 and 0992 and handles partially populated results.
+- Optional **Import bundled history into prediction database** adds only missing records and repairs incomplete ones, without removing existing complete records or predictions. It checks storage success before committing.
+- Changing the Live date resets the previous result display, and the default date uses Malaysia time.
+- Service worker cache renamed to v4.17 for update refresh.
 
-## Security & caveats
-- This is a browser-only HTML app. Its DeepSeek API key, if supplied, is stored in browser localStorage. Do not use a sensitive reusable key on a shared device or publicly publish your app with a key embedded. API integration depends on browser CORS and service availability; it was not live tested.
-- Local browser storage is limited. The optional packs include only the most recent 1000 draws per operator to reduce quota failures. Back up regularly.
-- The source retained the original Oracle, Hot Hand, P&L and theme interfaces. These experimental systems are not scientifically verified and do not demonstrate higher future lottery-winning chances.
-- Four-digit draw outcomes are treated as independent. Historical scoring has not demonstrated a statistically significant forecasting edge.
+## Install / update
+1. **Export your existing backup** from the Data tab before updating. Keep a copy of your old app.
+2. For a hosted PWA, replace the same-origin files `index.html`, `manifest.json`, `sw.js`, icons from this ZIP. Keep the same URL/origin to preserve localStorage. Refresh or restart the PWA after installation. Do not clear browser data unless a backup exists.
+3. For a standalone Android HTML viewer, open `BEAST_MODE_4D_v4.17_FIXED.html`. A standalone file may have a different storage origin, so import your previous app's backup if needed.
+4. Open **Live**, select **2026-11-01**, then **Check DB**. You should see Magnum 5060/8133/3762, Toto 2270/9276/4275, Da Ma Cai 4863/0700/5201.
+5. Open **Check & Learn**, choose a saved target date/operator, then **Auto-fill**. To train on the historical archive, use the Live tab's **Import bundled history** button. Loading an actual result does not itself prove a prediction was made for that draw date.
 
-## Verification
-- JavaScript parsed successfully with Node.js `--check`.
-- Automated isolated engine tests verified candidate completeness (10,000), 4D-number handling including 0000, deterministic ranking, correct target date format, immutable scoring weights after outcomes, and non-voting diagnostics.
-- The browser integration could not be fully exercised in this environment; test PWA installation, service-worker refresh, and DeepSeek manually on your target device.
-- The optional datasets originate from files provided in this conversation, not from a new authoritative independent live check.
+## Limitations
+- This release fixes historical lookup; it **does not fetch new draws from the internet** and does not claim to improve lottery odds.
+- Your custom live API/backend is not represented in the HTML source we inspected. Integrating a real API will require the API endpoint/schema and code, then validation against trusted sources.
+- Browser rendering and persistence on your particular phone/host must still be confirmed. JavaScript syntax and isolated lookup/autofill tests are included in this delivery.
+- Bundled historical data came from the provided archives; only the newest draws were separately cross-checked. Verify against operator sources before relying on prize information.

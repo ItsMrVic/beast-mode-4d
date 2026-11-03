@@ -1,7 +1,7 @@
 {
-  "name": "Beast Mode 4D \u2014 Research Edition",
+  "name": "Beast Mode 4D v4.17 — Results Lookup Fixed",
   "short_name": "Beast 4D",
-  "description": "Historical lottery pattern analysis, honest scores and walk-forward evaluation",
+  "description": "Statistical research and date-specific archived results; offline snapshot, not a live feed",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
