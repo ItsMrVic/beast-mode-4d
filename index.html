@@ -11308,10 +11308,14 @@ function checkResults(){
             }
           }
         });
+        // Cross-operator research observations are not verified ticket wins.
+        // History's live result matcher highlights exact/permutation observations per operator.
         entry.checked=true;
-        entry.hits=sniperHits;
-        entry.permHits=sniperPermHits;
-        entry.permWinDetails=sniperPermDetails;
+        entry.crossOpMatches=sniperHits;
+        entry.crossOpPermMatches=sniperPermDetails;
+        entry.hits=[];
+        entry.permHits=0;
+        entry.permWinDetails=[];
       }
     }
     
