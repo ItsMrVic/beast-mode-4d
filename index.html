@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v4.20 — Match History</title>
+<title>Beast Mode 4D v4.21 — Stability Update</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -414,7 +414,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v4.20</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v4.21</span>
       <div class="sub">Historical Analysis & Walk-Forward Research + DeepSeek</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
@@ -1607,8 +1607,8 @@ function historyMatchesStatus(entry,status,summary){
 }
 function historyMatchesOperator(entry,operator){
   if(operator==='all')return true;
-  return entry.subOperator===operator||entry.operator===operator||
-    ((entry.operator==='SNIPER'||entry.operator==='ORACLE_SNIPER')&&!entry.subOperator);
+  if(operator==='UNASSIGNED')return !historyEntryTargetOperator(entry);
+  return historyEntryTargetOperator(entry)===operator;
 }
 function historyMatchTags(match){
   const accent=match.kind==='exact'?'#22c55e':'#f59e0b';
@@ -1683,6 +1683,7 @@ function renderHistory(){
         <option value="MAGNUM"${histOperator==='MAGNUM'?' selected':''}>Magnum</option>
         <option value="TOTO"${histOperator==='TOTO'?' selected':''}>Sports Toto</option>
         <option value="DAMACAI"${histOperator==='DAMACAI'?' selected':''}>Da Ma Cai</option>
+        <option value="UNASSIGNED"${histOperator==='UNASSIGNED'?' selected':''}>Cross-operator / unassigned</option>
       </select>
     </div>
     <div style="background:#1d1930;border:1px solid #40325c;border-radius:8px;padding:8px;color:#b8add6;font-size:10px;margin-bottom:8px">
@@ -11147,6 +11148,7 @@ function checkResults(){
   }
   
   if(!date||t3.some(n=>!is4D(n))){alert('Fill in date and top 3 prizes');return;}
+  if(sp.length!==10||cn.length!==10){alert('A complete board of 3 top, 10 Special and 10 Consolation prizes is required before a final check.');return;}
   
   const allActual=[...t3,...sp,...cn];
   
@@ -11454,7 +11456,7 @@ function checkResults(){
 }
 
 function exportData(){
-  const data={version:'4.20',exported:new Date().toISOString(),operators,history,moduleWeights,moduleToggles,moduleTogglesPerOp,stats,winsLog};
+  const data={version:'4.21',exported:new Date().toISOString(),operators,history,moduleWeights,moduleToggles,moduleTogglesPerOp,stats,winsLog};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;a.download=`beast4d-backup-${new Date().toISOString().slice(0,10)}.json`;
@@ -11491,7 +11493,11 @@ function importData(event){
       if(!confirm('Replace ALL current data with this backup?'))return;
       operators=data.operators.map(o=>({...o,draws:normalizeDraws(o.draws)}));
       history=Array.isArray(data.history)?data.history:[];
-      moduleWeights={...DEFAULT_WEIGHTS};moduleToggles={...DEFAULT_TOGGLES};moduleTogglesPerOp={};
+      const plain=v=>v&&typeof v==='object'&&!Array.isArray(v);
+      moduleWeights=plain(data.moduleWeights)?{...DEFAULT_WEIGHTS,...Object.fromEntries(Object.entries(data.moduleWeights).filter(([k,v])=>Object.hasOwn(DEFAULT_WEIGHTS,k)&&Number.isFinite(v)&&v>=0))}:{...DEFAULT_WEIGHTS};
+      moduleToggles=plain(data.moduleToggles)?{...DEFAULT_TOGGLES,...Object.fromEntries(Object.entries(data.moduleToggles).filter(([k,v])=>Object.hasOwn(DEFAULT_TOGGLES,k)&&typeof v==='boolean'))}:{...DEFAULT_TOGGLES};
+      moduleTogglesPerOp={};
+      if(plain(data.moduleTogglesPerOp))for(const op of ['MAGNUM','TOTO','DAMACAI'])if(plain(data.moduleTogglesPerOp[op]))moduleTogglesPerOp[op]={...moduleToggles,...Object.fromEntries(Object.entries(data.moduleTogglesPerOp[op]).filter(([k,v])=>Object.hasOwn(DEFAULT_TOGGLES,k)&&typeof v==='boolean'))};
       stats=(data.stats&&typeof data.stats==='object')?data.stats:stats;
       // v4.13: restore permanent wins log, then harvest any wins from the
       // imported history that aren't already logged (covers older backups
