@@ -1,0 +1,35 @@
+name: Build v4.22 app
+on:
+  push:
+    branches: [feature/v4.22-auto-results]
+    paths: [scripts/apply-v422.py, .github/workflows/build-v422.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Patch HTML
+        run: python3 scripts/apply-v422.py
+      - name: Validate JavaScript
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('index.html').read_text()
+          scripts=re.findall(r'<script(?:\s[^>]*)?>([\s\S]*?)</script>',s)
+          assert scripts, 'No scripts found'
+          Path('/tmp/beast-v422.js').write_text('\n'.join(scripts))
+          PY
+          node --check /tmp/beast-v422.js
+      - name: Commit updated HTML
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || (git commit -m "feat: release v4.22 auto-import UI" && git pull --rebase origin feature/v4.22-auto-results && git push)
