@@ -1,3 +1,11 @@
+# BEAST MODE v4.19 — 2,000 Draws Per Operator
+
+Automatically adds up to 2,000 verified historical draws per operator on the first load, preserves all existing complete results, predictions, P&L and settings. Repairs partial saved records and falls back to 1,500 or 1,000 per operator if local browser storage is insufficient. The previous 104 learned badge was actually the count of result checks; the badge now displays the number of saved draws and Data reports checks separately. Deep Learn statistical history window increased to 2,000.
+
+These are archived results through 1 November 2026, not an automatic feed for new draws. Historical frequency modeling does not demonstrate better winning odds. Localized Node and Chromium tests passed for the corresponding upgrade.
+
+---
+
 # BEAST MODE 4D v4.18 — Research Engine Upgrade
 
 - **Oracle:** deterministic scoring across 10,000 candidates, larger non-overlapping windows, smoothed position/pair frequencies, optional weekday comparison, and no compulsory sum-zone elimination. Unsupported Operator Dodge betting suggestions disabled.

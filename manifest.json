@@ -1,7 +1,7 @@
 {
-  "name": "BEAST MODE 4D v4.18 — Research Engine Upgrade",
+  "name": "BEAST MODE 4D v4.19 — Automatic Historical Archive",
   "short_name": "Beast 4D",
-  "description": "Historical-pattern research with deterministic Oracle, fixed Brainstorm, operator-specific Hot Hand and smoothed Deep Learn; no proven forecasting advantage.",
+  "description": "Up to 2,000 archived draws per lottery, auto imported safely. Historical research, no guaranteed forecasts.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
