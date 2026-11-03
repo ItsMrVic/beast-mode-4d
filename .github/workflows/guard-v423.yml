@@ -1,0 +1,21 @@
+name: Guard v4.23 cross-operator results
+on:
+  push:
+    branches: [feature/v4.23-mode-history]
+    paths: [scripts/guard-v423.py, .github/workflows/guard-v423.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Correct research-match attribution
+        run: python3 scripts/guard-v423.py
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || (git commit -m "fix: distinguish Sniper matches from ticket wins" && git pull --rebase origin feature/v4.23-mode-history && git push)
