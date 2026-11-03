@@ -1,0 +1,35 @@
+name: Complete v4.23 Dodge history
+on:
+  push:
+    branches: [feature/v4.23-mode-history]
+    paths: [scripts/complete-v423.py, .github/workflows/complete-v423.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Complete Dodge generator
+        run: python3 scripts/complete-v423.py
+      - name: Validate inline JavaScript
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          s=Path('index.html').read_text()
+          scripts=re.findall(r'<script(?:\s[^>]*)?>([\s\S]*?)</script>',s)
+          assert scripts
+          Path('/tmp/validate.js').write_text('\n'.join(scripts))
+          PY
+          node --check /tmp/validate.js
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || (git commit -m "feat: generate Dodge variants for history" && git pull --rebase origin feature/v4.23-mode-history && git push)
