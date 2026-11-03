@@ -23,3 +23,5 @@ assert s.count(old)==1, 'Expected original Dodge placeholder'
 s=s.replace(old,new,1)
 p.write_text(s)
 print('Added deterministic Dodge variants')
+
+# Retry after serialized cross-operator correction.
