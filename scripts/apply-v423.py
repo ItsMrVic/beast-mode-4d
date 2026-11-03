@@ -45,7 +45,7 @@ replace("      saveAll();render();toast('🔥 Operator-specific Hot Hand scan co
         saveModeHistory('FUSION',opN,targetDate,tDay,nums,
           {source:'oracle-and-hot-hand',matching:'digit-set'}));
       saveAll();render();toast('🔥 Hot Hand and available Fusion mode snapshots saved.');""")
-replace("v4.22","v4.23")
-replace("version:'4.22'","version:'4.23'")
+s=s.replace("v4.22","v4.23")
+s=s.replace("version:'4.22'","version:'4.23'")
 p.write_text(s,encoding='utf-8')
 print('Applied v4.23 history capture',len(s))
