@@ -41,7 +41,7 @@ function saveManualResults(){
   const opName=document.getElementById('manualOp')?.value;
   const date=document.getElementById('manualDate')?.value;
   const op=operators.find(o=>o.name===opName);
-  if(!op||!date||!/^\\d{4}-\\d{2}-\\d{2}$/.test(date)||date>malaysiaDateISO()){
+  if(!op||!date||!/^\d{4}-\d{2}-\d{2}$/.test(date)||date>malaysiaDateISO()){
     alert('Select an operator and a valid draw date (not in the future).');return;
   }
   const top3=Array.from({length:3},(_,i)=>(document.getElementById('manualTop'+i)?.value||'').trim());
