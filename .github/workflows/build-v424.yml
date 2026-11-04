@@ -1,0 +1,34 @@
+name: Build v4.24 manual results
+on:
+  push:
+    branches: [feature/v4.24-manual-results]
+    paths: [scripts/apply-v424.py, .github/workflows/build-v424.yml]
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: python3 scripts/apply-v424.py
+      - name: Validate JavaScript
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          s=Path('index.html').read_text()
+          scripts=re.findall(r'<script(?:\s[^>]*)?>([\s\S]*?)</script>',s)
+          assert scripts
+          Path('/tmp/v424.js').write_text('\n'.join(scripts))
+          assert 'saveManualResults' in s and 'manualResultsPanelHTML' in s
+          PY
+          node --check /tmp/v424.js
+      - name: Commit HTML
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || (git commit -m "feat: manual Live results form v4.24" && git pull --rebase origin feature/v4.24-manual-results && git push)
