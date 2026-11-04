@@ -1,0 +1,46 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BEAST MODE 4D — Evaluation Lab v4.25</title>
+<style>:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#0c101a;color:#e9eef7}body{max-width:980px;margin:auto;padding:18px}h1{color:#f6b84b}h2{font-size:1.2rem}section{background:#171e2b;border:1px solid #394154;border-radius:14px;padding:16px;margin:15px 0}input,select,button{background:#202c3f;color:white;border:1px solid #53647b;border-radius:8px;padding:10px;margin:4px;max-width:100%}button{background:#b44431;cursor:pointer}table{border-collapse:collapse;width:100%;font-size:12px}td,th{border-bottom:1px solid #394154;padding:7px;text-align:left}small,.muted{color:#b3c0d1}.scroll{overflow:auto}label{display:inline-block;margin:4px}strong{color:#ffce73}</style>
+<h1>🐉 BEAST MODE 4D — Evaluation Lab v4.25</h1><p><a href="./" style="color:#f6b84b">← Return to BEAST MODE</a></p>
+<section><h2>1 · Import your BEAST MODE backup</h2><p class="muted">Use the JSON backup exported from the Data tab. This lab reads it locally in your browser; it does not upload your data.</p><input id="file" type="file" accept=".json,application/json"><div id="status" role="status"></div></section>
+<section><h2>2 · Historical prediction evaluation</h2><p class="muted">Only predictions recorded before their target draw are evaluated. Permutations are observations, not confirmed ticket wins. Cross-operator results are shown separately. The random expectation assumes independent uniformly random four-digit outcomes; real draw rules may differ.</p>
+<div id="summary">Import a backup to calculate the results.</div><div class="scroll"><table><thead><tr><th>Mode</th><th>Eligible entries</th><th>Picks</th><th>Exact</th><th>Permutations</th><th>Cross-op permutations</th><th>Expected exact*</th></tr></thead><tbody id="modes"></tbody></table></div>
+<small>*Approximate expected exact matches = picks × 23 / 10,000 for a complete 23-number draw, assuming no duplicate winning numbers. Modes with different candidate counts cannot be fairly compared using raw hit totals.</small></section>
+<section><h2>3 · Consensus study</h2><p class="muted">Counts how often different modes independently proposed the same four-digit number for the same operator and target date. Consensus does not imply increased probability.</p><div id="consensus">Import a backup first.</div></section>
+<section><h2>4 · Real ticket ledger</h2><p class="muted">Record actual stakes and payouts separately from the prediction results. This ledger is stored locally in this browser and is included only when you export it below.</p>
+<label>Date <input id="tdate" type="date"></label><label>Operator <select id="top"><option>MAGNUM</option><option>TOTO</option><option>DAMACAI</option><option>Other / BK8</option></select></label>
+<label>Number <input id="tnum" maxlength="4" inputmode="numeric" placeholder="9458"></label><label>Ticket type <input id="ttype" placeholder="i-Perm"></label><label>Stake (RM) <input id="tstake" type="number" min="0" step=".01"></label><label>Payout (RM) <input id="tpayout" type="number" min="0" step=".01"></label><button id="add">Add ticket</button><div id="ledger"></div><button id="export">Export ledger JSON</button></section>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const is4=n=>typeof n==='string'&&/^\d{4}$/.test(n);
+const sig=n=>[...n].sort().join('');
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let data=null;
+function unpack(obj){let x=obj;if(x&&x.data&&typeof x.data==='object'&&!Array.isArray(x.data))x=x.data;const ops=Array.isArray(x.operators)?x.operators:Array.isArray(x.data?.operators)?x.data.operators:[];const history=Array.isArray(x.history)?x.history:Array.isArray(x.data?.history)?x.data.history:[];return {ops,history};}
+function analyze(){
+ const {ops,history}=unpack(data),draws=new Map(),byDate=new Map();
+ for(const op of ops){if(!op||!Array.isArray(op.draws))continue;for(const d of op.draws){if(!d||!d.date)continue;const nums=[...(d.top3||[]),...(d.special||[]),...(d.consolation||[])].filter(is4);if(nums.length!==23)continue;draws.set(op.name+'|'+d.date,nums);if(!byDate.has(d.date))byDate.set(d.date,[]);byDate.get(d.date).push({op:op.name,nums});}}
+ const stats=new Map(),cons=new Map();let eligible=0,excluded=0;
+ for(const e of history){const date=e.targetDate,op=e.subOperator||e.operator;const picks=[...new Set((e.predictions||[]).filter(is4))];const when=Date.parse(e.generatedAt||'');const draw=draws.get(op+'|'+date);
+ if(!date||!draw||!picks.length||!Number.isFinite(when)||when>=Date.parse(date+'T23:59:59+08:00')){excluded++;continue;}
+ // GeneratedAt must be before the target date starts; same-day entries cannot be proven pre-draw from date-only data.
+ if(when>=Date.parse(date+'T00:00:00+08:00')){excluded++;continue;}
+ eligible++;const mode=e.operator||'UNKNOWN';if(!stats.has(mode))stats.set(mode,{entries:0,picks:0,exact:0,perm:0,cross:0,expected:0});const st=stats.get(mode);st.entries++;st.picks+=picks.length;st.expected+=picks.length*23/10000;
+ const exact=new Set(draw),perms=new Set(draw.map(sig));const others=(byDate.get(date)||[]).filter(d=>d.op!==op).flatMap(d=>d.nums),cross=new Set(others.map(sig));
+ for(const n of picks){if(exact.has(n))st.exact++;else if(perms.has(sig(n)))st.perm++;else if(cross.has(sig(n)))st.cross++;
+ const k=op+'|'+date+'|'+n;if(!cons.has(k))cons.set(k,{op,date,num:n,modes:new Set(),exact:exact.has(n),perm:perms.has(sig(n))});cons.get(k).modes.add(mode);}
+ }
+ $('summary').textContent='Complete stored draws: '+draws.size+' · Eligible pre-draw entries: '+eligible+' · Excluded/unverifiable entries: '+excluded+'. Strict timestamp filter prevents hindsight scoring.';
+ $('modes').innerHTML=[...stats].sort((a,b)=>b[1].entries-a[1].entries).map(([name,s])=>'<tr><td>'+esc(name)+'</td><td>'+s.entries+'</td><td>'+s.picks+'</td><td>'+s.exact+'</td><td>'+s.perm+'</td><td>'+s.cross+'</td><td>'+s.expected.toFixed(2)+'</td></tr>').join('')||'<tr><td colspan="7">No verifiable pre-draw prediction snapshots found.</td></tr>';
+ const overlap=[...cons.values()].filter(x=>x.modes.size>=2).sort((a,b)=>b.modes.size-a.modes.size).slice(0,30);
+ $('consensus').innerHTML=overlap.length?'<div class="scroll"><table><tr><th>Target</th><th>Operator</th><th>Number</th><th>Modes</th><th>Observed match</th></tr>'+overlap.map(x=>'<tr><td>'+esc(x.date)+'</td><td>'+esc(x.op)+'</td><td>'+x.num+'</td><td>'+esc([...x.modes].join(', '))+'</td><td>'+(x.exact?'Exact':x.perm?'Permutation':'None')+'</td></tr>').join('')+'</table></div>':'No multi-mode overlaps among eligible entries.';
+}
+$('file').onchange=async e=>{try{const f=e.target.files[0];if(!f)return;if(f.size>30000000)throw Error('Backup exceeds 30 MB');data=JSON.parse(await f.text());const x=unpack(data);if(!x.ops.length||!x.history.length)throw Error('Backup must include operators and history arrays.');analyze();$('status').textContent='Backup loaded locally.';}catch(err){data=null;$('status').textContent='Could not evaluate this backup: '+err.message;}};
+const ledgerKey='beast-v425-ticket-ledger';let ledger=[];try{ledger=JSON.parse(localStorage.getItem(ledgerKey)||'[]');if(!Array.isArray(ledger))ledger=[];}catch{ledger=[];}
+function renderLedger(){const net=ledger.reduce((n,t)=>n+t.payout-t.stake,0);$('ledger').innerHTML='<p>Tickets: '+ledger.length+' · Recorded net: <strong>RM '+net.toFixed(2)+'</strong></p><div class="scroll"><table><tr><th>Date</th><th>Operator</th><th>Number</th><th>Type</th><th>Stake</th><th>Payout</th><th>Net</th><th></th></tr>'+ledger.map((t,i)=>'<tr><td>'+esc(t.date)+'</td><td>'+esc(t.operator)+'</td><td>'+esc(t.num)+'</td><td>'+esc(t.type)+'</td><td>'+t.stake.toFixed(2)+'</td><td>'+t.payout.toFixed(2)+'</td><td>'+(t.payout-t.stake).toFixed(2)+'</td><td><button data-delete="'+i+'">Delete</button></td></tr>').join('')+'</table></div>';$('ledger').querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>{if(confirm('Delete this ticket entry?')){ledger.splice(Number(b.dataset.delete),1);persist();}});}
+function persist(){localStorage.setItem(ledgerKey,JSON.stringify(ledger));renderLedger();}
+$('add').onclick=()=>{const date=$('tdate').value,num=$('tnum').value.trim(),stake=Number($('tstake').value),payout=Number($('tpayout').value);if(!date||!is4(num)||!Number.isFinite(stake)||!Number.isFinite(payout)||stake<0||payout<0||!$('tstake').value||!$('tpayout').value){alert('Enter date, four-digit number, stake and payout.');return;}ledger.push({date,operator:$('top').value,num,type:$('ttype').value.trim(),stake,payout});persist();};
+$('export').onclick=()=>{const blob=new Blob([JSON.stringify({version:'4.25',tickets:ledger},null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='beast-ticket-ledger.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+$('tdate').value=new Date().toISOString().slice(0,10);renderLedger();
+</script></html>
