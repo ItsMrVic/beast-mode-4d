@@ -1,10 +1,10 @@
 name: Sync verified 4D results
 on:
   schedule:
-    - cron: '15,45 11-14 * * *'
+    - cron: '7,22,37,52 11-15 * * *'
   workflow_dispatch:
   push:
-    branches: [fix/v4.24-live-results]
+    branches: [main, fix/v4.24-live-results]
     paths: [.github/workflows/sync-results.yml, scripts/sync-results.py]
 permissions:
   contents: write
