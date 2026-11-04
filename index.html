@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v4.24 — Stability Update</title>
+<title>Beast Mode 4D v4.25 — Stability Update</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -414,7 +414,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v4.24</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v4.25</span>
       <div class="sub">Historical Analysis & Walk-Forward Research + DeepSeek</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
@@ -8311,7 +8311,7 @@ let liveResults=null;
 let liveDate=malaysiaDateISO();
 
 
-// v4.24: Manual verified-board entry is a local user action, never a provider claim.
+// v4.25: Manual verified-board entry is a local user action, never a provider claim.
 function toggleManualResults(){
   const panel=document.getElementById('manualResultsPanel');
   if(panel)panel.hidden=!panel.hidden;
@@ -8376,6 +8376,8 @@ function saveManualResults(){
 }
 
 function renderLive(){
+  // v4.25 evaluation lab: optional, isolated from the existing prediction engines.
+
   const pg=document.getElementById('pgLive');
   const opLogosSmall={
     MAGNUM:`<img src="data:image/png;base64,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" style="width:28px;height:28px;border-radius:4px">`,
@@ -8393,6 +8395,8 @@ function renderLive(){
   h+=`<div style="font-size:10px;color:var(--dim2);margin-bottom:9px">Offline historical snapshot through ${BUNDLED_ASOF}. New draws may require a feed sync or manual entry.</div>`;
   h+=`<button class="btn btn-sm btn-outline" onclick="mergeBundledHistory()" style="width:100%;margin-bottom:14px">📥 Merge archive again (optional)</button>`;
   h+=manualResultsPanelHTML();
+  h+='<a href="./evaluation-lab.html" style="display:block;text-align:center;padding:12px;margin:8px 0 14px;border:1px solid #8b6a38;border-radius:9px;color:#ffce73;text-decoration:none;font-weight:700">📊 v4.25 Evaluation Lab · Backtest & Ticket Ledger</a>';
+
   if(!liveResults){
     h+=`<div style="text-align:center;padding:40px 0;color:var(--dim3)">
       <div style="font-size:44px;margin-bottom:10px">📡</div>
@@ -8678,7 +8682,7 @@ function oracleAnalyze(opDraws,targetDay){
       break;
     }
   }
-  return {targetDay:targetDay||null,dayDrawsUsed:dayDraws.length,hasDayWindow,windows:windowAnalysis,consensusPerPos,predictions,sumZone,coldPerPos,dodgeVariants,modelVersion:'v4.24',scoreIsProbability:false};
+  return {targetDay:targetDay||null,dayDrawsUsed:dayDraws.length,hasDayWindow,windows:windowAnalysis,consensusPerPos,predictions,sumZone,coldPerPos,dodgeVariants,modelVersion:'v4.25',scoreIsProbability:false};
 }
 
 // ============================================================
@@ -10884,7 +10888,7 @@ function nextTargetDateMYT(day){
 }
 
 
-// v4.24: Persist the actual outputs of each generated mode, not recomputed guesses.
+// v4.25: Persist the actual outputs of each generated mode, not recomputed guesses.
 // Existing entries are never overwritten; duplicate runs for the same mode/date/operator are idempotent.
 function saveModeHistory(mode,operator,targetDate,targetDay,numbers,meta={}){
   const predictions=[...new Set((Array.isArray(numbers)?numbers:[]).filter(is4D))].slice(0,15);
