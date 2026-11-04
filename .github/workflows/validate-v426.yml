@@ -1,0 +1,25 @@
+name: Validate v4.26 Evaluation Lab
+on:
+  push:
+    branches: [feature/v426-mobile-evaluation]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check inline JavaScript
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('evaluation-lab.html').read_text()
+          scripts=re.findall(r'<script(?:\s[^>]*)?>([\s\S]*?)</script>',s)
+          assert scripts
+          Path('/tmp/evaluation-lab.js').write_text('\n'.join(scripts))
+          PY
+          node --check /tmp/evaluation-lab.js
