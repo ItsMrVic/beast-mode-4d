@@ -1,91 +1,405 @@
-
-### function renderLive count 1
-=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
-  const get=t=>parts.find(p=>p.type===t).value;
-  return `${get('year')}-${get('month')}-${get('day')}`;
+### function saveDraw(){ at 1954912
+function saveDraw(){
+  const date=document.getElementById('mDate').value;
+  const day=document.getElementById('mDay').value;
+  const p=[document.getElementById('mP1').value,document.getElementById('mP2').value,document.getElementById('mP3').value].map(v=>v.trim());
+  if(!date||p.some(n=>!is4D(n))){alert('Fill in date and all 3 prizes');return;}
+  const sp=[],cn=[];
+  for(let i=1;i<=10;i++){
+    const sv=(document.getElementById('mSp'+i)?.value||'').trim();
+    const cv=(document.getElementById('mCn'+i)?.value||'').trim();
+    if(sv.length===4&&/^\d{4}$/.test(sv))sp.push(sv);
+    if(cv.length===4&&/^\d{4}$/.test(cv))cn.push(cv);
+  }
+  
+  // DUPLICATE CHECK
+  const existing=checkDuplicate(addOpIdx,date);
+  if(existing){
+    if(!confirm(`⚠️ ${operators[addOpIdx].name} already has a draw on ${date}.\n\n1st: ${existing.top3[0]}, 2nd: ${existing.top3[1]}, 3rd: ${existing.top3[2]}\n\nReplace with new data?`))return;
+    // Remove old one
+    operators[addOpIdx].draws=operators[addOpIdx].draws.filter(d=>d.date!==date);
+  }
+  
+  operators[addOpIdx].draws.unshift({date,day,top3:p,special:sp,consolation:cn});
+  operators[addOpIdx].draws.sort((a,b)=>b.date.localeCompare(a.date));
+  saveAll();closeModal('modalAdd');render();
+  toast(existing?'♻️ Draw replaced for '+operators[addOpIdx].name:'✅ Draw added to '+operators[addOpIdx].name);
 }
 
-let liveResults=null;
-let liveDate=malaysiaDateISO();
+// ============================================================
+// BACKTEST RUNNER
+// ============================================================
+function startBacktest(){
+  const opName=document.getElementById('btOp').value;
+  const numDraws=parseInt(document.getElementById('btDraws').value);
+  const btn=document.getElementById('btBtn');
+  const progress=document.getElementById('btProgress');
+  const bar=document.getElementById('btBar');
+  const status=document.getElementById('btStatus');
+  const results=document.getElementById('btResults');
+  
+  const op=operators.find(o=>o.name===opName);
+  if(!op||op.draws.length<numDraws+30){
+    results.innerHTML=`<div style="color:var(--toto);font-size:11px;padding:10px">⚠️ Not enough data. Need at least ${numDraws+30} draws, ${opName} has ${op?op.draws.length:0}.</div>`;
+    return;
+  }
+  
+  btn.disabled=true;btn.textContent='🔬 Running...';
+  progress.style.display='block';
+  results.innerHTML='';
+  bar.style.width='0%';
+  status.textContent=`Testing ${numDraws} historical draws (full model plus independent random control)...`;
+  
+  // Run async in chunks so UI doesn't freeze
+  setTimeout(()=>{
+    const result=runBacktest(opName,numDraws,pct=>{
+      bar.style.width=(pct*100)+'%';
+      status.textContent=`Testing draw ${Math.round(pct*numDraws)}/${numDraws}...`;
+    });
+    
+    btn.disabled=false;btn.textContent='🔬 Run Backtest';
+    progress.style.display='none';
+    
+    if(!result){
+      results.innerHTML=`<div style="color:var(--toto);font-size:11px;padding:10px">⚠️ Backtest failed - insufficient data</div>`;
+      return;
+    }
+    
+    displayBacktestResults(result);
+  },100);
+}
 
+function displayBacktestResults(r){
+  const results=document.getElementById('btResults');
+  const wNames={position:"Position Freq",daySpecific:"Day-Specific",markov:"Markov Chain",monteCarlo:"Monte Carlo",chiSquare:"Chi-Square",momentum:"Momentum",digitSum:"Digit Sum",pairs:"Pair Freq",oddEven:"Odd/Even",repeat:"Repeat Detect",crossOp:"Cross-Operator",mirror:"Mirror Pattern",elimination:"Elimination",streak:"Streak Detect",entropy:"Entropy Bias",genetic:"Genetic Algo"};
+  
+  let html=`<div style="background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(139,92,246,0.05));border:1px solid #333366;border-radius:10px;padding:12px;margin-bottom:10px">
+    <div style="font-size:13px;font-weight:800;color:#a78bfa;margin-bottom:8px">🏆 ${r.opName} Backtest Results</div>
+    <div style="font-size:10px;color:var(--dim);margin-bottom:10px">Tested ${r.testedDraws} draws chronologically; exploratory, not a statistically validated prediction edge</div>
+    
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+      <div style="background:rgba(34,197,94,0.1);border:1px solid #22c55e33;border-radius:6px;padding:8px;text-align:center">
+        <div style="font-size:18px;font-weight:900;color:var(--green)">${r.baseline.any}</div>
+        <div style="font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:0.5px">Draws with exact hit</div>
+      </div>
+      <div style="background:rgba(245,146,0,0.1);border:1px solid #f5920033;border-radius:6px;padding:8px;text-align:center">
+        <div style="font-size:18px;font-weight:900;color:var(--amber)">${r.baseline.straight}</div>
+        <div style="font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:0.5px">Straight Hits</div>
+      </div>
+    </div>
+    
+    <div style="font-size:10px;color:var(--dim);margin-bottom:6px">Exact-hit draw rate: <b style="color:#fff">${((r.baseline.any/r.testedDraws)*100).toFixed(1)}% of draws had at least one hit</b></div>
+  </div>`;
+  
+  html+=`<div class="card" style="font-size:11px;line-height:1.7">Random control: <b>${r.randomBaseline?.drawHits??'n/a'}</b> matching draws; fair-draw expectation: <b>${(r.randomExpectation||0).toFixed(2)}</b> matching draws. Exact hits only; permutation matches (${r.baseline.perm}) are NOT counted as wins. This short test cannot justify tuning weights.</div>`;
+  // Module impact table (now in
+### function checkResults(){ at 1965547
+function checkResults(){
+  const date=document.getElementById('chkDate').value;
+  const opName=document.getElementById('chkOp').value;
+  const t3=[document.getElementById('chk1').value,document.getElementById('chk2').value,document.getElementById('chk3').value].map(v=>v.trim());
+  const sp=[],cn=[];
+  for(let i=1;i<=10;i++){
+    const sv=(document.getElementById('chkSp'+i)?.value||'').trim();
+    const cv=(document.getElementById('chkCn'+i)?.value||'').trim();
+    if(sv.length===4&&/^\d{4}$/.test(sv))sp.push(sv);
+    if(cv.length===4&&/^\d{4}$/.test(cv))cn.push(cv);
+  }
+  
+  if(!date||t3.some(n=>!is4D(n))){alert('Fill in date and top 3 prizes');return;}
+  if(sp.length!==10||cn.length!==10){alert('A complete board of 3 top, 10 Special and 10 Consolation prizes is required before a final check.');return;}
+  
+  const allActual=[...t3,...sp,...cn];
+  
+  // A check is valid only if a prediction was recorded FOR this exact target draw.
+  if(stats.checksLog?.some(e=>e.date===date&&e.operator===opName)){
+    alert('Results for this operator and target date were already checked. Use Revert Last Check if a correction is needed.');return;
+  }
+  const eligible=history.some(entry=>!entry.checked&&entry.targetDate===date&&(
+    entry.operator===opName||entry.subOperator===opName||['SNIPER','ORACLE_SNIPER'].includes(entry.operator)));
+  if(!eligible){
+    alert('No recorded predictions for this exact target draw date. Past predictions without a recorded target date cannot be scored fairly. Add the draw as data instead.');return;
+  }
+  // Find matching predictions in history
+  let totalHits=0,permHitsTotal=0,t3Hits=0,spHits=0,cnHits=0;
+  
+  history.forEach(entry=>{
+    // Check regular operator entries
+    if(entry.operator===opName&&!entry.checked&&entry.targetDate===date){
+      const hits=entry.predictions.filter(n=>allActual.includes(n));
+      let permHits=0;
+      let permWinDetails=[];
+      entry.predictions.forEach(n=>{
+        if(!allActual.includes(n)){
+          const perms=getPerms(n);
+          const winningPerm=perms.find(p=>allActual.includes(p));
+          if(winningPerm){
+            permHits++;
+            const prizeType=t3.includes(winningPerm)?'TOP3':sp.includes(winningPerm)?'SPECIAL':'CONSOLATION';
+            permWinDetails.push({predicted:n,won:winningPerm,prize:prizeType});
+          }
+        }
+      });
+      entry.checked=true;
+      entry.hits=hits;
+      entry.permHits=permHits;
+      entry.permWinDetails=permWinDetails;
+      
+      totalHits+=hits.length;
+      permHitsTotal+=permHits;
+      hits.forEach(h=>{
+        if(t3.includes(h))t3Hits++;
+        else if(sp.includes(h))spHits++;
+        else if(cn.includes(h))cnHits++;
+      });
+      
+      // Self-learning: adjust weights
+      if(lastResults&&lastResults[opName]){
+        adjustWeights(lastResults[opName].predictions.slice(0,10),allActual);
+      }
+    }
+    
+    // Check SNIPER and ORACLE_SNIPER entries against ALL operators' actual results
+    if((entry.operator==='SNIPER'||entry.operator==='ORACLE_SNIPER')&&!entry.checked&&entry.targetDate===date){
+      // Gather actual numbers from all 3 operators for the same date
+      const allOpsActual=[];
+      const t3ByOp={};
+      operators.forEach(op=>{
+        const draw=op.draws.find(d=>d.date===date);
+        if(draw){
+          allOpsActual.push(...draw.top3,...(draw.special||[]),...(draw.consolation||[]));
+          t3ByOp[op.name]=draw.top3;
+        }
+      });
+      if(allOpsActual.length>0){
+        const sniperHits=entry.predictions.filter(n=>allOpsActual.includes(n));
+        let sniperPermHits=0;
+        let sniperPermDetails=[];
+        entry.predictions.forEach(n=>{
+          if(!allOpsActual.includes(n)){
+            const perms=getPerms(n);
+            const winningPerm=perms.find(p=>allOpsActual.includes(p));
+            if(winningPerm){
+              sniperPermHits++;
+              // Find which operator it won in
+              let prizeType='CONSOLATION';
+              let winOp='';
+              for(const op of operators){
+                const dr=op.draws.find(d=>d.date===date);
+                if(dr){
+                  if(dr.top3.includes(winningPerm)){prizeType='TOP3';winOp=op.name;break;}
+                  if((dr.special||[]).includes(winningPerm)){prizeType='SPECIAL';winOp=op.name;break;}
+                  if((dr.consolation||[]).includes(winningPerm)){prizeType='CONSOLATION';winOp=op.name;break;}
+                }
+              }
+              sniperPermDetails.push({predicted:n,won:winningPerm,prize:prizeType+(winOp?' ('+winOp+')':'')});
+            }
+          }
+        });
+        // Cross-operator research observations are not verified ticket wins.
+        // History's live result matcher highlights exact/permutation observations per operator.
+        entry.checked=true;
+        entry.crossOpMatches=sniperHits;
+        entry.crossOpPermMatches=sniperPermDetails;
+        entry.hits=[];
+        entry.permHits=0;
+        entry.permWinDetails=[];
+      }
+    }
+    
+    // Check ORACLE entries — only match when subOperator equals the operator being checked
+    if(entry.operator==='ORACLE'&&entry.subOperator===opName&&!entry.checked&&entry.targetDate===date){
+      const oracleHits=entry.predictions.filter(n=>allActual.includes(n));
+      let oraclePermHits=0;
+      let oraclePermDetails=[];
+      entry.predictions.forEach(n=>{
+        if(!allActual.incl
+### function renderLive(){ at 1778547
+NEEDLE Check DB 980
+8px;height:28px;border-radius:4px">`,
+    DAMACAI:`<img src="[BASE64_LOGO]" style="width:28px;height:28px;border-radius:4px">`
+  };
+  const opC={MAGNUM:'#D4A017',TOTO:'#DC2626',DAMACAI:'#2563EB'};
+  
+  let h=`<div class="section-title">📂 4D Results — Saved & Bundled Archive</div>`;
+  h+=`<div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
+    <input type="date" id="liveDate" value="${liveDate}" style="flex:1;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px;font-family:inherit;font-size:13px" onchange="liveDate=this.value;liveResults=null;renderLive()">
+    <button class="btn btn-red" onclick="fetchLiveResults()" id="liveBtn" style="padding:10px 20px;font-size:12px">🔎 Check DB</button>
+  </div>`;
+  
+  h+=`<div style="font-size:10px;color:var(--dim2);margin-bottom:9px">Offline historical snapshot through ${BUNDLED_ASOF}. New draws are not downloaded automatically.</div>`;
+  h+=`<button class="btn btn-sm btn-outline" onclick="mergeBundledHistory()" style="width:100%;margin-bottom:14px">📥 Merge archive again (optional)</button>`;
+  if(!liveResults){
+    h+=`<div style="text-align:center;padding:40px 0;color:var(--dim3)">
+      <div style="font-size:44px;margin-bottom:10px">📡</div>
+      <div style="font-size:12px;color:var(--dim2)">Select a date and tap Check DB</div>
+      <div style="font-size:9px;margin-top:4px">Results through 1 November 2026 are bundled; this is not a live internet feed</div>
+    </div>`;
+  }else{
+    h+=`<div id="liveStatus"></div>`;
+    ['MAGNUM','TOTO','DAMACAI'].forEach(opName=>{
+      const r=liveResults[opName];
+      const logo=opLogosSmall[opName]||'';
+      const color=opC[opName];
+      
+      h+=`<div style="border:1px solid ${color}33;border-radius:12px;padding:12px;margin-bottom:10px;background:rgba(0,0,0,0.2)">
+   
+NEEDLE Merge archive 1304
+rgin-bottom:12px;align-items:center">
+    <input type="date" id="liveDate" value="${liveDate}" style="flex:1;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px;font-family:inherit;font-size:13px" onchange="liveDate=this.value;liveResults=null;renderLive()">
+    <button class="btn btn-red" onclick="fetchLiveResults()" id="liveBtn" style="padding:10px 20px;font-size:12px">🔎 Check DB</button>
+  </div>`;
+  
+  h+=`<div style="font-size:10px;color:var(--dim2);margin-bottom:9px">Offline historical snapshot through ${BUNDLED_ASOF}. New draws are not downloaded automatically.</div>`;
+  h+=`<button class="btn btn-sm btn-outline" onclick="mergeBundledHistory()" style="width:100%;margin-bottom:14px">📥 Merge archive again (optional)</button>`;
+  if(!liveResults){
+    h+=`<div style="text-align:center;padding:40px 0;color:var(--dim3)">
+      <div style="font-size:44px;margin-bottom:10px">📡</div>
+      <div style="font-size:12px;color:var(--dim2)">Select a date and tap Check DB</div>
+      <div style="font-size:9px;margin-top:4px">Results through 1 November 2026 are bundled; this is not a live internet feed</div>
+    </div>`;
+  }else{
+    h+=`<div id="liveStatus"></div>`;
+    ['MAGNUM','TOTO','DAMACAI'].forEach(opName=>{
+      const r=liveResults[opName];
+      const logo=opLogosSmall[opName]||'';
+      const color=opC[opName];
+      
+      h+=`<div style="border:1px solid ${color}33;border-radius:12px;padding:12px;margin-bottom:10px;background:rgba(0,0,0,0.2)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          ${logo}
+          <span style="font-size:13px;font-weight:800;color:${color};letter-spacing:1px">${opName}</span>
+          <span style="font-size:9px;color:var(--dim3);margin-left:auto">${liveDate}</span>
+        </div>`;
+      
+      
+NEEDLE liveDate 619
 function renderLive(){
   const pg=document.getElementById('pgLive');
   const opLogosSmall={
-    MAGNUM:`<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAYAAACOEfKtAAABCGlDQ1BJQ0MgUHJvZmlsZQAAeJxjYGA8wQAELAYMDLl5JUVB7k4KEZFRCuwPGBiBEAwSk4sLGHADoKpv1yBqL+viUYcLcKakFicD6Q9ArFIEtBxopAiQLZIOYWuA2EkQtg2IXV5SUAJkB4DYRSFBzkB2CpCtkY7ETkJiJxcUgdT3ANk2uTmlyQh3M/Ck5oUGA2kOIJZhKGYIYnBncAL5H6IkfxEDg8VXBgbmCQixpJkMDNtbGRgkbiHEVBYwMPC3MDBsO48QQ4RJQWJRIliIBYiZ0tIYGD4tZ2DgjWRgEL7AwMAVDQsIHG5TALvNnSEfCNMZchhSgSKeDHkMyQx6QJYRgwGDIYMZAKbWPz9HbOBQAAAOmklEQVR42u2ca5BVVXbHf2vvc+7tF5duVEBUUBPHGksYxYnyKGY0FuUDlRQixkgXDyEYqxijWBIHHHVwxhGNjo9UEicoUQdjqLGMU5KXpkxZghQyAlqK84ERITYN3XQD0n0fZ++VD+feY3fbwL08BK27qk7f2/vsvc9e//Pfa6+91u4WQKnKYYupQlAFsApgFcAqgFWpAlgFsApgFcCqVAGsAlgFsApgVaoAfo0SnMiDk+IPIY65qVbetvRRaftKnqMnClhiwEg8IO8rU9hI3F6Kbb1+fePW4wQX4DFGMAKR0y8pgwIGa5WB9ZbaGmHPF44vuvxXerFWioBprzvWQEOdJR1CKhCyeaVtjzvq6h43BhoRRMAVMQmsZdQ5hh9cKJw/As47K6CpIUem3pAZHPKTJz2P/0s3gRUip1gDztsE8LNOs/zge5bR58A5Iwynn5LnpIwQWkvtQGHV/xpuXJzDmAjvv8k2UCAwELnYKJ17Zsj0Ky1/Nh6+O8JjGxyog0IOvEA+groCtUE8VBGwRnBeSQXK1MvTzLhKGXc+NDRFQHH+RgoeiApQD/WpNOASjn8jATRiUInBO+eMgAU3C9MnKvVNech6yEPUUVo4YoZGXgidIVJBxKA+Zu3lY1P84i8t3x9ViEHKguuMp5MUF54Sw20keK/HZMJ9bQAaA957RC13/3nIj+cIAwflYJ8n6ojvG4GgNCtjKGIwFEIDqkpNTciSv7LcPs0hdOH2xDWtgLX9EF7i66hT7+sE0BqD857BjSmW3RtwzeV52BtR6BCsFQJ7IFZoER3Ys185udHy28dCxlyQw3dGeAzWHMKgaZ/PbxqAxoDzwhmDQ377mOV73y2Qb48IjRBaLas9Bc+F3wmZMUn4/oVZojZHEBLbu7JEMXJscAyOLXix7Tn9FMN//NJw3jlZ8h1CGBikTFWsCNqlzL4mDyJEHVoErxKPGow9NjQ8ZgCaouGpr7GsfCjFeefmKHTEK2dlorHpL3iUeAU/kbw2cyynrvfCP/xNwJjRWfKdjuAItBchmYbf8r2wIbBK5GDOdSHTr4mIOn3R3n37TpEcZQYKgTFEDkZ/J+TxOyDqjrCiHENP4tsDoIji1dOYCVixJKQhnYOCif2wajzw0KEBYwSvwt/dGXDuH3fjupXAfLsPfx0VABWw1uAczL8h5C+ujYg6tbgz+HYDeFQWEWvjcNSY80MeuR38vgh7QsW6JTExghR9UOlDAUlq+gpc7iMG0AioFwZlLM8vtqRtNz4fBzdPKFFBVXAqh5xNIoJqdOw9S0EwVnFOWPmzWqZemSXq9D0CAicAbsQvs+OLkM3bA+xB1HVeSNULb60LuOvJfRjRQ0a2gyObuobIee64qZapVxQodHpCe2IRT4pb5qaGAmNHFQ5MGwEckLE88es4ci2mWHYsGBgHNeGHF4S88bQBl49D7Fp+uNf7YrDgcNmllO0ilfIsB6ruFSQtbP5DitGzIwpRnJQ5FDjm8OyexasyuNGy/F5LYLMYB7aCV+FVMDXmsEagxO6SpCweUxaKAlhT
-
-### function renderData count 1
-cument.getElementById('btOp2');
-  const opName=opSel?opSel.value:'MAGNUM';
-  const btn=document.getElementById('btRunBtn');
-  if(btn){btn.textContent='⏳ Running…';btn.disabled=true;}
-  setTimeout(()=>{
-    const res=runBacktestV2(opName,3,80);
-    window._lastBacktest=res;
-    render();
-  },50);
-}
-
-function renderData(){
-  const pg=document.getElementById('pgData');
-  const totalDraws=operators.reduce((a,o)=>a+o.draws.length,0);
-  const totalNums=operators.reduce((a,o)=>a+o.draws.reduce((b,d)=>b+d.top3.length+(d.special?.length||0)+(d.consolation?.length||0),0),0);
+    MAGNUM:`<img src="[BASE64_LOGO]" style="width:28px;height:28px;border-radius:4px">`,
+    TOTO:`<img src="[BASE64_LOGO]" style="width:28px;height:28px;border-radius:4px">`,
+    DAMACAI:`<img src="[BASE64_LOGO]" style="width:28px;height:28px;border-radius:4px">`
+  };
+  const opC={MAGNUM:'#D4A017',TOTO:'#DC2626',DAMACAI:'#2563EB'};
   
-  // 🎨 THEME SELECTOR (v4.11)
-  const currentTheme = getTheme();
-  let h = `<div class="section-title">🎨 Theme</div>
-  <div class="card" style="padding:14px">
-    <div style="font-size:11px;color:var(--dim);margin-bottom:8px;line-height:1.5">Choose a color theme that matches your vibe — fortune palettes for prosperity, or stay on the original dark theme.</div>
-    <select id="themeSelect" onchange="setTheme(this.value)" style="width:100%;font-size:13px;font-weight:600;padding:10px 12px">
-      ${THEMES.map(t=>`<option value="${t.id}"${t.id===currentTheme?' selected':''}>${t.name}</option>`).join('')}
-    </select>
-    <div style="font-size:9px;color:var(--dim);margin-top:8px;line-height:1.5">${THEMES.find(t=>t.id===currentTheme)?.desc || ''}</div>
-    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-top:10px">
-      ${THEMES.map(t=>{
-        const swatch = {
-          dark:'#0a0a1a', red:'#FFF8E7', gold:'#FAF3E3',
-          jade:'#F5F1E8', peach:'#FFF4EC', plum:'#FBF4E6'
-        }[t.id];
-        const accent = {
-          dark:'#ff4444', red:'#C8102E', gold:'#C9A03A',
-          jade:'#2D7D5E', peach:'#E8758C', plum:'#7B2D5E'
-        }[t.id];
-        return `<button onclick="setTheme('${t.id}')" style="padding:0;border:2px solid ${t.id===currentTheme?accent:'var(--border)'};border-radius:8px;background:${swatch};height:40px;cursor:pointer;position:relative;overflow:hidden" title="${t.name}">
-          <div style="position:absolute;bottom:0;left:0;right:0;height:14px;background:${accent}"></div>
-          ${t.id===currentTheme?`<div style="position:absolute;top:2px;right:2px;font-size:10px;color:${accent};font-weight:900">✓</div>`:''}
-        </button>`;
-      }).join('')}
-    </div>
+  let h=`<div class="section-title">📂 4D Results — Saved & Bundled Archive</div>`;
+  h+=`<div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
+    <input type="date" id="liveDate" value="${liveDate}" style="flex:1;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px;font-family:inherit;font-size:13px" onchange="liveDate=this.value;liveResults=null;renderLive()">
+    <button class="btn btn-red" onclick="fetchLiveResults()" id="liveBtn" style="padding:10px 20px;font-size:12px">🔎 Check DB</button>
   </div>`;
   
-  // ===== BACKTEST PANEL (v4.13) =====
-  h+=`<div class="section-title">
-
-### function saveAll count 1
-);
-    return ((t^t>>>14)>>>0)/4294967296;
-  };
+  h+=`<div style="font-size:10px;color:var(--dim2);margin-bottom:9px">Offline historical snapshot through ${BUNDLED_ASOF}. New draws are not downloaded automatically.</div>`;
+  h+=`<button class="btn btn-sm btn-outline" onclick="mergeBundledHistory()" style="width:100%;margin-bottom:14px">📥 Merge archive again (optional)</button>`;
+  if(!liveResults){
+    h+=`<div style="text-align:center;padding:40px 0;color:var(--dim3)">
+      <div style="font-size:44px;margin-bottom:10px">📡</div>
+      <div style="font-size:12px;color:var(--dim2)">Select a date and tap Check DB</div>
+      <div style="font-size:9px;margin-top:4px">Results through 1 November 2026 are bundled; this is not a live internet feed</div
+NEEDLE pg.innerHTML 5154
+    const exists=opIdx>=0&&operators[opIdx].draws.find(d=>d.date===liveDate);
+        if((!exists||!isCompletePrizeBoard(exists))&&opIdx>=0){
+          h+=`<button class="btn btn-sm btn-outline" style="width:100%;margin-top:8px;font-size:9px;border-color:${color}44;color:${color}" onclick="addLiveToDatabase('${opName}')">+ Add to ${opName} Database</button>`;
+        }else if(exists){
+          h+=`<div style="font-size:8px;color:var(--dim3);margin-top:6px;text-align:center">✅ Already in database</div>`;
+        }
+      }else{
+        h+=`<div style="text-align:center;padding:16px;color:var(--dim3);font-size:11px">Not in saved / bundled history for this date. Import new results to update.</div>`;
+      }
+      h+=`</div>`;
+    });
+  }
+  
+  pg.innerHTML=h;
 }
-function hashStr(s){let h=0;for(let i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0;}return Math.abs(h)||1;}
-function withSeed(seed,fn){
-  const orig=Math.random;
-  Math.random=mulberry32(seed);
-  try{return fn();}finally{Math.random=orig;}
+
+async function fetchLiveResults(){
+  const date=document.getElementById('liveDate')?.value||liveDate;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){toast('Please select a valid draw date.');return;}
+  liveDate=date;
+  liveResults={MAGNUM:null,TOTO:null,DAMACAI:null};
+  liveResultSources={MAGNUM:'',TOTO:'',DAMACAI:''};
+  for(const name of ['MAGNUM','TOTO','DAMACAI']){
+    const found=findStoredDraw(name,date);
+    if(found){
+      const d=found.draw;
+      liveResults[name]={top3:[...d.top3],special:[...(d.special||[])],consolation:[...(d.consolation||[])]};
+      liveResultSources[name]=found.source;
+    }
+  }
+  renderLive();
+  const found=Object.entries(liveResults).filter(([,v])=>v).map(([name])=>name);
+  if(found.length)toast('✅ Found stored results for: '+found.join(', '));
+  else toast('No saved or bundled results for '+date+'. Import updated results to extend the archive.');
 }
 
-function saveAll(){save(KEYS.ops,operators);save(KEYS.hist,history);save(KEYS.weights,moduleWeights);save(KEYS.stats,stats);save(KEYS.toggles,moduleToggles);save(KEYS.togglesPerOp,moduleTogglesPerOp);save(KEYS.winsLog,winsLog);}
+function addLiveToDatabase(opName){
+  const r=liveResults?.[opName];
+  if(!r || !r.top3 || r.top3.length!==3){toast('No complete result selected.');return;}
+  const opIdx=operators.findIndex
+NEEDLE saveDraw -1
 
-// ============================================================
-// ANALYSIS ENGINE (14 modules + elimination + streak)
-// ============================================================
-function getDigitFreq(nums){const f=[{},{},{},{}];DIGITS.forEach(d=>f.forEach(x=>x[d]=0));nums.forEach(n=>{if(n&&n.length===4)for(let i=0;i<4;i++)f[i][n[i]]++});return f;}
-function getWeighted(draws){const f=[{},{},{},{}];DIGITS.forEach(d=>f.forEach(x=>x[d]=0));draws.forEach((dr,idx)=>{const w=idx<5?3:idx<10?2:1;[...dr.top3,...(dr.special||[]),...(dr.consolation||[])].filter(Boolean).forEach(n=>{if(n.length===4)for(let i=0;i<4;i++)f[i][n[i]]+=w});});return f;}
-function getDayFreq(draws,day){const dd=draws.filter(d=>d.day===day);const all=[],t3=[];dd.forEach(d=>{t3.push(...d.top3);all.push(...d.top3,...(d.special||[]),...(d.consolation||[]));});return{allF:getDigitFreq(all.filter(Boolean)),t3F:getDigitFreq(t3),count:dd.length};}
-function buildMarkov(nums){const t={};DIGITS.forEach(d=>{t[d]={};DIGITS.forEach(d2=>t[d][d2]=0)});nums.forEach(n=>{if(n&&n.length===4)for(let i=0;i<3;i++)t[n[i]][n[i+1]]++});const p={};DIGITS.forEach(fr=>{const tot=Object.values(t[fr]).reduce((a,b)=>a+b,0);p[fr]={};DIGITS.forEach(to=>p[fr][to]=tot>0?t[fr][to]/tot:0.1)});return p;}
-function monteCarlo(nums,n=30000){const pp=[0,1,2,3].map(pos=>{const f={};DIGITS.forEach(d=>f[d]=0);nums.forEach(num=>{if(num&&num.length===4)f[num[pos]]++});const tot=Object.values(f).reduce((a,b)=>a+b,0)||1;let cum=0;return DIGITS.map(d=>{cum+=f[d]/tot;return{d,cum}})});const r={};for(let i=0;i<n;i++){let num="";for(let pos=0;pos<4;pos++){const rv=Math.random();const ch=pp[pos].find(({cum})=>rv<=cum)||pp[pos][9];num+=ch.d}r[num]=(r[num]||0)+1}return r;}
-function chiSquare(nums){return[0,1,2,3].map(pos=>{const f={};DIGITS.forEach(d=>f[d]=0);nums.forEach(n=>{if(n&&n.length===4)f[n[pos]]++});const tot=Object.v
+NEEDLE Manual -1
 
-### function check count 2
-.consolation||[]});
+### function autoFetchResults( at 1949553
+function autoFetchResults(silent=false){
+  const el=document.getElementById('fetchStatus');
+  const btn=document.getElementById('fetchBtn');
+  if(btn)btn.disabled=true;
+  try{
+    const response=await fetch('./data/verified-results.json?t='+Date.now(),{cache:'no-store'});
+    if(!response.ok)throw Error('Verified-results feed unavailable (HTTP '+response.status+')');
+    const payload=await response.json();
+    if(payload.schema!==1||!Array.isArray(payload.draws))throw Error('Unexpected verified-results format');
+    const proposed=operators.map(o=>({...o,draws:[...o.draws]}));
+    let added=0,conflicts=0,skipped=0;
+    for(const row of payload.draws){
+      if(!row||row.status!=='checked'||!['MAGNUM','TOTO','DAMACAI'].includes(row.operator)||!/^\d{4}-\d{2}-\d{2}$/.test(row.date||'')||row.date>malaysiaDateISO())continue;
+      const draw={date:row.date,day:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(row.date+'T00:00:00Z').getUTCDay()],top3:row.top3,special:row.special,consolation:row.consolation};
+      if(!validDraw(draw)||!isCompletePrizeBoard(draw))continue;
+      const op=proposed.find(o=>o.name===row.operator);
+      const existing=op.draws.find(d=>d.date===draw.date);
+      if(existing){
+        if(JSON.stringify([existing.top3,existing.special,existing.consolation])!==JSON.stringify([draw.top3,draw.special,draw.consolation]))conflicts++;
+        else skipped++;
+        continue;
+      }
+      op.draws.push(draw);added++;
+    }
+    if(added){
+      proposed.forEach(o=>o.draws.sort((a,b)=>b.date.localeCompare(a.date)));
+      // Commit a single validated snapshot; keep memory unchanged on quota failure.
+      localStorage.setItem(KEYS.ops,JSON.stringify(proposed));
+      operators=proposed;
+    }
+    const status='Verified feed: '+added+' new draws, '+skipped+' already stored, '+conflicts+' conflicts kept';
+    try{localStorage.setItem('b4d_verified_sync_status',new Date().toISOString()+' — '+status);}catch(ignore){}
+    if(el)el.textContent=status+' · Source: 4dlivetoday.com';
+    if(!silent)toast(status);
+    if(added)render();
+    return {added,conflicts,skipped};
+  }catch(error){
+    if(el)el.textContent='Automatic sync unavailable: '+error.message;
+    if(!silent)toast('Results sync unavailable; saved history unchanged');
+    console.warn('Verified results sync failed',error);
+    return null;
+  }finally{if(btn)btn.disabled=false;}
+}
+
+
+function quickAddFetched(opName,date){
+  const data=window._fetchedResults?.[opName];
+  if(!data){toast('⚠️ No data available');return;}
+  const opIdx=operators.findIndex(o=>o.name===opName);
+  if(opIdx<0)return;
+  const dayOfWeek=new Date(date+'T00:00:00Z').getUTCDay();
+  const dayMap={0:'Sun',1:'Mon',2:'Tue',3:'Wed',4:'Thu',5:'Fri',6:'Sat'};
+  
+  // Check duplicate
+  const dup=operators[opIdx].draws.find(d=>d.date===date);
+  if(dup){toast(`⚠️ ${opName} ${date} already exists — skipped`);return;}
+  
+  operators[opIdx].draws.unshift({date,day:dayMap[dayOfWeek],top3:data.top3||[],special:data.special||[],consolation:data.consolation||[]});
   operators[opIdx].draws.sort((a,b)=>b.date.localeCompare(a.date));
   saveAll();toast(`✅ ${opName} ${date} added!`);render();
 }
@@ -136,335 +450,52 @@ function resetStatsCounters(){
 }
 
 function saveDraw(){
-  const date=document.getElementById('mDate'
-10;i++){
-    const s=document.getElementById('chkSp'+(i+1)),c=document.getElementById('chkCn'+(i+1));
-    if(s)s.value=(draw.special||[])[i]||'';
-    if(c)c.value=(draw.consolation||[])[i]||'';
-  }
-  toast(`✅ ${opName} ${date} loaded from ${found.source}${found.partial?' (partial board)':''}.`);
+  const date=documen
+### function importVerified at -1
+### function checkDuplicate( at 1952877
+function checkDuplicate(opIdx,date){
+  return operators[opIdx].draws.find(d=>d.date===date);
 }
 
-function checkResults(){
-  const date=document.getElementById('chkDate').value;
-  const opName=document.getElementById('chkOp').value;
-  const t3=[document.getElementById('chk1').value,document.getElementById('chk2').value,document.getElementById('chk3').value].map(v=>v.trim());
-  const sp=[],cn=[];
-  for(let i=1;i<=10;i++){
-    const sv=(document.getElementById('chkSp'+i)?.value||'').trim();
-    const cv=(document.getElementById('chkCn'+i)?.value||'').trim();
-    if(sv.length===4&&/^\d{4}$/.test(sv))sp.push(sv);
-    if(cv.length===4&&/^\d{4}$/.test(cv))cn.push(cv);
-  }
-  
-  if(!date||t3.some(n=>!is4D(n))){alert('Fill in date and top 3 prizes');return;}
-  if(sp.length!==10||cn.length!==10){alert('A complete board of 3 top, 10 Special and 10 Consolation prizes is required before a final check.');return;}
-  
-  const allActual=[...t3,...sp,...cn];
-  
-  // A check is valid only if a prediction was recorded FOR this exact target draw.
-  if(stats.checksLog?.some(e=>e.date===date&&e.operator===opName)){
-    alert('Results for this operator and target date were already checked. Use Revert Last Check if a correction is needed.');return;
-  }
-  const eligible=history.some(entry=>!entry.checked&&entry.targetDate===date&&(
-    entry.operator===opName||entry.subOperator===opName||['SNIPER','ORACLE_SNIPER'].includes(entry.operator)));
-  if(!eligible){
-    alert('No recorded predictions for this exact target draw date. Past predictions without a recorded target date cannot be scored fairly. Add the draw as data instead.');return;
-  }
-  // Find matching predictions in history
-  let totalHits=0,permHitsTotal=0,t3Hits=0,spHits=0,cnHits=0;
-  
-  history.forEach(entry=>{
-    // Check regular operator entries
-    if(entry.operator===opName&&!entry.checked&&entry.targetDate===date){
-      const hits=entry.predictions.filter(n=>allActual.includes(n));
-      let permHits=0;
-      let permWinDetails=[];
-      entry.predictions.forEach(n=>{
-        if(!allActual.includes(n)){
-          const perms=getPerms(n);
-          const winningPerm=perms.find(p=>allActual.includes(p));
-          if(win
-
-### function render( count 1
-eModal(id){document.getElementById(id).classList.remove('show');}
-
-// ============================================================
-// RENDER FUNCTIONS
-// ============================================================
-let lastResults=null;
-let selectedDay=localStorage.getItem('b4d_targetDay')||'Sat';
-
-function render(){
-  // v4.13: continuously harvest wins into the permanent log so a later
-  // "Clear Checked History" can never erase a win from the stats.
-  try{harvestWins();}catch(e){}
-  if(activeNav==='Predict')renderPredict();
-  else if(activeNav==='History')renderHistory();
-  else if(activeNav==='Live')renderLive();
-  else if(activeNav==='Oracle')renderEngines();
-  else if(activeNav==='Dashboard')renderDashboard();
-  else if(activeNav==='Pnl')renderPnl();
-  else if(activeNav==='Data')renderData();
-  // Learning badge
-  const indexed=operators.reduce((sum,op)=>sum+op.draws.length,0);
-  document.getElementById('learningBadge').innerHTML=`<span class="learning-badge" title="Verified and saved historical draws, not trained AI accuracy">${indexed.toLocaleString('en-MY')} draws</span>`;
-}
-
-function renderPredict(){
-  const op=operators[activeOp];
-  const pg=document.getElementById('pgPredict');
-  
-  // Controls
-  // Next draw countdown banner with Chinese Zodiac of the draw day
-  const drawInfo=formatDrawCountdown();
-  const notifyOn=!!localStorage.getItem('b4d_notify');
-  let h='';
-  
-  // Today's zodiac + mantra + lucky hour banner
-  const todayZodiac=getZodiacDay(new Date());
-  const mantra=getTodayMantra();
-  const shichen=getCurrentShichen();
-  
-  h+=`<div style="background:linear-gradient(135deg,rgba(220,38,38,0.08),rgba(245,146,0,0.06));border:1px solid rgba(220,38,38,0.2);border-radius:12px;padding:10px 12px;margin-bottom:10px">
-    <div style="display:flex;align-items:center;gap:10px">
-      <div style="font-size:28px;filter:drop-shadow(0 0 6px ${todayZodiac.color}66)">${todayZodiac.emoji}</div>
-      <div style="flex:1;min-width:0">
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
-          <span style="font-size:11px;font-weight:800;color:${todayZodiac.color}">${todayZodiac.cn} ${todayZodiac.en} Day</span>
-          ${shichen.lucky?`<span style="font-size:7px;background:#dc2626;color:#fff;padding:2px 5px;border-radius:3px;font-weight:700">💰 ${shichen.name} LUCKY HOUR</span>`:`<span style="font-size:7px;color:var(--dim3)"
-
-### function import count 1
-aleCompare(a.date)).filter(d=>{if(seen.has(d.date))return false;seen.add(d.date);return true;}).map(d=>({
- date:d.date,day:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(d.date+'T00:00:00Z').getUTCDay()],top3:[...d.top3],special:[...(d.special||[])],consolation:[...(d.consolation||[])]
-}));}
-
-function importData(event){
-  const file=event.target.files[0];if(!file)return;
-  const reader=new FileReader();
-  reader.onload=function(e){
-    try{
-      const data=JSON.parse(e.target.result);
-      
-      // Check if this is an operator-specific merge file
-      if(data.type==='operator_merge'&&data.operator&&data.draws){
-        mergeOperatorData(data);
-        return;
-      }
-      
-      // Regular full backup import
-      if(!Array.isArray(data.operators)||!data.operators.every(validOperatorData)){alert('Invalid file: operator records must contain valid dates and 4-digit numbers.');return;}
-      if(!confirm('Replace ALL current data with this backup?'))return;
-      operators=data.operators.map(o=>({...o,draws:normalizeDraws(o.draws)}));
-      history=Array.isArray(data.history)?data.history:[];
-      const plain=v=>v&&typeof v==='object'&&!Array.isArray(v);
-      moduleWeights=plain(data.moduleWeights)?{...DEFAULT_WEIGHTS,...Object.fromEntries(Object.entries(data.moduleWeights).filter(([k,v])=>Object.hasOwn(DEFAULT_WEIGHTS,k)&&Number.isFinite(v)&&v>=0))}:{...DEFAULT_WEIGHTS};
-      moduleToggles=plain(data.moduleToggles)?{...DEFAULT_TOGGLES,...Object.fromEntries(Object.entries(data.moduleToggles).filter(([k,v])=>Object.hasOwn(DEFAULT_TOGGLES,k)&&typeof v==='boolean'))}:{...DEFAULT_TOGGLES};
-      moduleTogglesPerOp={};
-      if(plain(data.moduleTogglesPerOp))for(const op of ['MAGNUM','TOTO','DAMACAI'])if(plain(data.moduleTogglesPerOp[op]))moduleTogglesPerOp[op]={...moduleToggles,...Object.fromEntries(Object.entries(data.moduleTogglesPerOp[op]).filter(([k,v])=>Object.hasOwn(DEFAULT_TOGGLES,k)&&typeof v==='boolean'))};
-      stats=(data.stats&&typeof data.stats==='object')?data.stats:stats;
-      // v4.13: restore permanent wins log, then harvest any wins from the
-      // imported history that aren't already logged (covers older backups
-      // exported before the wins log existed).
-      winsLog=Array.isArray(data.winsLog)?data.winsLog:[];
-      try{harvestWins();}catch(e){}
-      saveAll();render();toast('Data imported successfully!');
-    }catch(err)
-
-### function is4D count 1
-hts
-// ============================================================
-// v4.17 RESEARCH ENGINE — exact evaluation of all 10,000 candidates.
-// Component scores are historical fit indices, NOT future winning probabilities.
-// Only fully observed past draws are included. Diagnostic methods do not vote.
-function is4D(x){return typeof x==='string'&&/^\d{4}$/.test(x);}
-function drawNumbers(d){return [...(Array.isArray(d?.top3)?d.top3:[]),...(Array.isArray(d?.special)?d.special:[]),...(Array.isArray(d?.consolation)?d.consolation:[])].filter(is4D);}
-function countPositions(nums){const m=Array.from({length:4},()=>Array(10).fill(0));nums.forEach(n=>{for(let i=0;i<4;i++)m[i][+n[i]]++;});return m;}
-function countPairs(nums){const m=Array.from({length:3},()=>Array(100).fill(0));nums.forEach(n=>{for(let i=0;i<3;i++)m[i][+(n.slice(i,i+2))]++;});return m;}
-function centeredLogRatio(n,count,total,k,alpha){return Math.log(((count+alpha)/(total+k*alpha))*k);}
-function candidateDispersion(items){let mean=0;for(const x of items)mean+=x;mean/=Math.max(items.length,1);let variance=0;for(const x of items)variance+=(x-mean)**2;return{mean,sd:Math.sqrt(variance/Math.max(items.length,1))||1};}
-function safePatternScore(z){return Math.max(1,Math.min(99,Math.round(50+10*z)));}
-function masterFusion(opDraws,targetDay,allOps,w=moduleWeights,t=moduleToggles){
-  const historyOnly=(Array.isArray(opDraws)?opDraws:[]).filter(d=>d&&/^\d{4}-\d{2}-\d{2}$/.test(d.date))
-    .slice().sort((a,b)=>b.date.localeCompare(a.date));
-  const recent=historyOnly.slice(0,500), long=historyOnly.slice(0,2000), weekday=historyOnly.filter(d=>d.day===targetDay).slice(0,500);
-  const nums=recent.flatMap(drawNumbers), longNums=long.flatMap(drawNumbers), dayNums=weekday.flatMap(drawNumbers);
-  const rp=countPositions(nums), lp=countPositions(longNums), dp=countPositions(dayNums), pairs=countPairs(nums);
-  const previous=historyOnly.slice(500,1000).flatMap(drawNumbers), oldPos=countPositions(previous);
-  const recentTotals=rp.map(a=>a.reduce((x,y)=>x+y,0));
-  const longTotals=lp.map(a=>a.reduce((x,y)=>x+y,0));
-  const dayTotals=dp.map(a=>a.reduce((x,y)=>x+y,0));
-  const pairTotals=pairs.map(a=>a.reduce((x,y)=>x+y,0));
-  const isOn=k=>(t?.[k]!==false)&&(Number(w?.[k])||0)>0;
-  // Fixed, conservative smoothing and weights. Never tuned on the draw to be predicted.
-  const components={position:[],pairs:[],daySpecific:[],mo
-
-### autoFetchResults count 3
-tom:14px">
-      <div style="font-size:10px;font-weight:700;color:#8b5cf6;margin-bottom:8px">⚡ AUTO-FETCH FROM WEB</div>
-      <div class="fetch-bar">
-        <div class="ctrl-group"><label>Date</label><input type="date" id="fetchDate"></div>
-        <button class="fetch-btn" id="fetchBtn" onclick="autoFetchResults()">⚡ Fetch</button>
-      </div>
-      <div id="fetchStatus"></div>
-      <div style="font-size:8px;color:var(--dim3)">Auto-fills from 4D results websites. Select date & tap Fetch.</div>
-    </div>
-    
-    <div style="font-size:9px;color:var(--dim3);text-align:center;margin-bottom:10px">— or enter manually —</div>
-    
-    <div class="field"><label>Date</label><input type="date" id="mDate"></div>
-    <div class="field"><label>Day</label>
-      <select id="mDay"><option value="Sat">Saturday</option><option value="Sun">Sunday</option><option value="Wed">Wednesday</option><option value="Tue">Tuesday (Special)</option></select>
-    </div>
-    <div class="field"><label>Top 3 Prizes</label>
-      <div class="row">
-        <div><div style="font-size:8px;color:var(--dim3)">1st</div><input class="num-in" id="mP1" maxlength="4" placeholder="0000" inputmode="numeric"></div>
-        <div><div style="font-size:8px;color:var(--dim3)">2nd</div><input class="num-in" id="mP2" maxlength="4" placeholder="0000" inputmode="numeric"></div>
-        <div><div style="font-size:8px;color:var(--dim3)">3rd</div><input class="num-in" id="mP3" maxlength="4" placeholder="0000" inputmode="numeric"></div>
-      </div>
-    </div>
-    <div class="field"><label>Special (10 numbers)</label>
-      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:4px">
-        <input class="num-in" id="mSp1" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
-        <input class="num-in" id="mSp2" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
-        <input class="num-in" id="mSp3" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
-        <input class="num-in" id="mSp4" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
-        <input class="num-in" id="mSp5" maxlength="4" placeholder="0000" inputmode="numeric" style="font-size:10px">
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px">
-        <input class="num-in" id="mSp
-4-08 to various formats needed by sites
-  const d=new Date(dateStr);
-  const dd=String(d.getDate()).padStart(2,'0');
-  const mm=String(d.getMonth()+1).padStart(2,'0');
-  const yyyy=d.getFullYear();
-  return{ddmmyyyy:`${dd}-${mm}-${yyyy}`,iso:dateStr,display:`${dd}/${mm}/${yyyy}`};
-}
-
-async function autoFetchResults(silent=false){
-  const el=document.getElementById('fetchStatus');
-  const btn=document.getElementById('fetchBtn');
-  if(btn)btn.disabled=true;
-  try{
-    const response=await fetch('./data/verified-results.json?t='+Date.now(),{cache:'no-store'});
-    if(!response.ok)throw Error('Verified-results feed unavailable (HTTP '+response.status+')');
-    const payload=await response.json();
-    if(payload.schema!==1||!Array.isArray(payload.draws))throw Error('Unexpected verified-results format');
-    const proposed=operators.map(o=>({...o,draws:[...o.draws]}));
-    let added=0,conflicts=0,skipped=0;
-    for(const row of payload.draws){
-      if(!row||row.status!=='checked'||!['MAGNUM','TOTO','DAMACAI'].includes(row.operator)||!/^\d{4}-\d{2}-\d{2}$/.test(row.date||'')||row.date>malaysiaDateISO())continue;
-      const draw={date:row.date,day:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(row.date+'T00:00:00Z').getUTCDay()],top3:row.top3,special:row.special,consolation:row.consolation};
-      if(!validDraw(draw)||!isCompletePrizeBoard(draw))continue;
-      const op=proposed.find(o=>o.name===row.operator);
-      const existing=op.draws.find(d=>d.date===draw.date);
-      if(existing){
-        if(JSON.stringify([existing.top3,existing.special,existing.consolation])!==JSON.stringify([draw.top3,draw.special,draw.consolation]))conflicts++;
-        else skipped++;
-        continue;
-      }
-      op.draws.push(draw);added++;
-    }
-    if(added){
-      proposed.forEach(o=>o.draws.sort((a,b)=>b.date.localeCompare(a.date)));
-      // Commit a single validated snapshot; keep memory unchanged on quota failure.
-      localStorage.setItem(KEYS.ops,JSON.stringify(proposed));
-      operators=proposed;
-    }
-    const status='Verified feed: '+added+' new draws, '+skipped+' already stored, '+conflicts+' conflicts kept';
-    try{localStorage.setItem('b4d_verified_sync_status',new Date().toISOString()+' — '+status);}catch(ignore){}
-    if(el)el.textContent=status+' · Source: 4dlivetoday.com';
-    if(!silent)toast(status);
-    if(added)render();
-    return {added,conflicts,s
- render();
-  toast('🎨 Theme: ' + (THEMES.find(t=>t.id===themeId)?.name || themeId));
-}
-
-// Init
-applyThemeOnLoad();
-// A one-time non-destructive migration from the full offline archive.
-autoSyncBundledHistory();
-render();
-// Refresh on launch; scheduled GitHub Actions refreshes the published feed.
-autoFetchResults(true);
-</script>
-</body>
-</html>
-
-
-### operators= count 7
-gify(val));return true;}catch(e){
-  console.error('Unable to save '+key,e);
-  if(!window._b4dStorageWarned){window._b4dStorageWarned=true;alert('Storage is full or blocked. Latest changes may NOT have been saved. Export a backup, then reduce the number of imported draws.');}
-  return false;
-}}
-
-let operators=load(KEYS.ops,DEFAULT_OPS);
-let history=load(KEYS.hist,[]);
-let moduleWeights=load(KEYS.weights,DEFAULT_WEIGHTS);
-let moduleToggles=load(KEYS.toggles,DEFAULT_TOGGLES);
-let moduleTogglesPerOp=load(KEYS.togglesPerOp,{});
-let stats=load(KEYS.stats,{totalPredictions:0,totalChecks:0,top3Hits:0,specialHits:0,consolationHits:0,anyHits:0,checksLog:[]});
-// v4.17: preserve legacy weight/toggle preferences before resetting unsafe defaults.
-// Historical draws, predictions, P&L and operator data remain untouched.
-try {
-  if(!localStorage.getItem('b4d_v416_migrated')){
-    localStorage.setItem('b4d_v415_settings_backup',JSON.stringify({weights:moduleWeights,toggles:moduleToggles,togglesPerOp:moduleTogglesPerOp}));
-    moduleWeights={...DEFAULT_WEIGHTS}; moduleToggles={...DEFAULT_TOGGLES}; moduleTogglesPerOp={};
-    save(KEYS.weights,moduleWeights); save(KEYS.toggles,moduleToggles); save(KEYS.togglesPerOp,moduleTogglesPerOp);
-    localStorage.setItem('b4d_v416_migrated','1');
-  }
-} catch(e){console.warn('Settings migration skipped',e);}
-
-// v4.13: permanent wins log — survives clearCheckedHistory so wins are never lost
-let winsLog=load(KEYS.winsLog,[]);
-
-// Per-operator toggles helpers
-function getToggles(opName){
-  if(moduleTogglesPerOp[opName])return moduleTogglesPerOp[opName];
-  return {...moduleToggles};
-}
-function setToggles(opName,toggles){
-  moduleTogglesPerOp[opName]={...toggles};
-  save(KEYS.togglesPerOp,moduleTogglesPerOp);
-}
-
-// Seeded RNG (Mulberry32) for deterministic backtests
-function mulberry32(seed){
-  return function(){
-    let t=(seed+=0x6D2B79F5)|0;
-    t=Math.imul(t^t>>>15,t|1);
-    t^=t+Math.imul(t^t>>>7,t|61);
-    return ((t^t>>>14)>>>0)/4294967296;
-  };
-}
-function hashStr(s){let h=0;for(let i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0;}return Math.abs(h)||1;}
-function withSeed(seed,fn){
-  const orig=Math.random;
-  Math.random=mulberry32(seed);
-  try{return fn();}finally{Math.random=orig;}
-}
-
-function saveAll(){save(KEYS.ops,operators);save(KEYS.hist,history);save(KEYS.weights,moduleWeights);save(KEYS.stats,stats);save(KEYS.toggles,mod
-tePrizeBoard(old)&&isCompletePrizeBoard(d)))byDate.set(d.date,d);
-    }
-    return {...op,draws:[...byDate.values()].sort((a,b)=>b.date.localeCompare(a.date))};
+function deduplicateAll(){
+  let removed=0;
+  operators.forEach(op=>{
+    const seen=new Set();
+    const before=op.draws.length;
+    op.draws=op.draws.filter(d=>{
+      const key=d.date+d.top3.join('');
+      if(seen.has(key)){removed++;return false;}
+      seen.add(key);return true;
+    });
   });
-  // Write first, then commit in memory; don't tell user import succeeded if storage failed.
-  if(!save(KEYS.ops,proposed))return;
-  operators=proposed;
-  toast(`✅ Imported ${totalAdd} draws; completed ${totalRepair} partial records.`);
+  if(removed>0){saveAll();toast(`🧹 Removed ${removed} duplicate(s)`);render();}
+  return removed;
+}
+
+// ============================================================
+// RESET / REBUILD STAT COUNTERS (v4.13)
+// Wipes old inflated stored counters, rebuilds from authoritative per-entry
+// records so stats.* matches the live dashboard recompute everywhere.
+// ============================================================
+function resetStatsCounters(){
+  const live=recomputeHitStats();
+  let anyHits=0,drawsWithPermWin=0;
+  history.forEach(e=>{
+    if(!e.checked)return;
+    const straight=Array.isArray(e.hits)?e.hits.length:0;
+    const perm=Array.isArray(e.permWinDetails)?e.permWinDetails.length:0;
+    if(straight>0)anyHits++;else if(perm>0)drawsWithPermWin++;
+  });
+  const oldPerm=stats.permWins||0,oldTotal=(stats.anyHits||0)+oldPerm;
+  stats.top3Hits=live.top3Total;stats.specialHits=live.specialTotal;stats.consolationHits=live.consolationTotal;
+  stats.anyHits=anyHits;stats.permWins=live.permTotal;stats.drawsWithPermWin=drawsWithPermWin;
+  saveAll();
+  const newTotal=anyHits+live.permTotal;
+  alert(`✅ STAT COUNTERS REBUILT\n${'='.repeat(34)}\n\n  Top 3 Hits:    ${live.top3Total}  (${live.top3Straight} straight + ${live.top3Perm} perm)\n  Special Hits:  ${live.specialTotal}  (${live.specialStraight}+${live.specialPerm})\n  Consol. Hits:  ${live.consolationTotal}  (${live.consolationStraight}+${live.consolationPerm})\n  Straight Wins: ${anyHits}\n  Permutation matches:     ${live.permTotal}   (was ${oldPerm})\n  Total Wins:    ${newTotal}   (was ${oldTotal})\n\nStored counters now match the dashboard.`);
   render();
 }
 
-// v4.19 ONE-TIME automatic archive seed. Deliberately no live website scraping.
-// Existing complete draw boards, checked prediction history and P&L are left untouched.
-// If the browser has limited localStorage, prefer 2,000, then 1,500, then 1,000.
-let archiveSyncStatus='Not checked';
-function archiveMergedOperators(limit){
-  let added=0,repaired=0,conflicts=0;
-  const proposed=operators.map(op=>{
-    const byDate=new Map((op.draws||[]).map(d=>[d.date,d]));
-    for(const row of (BUNDLED_DRAW_HISTORY[op.name]||[]).slice(0,limit)){
-      const save
+function saveDraw(){
+  const date=document.getElementById('mDate').value;
+  const day=document.getElementById('mDay').value;
+  con
