@@ -1,1 +1,112 @@
-{"schema":1,"source":"https://4dlivetoday.com","attribution":"Results from 4dlivetoday.com, compiled from official operator sites.","draws":[]}
+{
+  "schema": 1,
+  "source": "https://4dlivetoday.com",
+  "attribution": "Results from 4dlivetoday.com, compiled from official operator sites.",
+  "draws": [
+    {
+      "operator": "TOTO",
+      "date": "2026-11-04",
+      "top3": [
+        "5833",
+        "5984",
+        "0356"
+      ],
+      "special": [
+        "0578",
+        "2426",
+        "9887",
+        "5889",
+        "9637",
+        "4090",
+        "0937",
+        "1970",
+        "7653",
+        "2467"
+      ],
+      "consolation": [
+        "8791",
+        "1469",
+        "2452",
+        "7951",
+        "0245",
+        "8645",
+        "9592",
+        "6185",
+        "9805",
+        "0959"
+      ],
+      "source": "4dlivetoday.com",
+      "status": "checked"
+    },
+    {
+      "operator": "MAGNUM",
+      "date": "2026-11-04",
+      "top3": [
+        "1588",
+        "2307",
+        "6929"
+      ],
+      "special": [
+        "0215",
+        "6479",
+        "5583",
+        "4580",
+        "2038",
+        "4464",
+        "7166",
+        "1891",
+        "8054",
+        "0798"
+      ],
+      "consolation": [
+        "8562",
+        "4320",
+        "1725",
+        "1824",
+        "4042",
+        "7029",
+        "1902",
+        "7313",
+        "2695",
+        "5719"
+      ],
+      "source": "4dlivetoday.com",
+      "status": "checked"
+    },
+    {
+      "operator": "DAMACAI",
+      "date": "2026-11-04",
+      "top3": [
+        "2734",
+        "7119",
+        "0579"
+      ],
+      "special": [
+        "7505",
+        "5422",
+        "8799",
+        "2756",
+        "5584",
+        "6489",
+        "1240",
+        "1423",
+        "2970",
+        "1740"
+      ],
+      "consolation": [
+        "5306",
+        "2349",
+        "3733",
+        "4470",
+        "1756",
+        "4844",
+        "7671",
+        "1460",
+        "9103",
+        "5614"
+      ],
+      "source": "4dlivetoday.com",
+      "status": "checked"
+    }
+  ]
+}
