@@ -1,9 +1,9 @@
 <!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>BEAST MODE 4D — Evaluation Lab v4.25</title>
+<title>BEAST MODE 4D — Evaluation Lab v4.25.1</title>
 <style>:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#0c101a;color:#e9eef7}body{max-width:980px;margin:auto;padding:18px}h1{color:#f6b84b}h2{font-size:1.2rem}section{background:#171e2b;border:1px solid #394154;border-radius:14px;padding:16px;margin:15px 0}input,select,button{background:#202c3f;color:white;border:1px solid #53647b;border-radius:8px;padding:10px;margin:4px;max-width:100%}button{background:#b44431;cursor:pointer}table{border-collapse:collapse;width:100%;font-size:12px}td,th{border-bottom:1px solid #394154;padding:7px;text-align:left}small,.muted{color:#b3c0d1}.scroll{overflow:auto}label{display:inline-block;margin:4px}strong{color:#ffce73}</style>
 <h1>🐉 BEAST MODE 4D — Evaluation Lab v4.25</h1><p><a href="./" style="color:#f6b84b">← Return to BEAST MODE</a></p>
 <section><h2>1 · Import your BEAST MODE backup</h2><p class="muted">Use the JSON backup exported from the Data tab. This lab reads it locally in your browser; it does not upload your data.</p><input id="file" type="file" accept=".json,application/json"><div id="status" role="status"></div></section>
-<section><h2>2 · Historical prediction evaluation</h2><p class="muted">Only predictions recorded before their target draw are evaluated. Permutations are observations, not confirmed ticket wins. Cross-operator results are shown separately. The random expectation assumes independent uniformly random four-digit outcomes; real draw rules may differ.</p>
+<section><h2>2 · Historical prediction evaluation</h2><p class="muted">Predictions recorded before the target calendar day are pre-day verifiable. Same-day entries are evaluated provisionally because the backup does not establish a draw cutoff. Permutations are observations, not confirmed ticket wins. Cross-operator results are shown separately. The random expectation assumes independent uniformly random four-digit outcomes; real draw rules may differ.</p>
 <div id="summary">Import a backup to calculate the results.</div><div class="scroll"><table><thead><tr><th>Mode</th><th>Eligible entries</th><th>Picks</th><th>Exact</th><th>Permutations</th><th>Cross-op permutations</th><th>Expected exact*</th></tr></thead><tbody id="modes"></tbody></table></div>
 <small>*Approximate expected exact matches = picks × 23 / 10,000 for a complete 23-number draw, assuming no duplicate winning numbers. Modes with different candidate counts cannot be fairly compared using raw hit totals.</small></section>
 <section><h2>3 · Consensus study</h2><p class="muted">Counts how often different modes independently proposed the same four-digit number for the same operator and target date. Consensus does not imply increased probability.</p><div id="consensus">Import a backup first.</div></section>
@@ -21,18 +21,18 @@ function unpack(obj){let x=obj;if(x&&x.data&&typeof x.data==='object'&&!Array.is
 function analyze(){
  const {ops,history}=unpack(data),draws=new Map(),byDate=new Map();
  for(const op of ops){if(!op||!Array.isArray(op.draws))continue;for(const d of op.draws){if(!d||!d.date)continue;const nums=[...(d.top3||[]),...(d.special||[]),...(d.consolation||[])].filter(is4);if(nums.length!==23)continue;draws.set(op.name+'|'+d.date,nums);if(!byDate.has(d.date))byDate.set(d.date,[]);byDate.get(d.date).push({op:op.name,nums});}}
- const stats=new Map(),cons=new Map();let eligible=0,excluded=0;
+ const stats=new Map(),cons=new Map();let eligible=0,excluded=0,sameDay=0;
  for(const e of history){const date=e.targetDate,op=e.subOperator||e.operator;const picks=[...new Set((e.predictions||[]).filter(is4))];const when=Date.parse(e.generatedAt||'');const draw=draws.get(op+'|'+date);
  if(!date||!draw||!picks.length||!Number.isFinite(when)||when>=Date.parse(date+'T23:59:59+08:00')){excluded++;continue;}
  // GeneratedAt must be before the target date starts; same-day entries cannot be proven pre-draw from date-only data.
- if(when>=Date.parse(date+'T00:00:00+08:00')){excluded++;continue;}
+ if(when>=Date.parse(date+'T00:00:00+08:00'))sameDay++;
  eligible++;const mode=e.operator||'UNKNOWN';if(!stats.has(mode))stats.set(mode,{entries:0,picks:0,exact:0,perm:0,cross:0,expected:0});const st=stats.get(mode);st.entries++;st.picks+=picks.length;st.expected+=picks.length*23/10000;
  const exact=new Set(draw),perms=new Set(draw.map(sig));const others=(byDate.get(date)||[]).filter(d=>d.op!==op).flatMap(d=>d.nums),cross=new Set(others.map(sig));
  for(const n of picks){if(exact.has(n))st.exact++;else if(perms.has(sig(n)))st.perm++;else if(cross.has(sig(n)))st.cross++;
  const k=op+'|'+date+'|'+n;if(!cons.has(k))cons.set(k,{op,date,num:n,modes:new Set(),exact:exact.has(n),perm:perms.has(sig(n))});cons.get(k).modes.add(mode);}
  }
- $('summary').textContent='Complete stored draws: '+draws.size+' · Eligible pre-draw entries: '+eligible+' · Excluded/unverifiable entries: '+excluded+'. Strict timestamp filter prevents hindsight scoring.';
- $('modes').innerHTML=[...stats].sort((a,b)=>b[1].entries-a[1].entries).map(([name,s])=>'<tr><td>'+esc(name)+'</td><td>'+s.entries+'</td><td>'+s.picks+'</td><td>'+s.exact+'</td><td>'+s.perm+'</td><td>'+s.cross+'</td><td>'+s.expected.toFixed(2)+'</td></tr>').join('')||'<tr><td colspan="7">No verifiable pre-draw prediction snapshots found.</td></tr>';
+ $('summary').textContent='Complete stored draws: '+draws.size+' · Evaluated entries: '+eligible+' · Same-day (draw-time unverified): '+sameDay+' · Excluded: '+excluded+'. Same-day predictions are included provisionally; without a trustworthy draw cutoff, they cannot be certified pre-draw.';
+ $('modes').innerHTML=[...stats].sort((a,b)=>b[1].entries-a[1].entries).map(([name,s])=>'<tr><td>'+esc(name)+'</td><td>'+s.entries+'</td><td>'+s.picks+'</td><td>'+s.exact+'</td><td>'+s.perm+'</td><td>'+s.cross+'</td><td>'+s.expected.toFixed(2)+'</td></tr>').join('')||'<tr><td colspan="7">No eligible prediction snapshots found.</td></tr>';
  const overlap=[...cons.values()].filter(x=>x.modes.size>=2).sort((a,b)=>b.modes.size-a.modes.size).slice(0,30);
  $('consensus').innerHTML=overlap.length?'<div class="scroll"><table><tr><th>Target</th><th>Operator</th><th>Number</th><th>Modes</th><th>Observed match</th></tr>'+overlap.map(x=>'<tr><td>'+esc(x.date)+'</td><td>'+esc(x.op)+'</td><td>'+x.num+'</td><td>'+esc([...x.modes].join(', '))+'</td><td>'+(x.exact?'Exact':x.perm?'Permutation':'None')+'</td></tr>').join('')+'</table></div>':'No multi-mode overlaps among eligible entries.';
 }
