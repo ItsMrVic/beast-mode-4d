@@ -1,0 +1,35 @@
+name: Build v4.27 learning memory
+on:
+  push:
+    branches: [feature/v427-evaluation-memory]
+    paths: [scripts/apply-v427.py, .github/workflows/build-v427.yml]
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: python3 scripts/apply-v427.py
+      - name: Check both app scripts
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          for name in ('index.html','evaluation-lab.html'):
+            s=Path(name).read_text()
+            scripts=re.findall(r'<script(?:\s[^>]*)?>([\s\S]*?)</script>',s)
+            assert scripts,name
+            Path('/tmp/'+name+'.js').write_text('\n'.join(scripts))
+          PY
+          node --check /tmp/index.html.js
+          node --check /tmp/evaluation-lab.html.js
+      - name: Commit updated main app
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || (git commit -m "chore: show v4.27 in main app" && git pull --rebase origin feature/v427-evaluation-memory && git push)
