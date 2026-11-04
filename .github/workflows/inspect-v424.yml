@@ -1,0 +1,19 @@
+name: Inspect v4.24 manual entry
+on:
+  push:
+    branches: [feature/v4.24-manual-results]
+    paths: [scripts/inspect-v424.py, .github/workflows/inspect-v424.yml]
+permissions:
+  contents: write
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/inspect-v424.py
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/v424-inspect.txt
+          git commit -m "test: report integration anchors"
+          git push
