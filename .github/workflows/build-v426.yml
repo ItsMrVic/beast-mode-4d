@@ -1,0 +1,33 @@
+name: Build v4.26 main app label
+on:
+  push:
+    branches: [fix/v426-main-label-cache]
+    paths: [scripts/apply-v426.py, .github/workflows/build-v426.yml]
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: python3 scripts/apply-v426.py
+      - name: Check main inline scripts
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          s=Path('index.html').read_text()
+          scripts=re.findall(r'<script(?:\s[^>]*)?>([\s\S]*?)</script>',s)
+          assert scripts
+          Path('/tmp/beast-main.js').write_text('\n'.join(scripts))
+          PY
+          node --check /tmp/beast-main.js
+      - name: Commit updated main app
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || (git commit -m "fix: show v4.26 in main app" && git pull --rebase origin fix/v426-main-label-cache && git push)
