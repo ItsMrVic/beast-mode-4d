@@ -1,0 +1,35 @@
+name: Build v4.25 evaluation lab
+on:
+  push:
+    branches: [feature/v4.25-evaluation-lab]
+    paths: [scripts/apply-v425.py, .github/workflows/build-v425.yml]
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: python3 scripts/apply-v425.py
+      - name: Validate inline scripts
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          for path in ('index.html','evaluation-lab.html'):
+            s=Path(path).read_text()
+            scripts=re.findall(r'<script(?:\s[^>]*)?>([\s\S]*?)</script>',s)
+            assert scripts,path
+            Path('/tmp/'+path+'.js').write_text('\n'.join(scripts))
+          PY
+          node --check /tmp/index.html.js
+          node --check /tmp/evaluation-lab.html.js
+      - name: Commit HTML
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || (git commit -m "feat: link v4.25 Evaluation Lab" && git pull --rebase origin feature/v4.25-evaluation-lab && git push)
