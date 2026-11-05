@@ -9,8 +9,11 @@ function convert(ops){
   if(!/^\d{4}-\d{2}-\d{2}$/.test(d.date||'')){issues.push(operator+': invalid date');continue;}
   const numbers=[...(d.top3||[]),...(d.special||[]),...(d.consolation||[])].filter(n=>/^\d{4}$/.test(String(n)));
   if(!numbers.length){issues.push(operator+' '+d.date+': no valid numbers');continue;}
-  const type=d.drawType==='special'||d.isSpecial===true||d.day==='Tue'?'special':'regular';
-  rows.push({operator,date:d.date,type,numbers,source:'Existing local operator archive (verification not established)'});
+  const explicit=d.drawType==='special'||d.isSpecial===true;
+  const tentative=!explicit&&d.day==='Tue';
+  const type=explicit||tentative?'special':'regular';
+  const source=tentative?'Existing local archive; Tuesday inferred (unverified event type)':'Existing local operator archive (verification not established)';
+  rows.push({operator,date:d.date,type,numbers,source});
  }}
  return {rows,issues};
 }
