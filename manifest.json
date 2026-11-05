@@ -1,7 +1,7 @@
 {
-  "name": "BEAST MODE 4D v4.20 — Permutation Match History",
+  "name": "BEAST MODE 4D v4.30 — Weekly Intelligence",
   "short_name": "Beast 4D",
-  "description": "History shows date-specific exact and permuted four-digit result matches across Magnum, Toto and Da Ma Cai. Observations are not ticket-winning probabilities.",
+  "description": "Offline-capable Malaysian 4D history research, draw analysis, read-only weekly patterns and archived prediction history. Patterns are not a verified winning advantage.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
