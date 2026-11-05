@@ -1,0 +1,36 @@
+name: Build Cultural Edition v4.28
+on:
+  push:
+    branches: [feature/v428-cultural-themes]
+    paths: [scripts/apply-v428.py, .github/workflows/build-v428.yml]
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: python3 scripts/apply-v428.py
+      - name: Check JavaScript and theme integration
+        run: |
+          node --check cultural-theme.js
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          s=Path('index.html').read_text()
+          assert 'cultural-theme.js?v=428' in s
+          assert 'cultural-theme.css?v=428' in s
+          scripts=re.findall(r'<script(?:\s[^>]*)?>([\s\S]*?)</script>',s)
+          assert scripts
+          Path('/tmp/beast-main.js').write_text('\n'.join(scripts))
+          PY
+          node --check /tmp/beast-main.js
+      - name: Commit versioned HTML
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || (git commit -m "feat: install v4.28 Cultural Theme Engine" && git pull --rebase origin feature/v428-cultural-themes && git push)

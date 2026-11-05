@@ -1,0 +1,16 @@
+/* BEAST MODE Cultural Edition v4.28 — visual layer only */
+:root{--culture-bg:#120e0d;--culture-panel:#241916;--culture-accent:#e8b95f;--culture-accent2:#b83b30;--culture-pattern:rgba(232,185,95,.07)}
+html[data-culture]{background:var(--culture-bg)}
+html[data-culture] body{background-color:var(--culture-bg)!important;background-image:radial-gradient(circle at 92% 4%,var(--culture-pattern),transparent 32%),repeating-linear-gradient(135deg,transparent 0 36px,var(--culture-pattern) 37px 38px,transparent 39px 74px)!important}
+html[data-culture] button:not(#culture-launch):not(.culture-btn),html[data-culture] .btn{border-color:var(--culture-accent2)}
+#culture-launch{position:fixed;right:15px;bottom:82px;z-index:2147483600;background:var(--culture-panel);color:var(--culture-accent);border:2px solid var(--culture-accent);border-radius:99px;padding:11px 15px;box-shadow:0 5px 24px #0009;font:600 14px system-ui;cursor:pointer}
+#culture-dialog{position:fixed;inset:0;z-index:2147483601;background:#000b;display:none;align-items:center;justify-content:center;padding:15px;font-family:system-ui,sans-serif}
+#culture-dialog[data-open="true"]{display:flex}
+#culture-dialog .culture-panel{background:var(--culture-panel);color:#f4eee6;border:1px solid var(--culture-accent);border-radius:16px;padding:20px;width:min(100%,480px);max-height:85vh;overflow:auto;box-shadow:0 15px 45px #000a}
+#culture-dialog h2{color:var(--culture-accent);font-size:21px;margin:0 0 8px}
+#culture-dialog p{font-size:13px;line-height:1.55;color:#e4d6c6}
+#culture-dialog label{display:block;margin:12px 0 5px;font-size:14px}
+#culture-dialog select,#culture-dialog input{display:block;width:100%;box-sizing:border-box;padding:10px;border-radius:8px;background:#111923;color:#fff;border:1px solid #687284;font-size:15px}
+#culture-dialog .culture-btn{background:var(--culture-accent2);color:white;border:1px solid var(--culture-accent);border-radius:9px;padding:10px 13px;margin:6px 5px 0 0;cursor:pointer}
+#culture-dialog .culture-note{border-left:3px solid var(--culture-accent);padding-left:10px}
+@media(prefers-reduced-motion:reduce){#culture-dialog *,#culture-launch{animation:none!important;transition:none!important}}
