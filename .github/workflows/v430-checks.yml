@@ -1,0 +1,31 @@
+name: v4.30 Weekly Intelligence checks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [feature/v4.30-weekly-pattern-intelligence]
+
+permissions:
+  contents: read
+
+jobs:
+  weekly-unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JavaScript syntax
+        run: |
+          node --check weekly-intelligence.js
+          node --check weekly-bridge.js
+          node --check weekly-ui.js
+          node --check sw.js
+      - name: Date, draw and storage adapter tests
+        run: |
+          node weekly-intelligence.test.js
+          node weekly-bridge.test.js
