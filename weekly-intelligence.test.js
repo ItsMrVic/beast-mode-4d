@@ -21,4 +21,5 @@ const prediction=m.lockPrediction({snapshotId:after.id,targetDate:"2026-11-07",c
 assert.equal(prediction.candidates[0],"0070");
 assert.throws(()=>m.lockPrediction({snapshotId:after.id,targetDate:"2026-11-05",createdAt:"2026-11-05T16:00:00+08:00",candidates:["0070"]}));
 assert.throws(()=>m.lockPrediction({snapshotId:after.id,targetDate:"2026-11-07",createdAt:"2026-11-05T16:00:00+08:00",candidates:["0070","0070"]}));
+assert.throws(()=>m.snapshot("Magnum","2026-02-31","2026-03-01T00:00:00Z"),/Invalid date/);
 console.log("Weekly intelligence tests passed");
