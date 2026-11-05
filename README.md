@@ -1,6 +1,21 @@
 # BEAST MODE 4D v4.30 — Weekly Pattern Intelligence (design and implementation checklist)
 
-**Status: design only; no prediction engine or UI integration yet.** This feature is experimental and must not be described as identifying an operator's secret algorithm or increasing lottery winning odds.
+**Status: DEVELOPMENT BRANCH ONLY — read-only Weekly UI integrated; not yet released.** The v4.30 tab is connected to the existing local operator records. It does **not** alter the prediction engine, imply a secret lottery algorithm, or increase winning odds.
+
+### Implemented in this branch (2026-11-06)
+- `index.html` displays v4.30 and adds the Weekly research tab with read-only analysis across three operators.
+- `weekly-bridge.js` converts the existing stored draw format without changing `b4d_ops`, `b4d_hist`, statistics or settings. Regular-draw *Special prize tier* remains distinct from a **Special Draw event**; Tuesday-inferred events are labeled unverified.
+- `weekly-ui.js` shows cutoff-limited descriptive digit counts, latest observed Wednesday, later recorded draws, short-window shifts and tentative Special Draw dates. Its cutoff defaults to Malaysia calendar time.
+- Malaysia-time fixes also apply to the next draw countdown, P&L default date, backup filenames and prediction-history creation date, independent of the device timezone.
+- `sw.js` rotates the shell cache to `beast-4d-v430-shell` and pre-caches all three research scripts. The PWA manifest now reflects v4.30.
+- `node weekly-intelligence.test.js` and `node weekly-bridge.test.js` passed locally. An isolated headless Chromium test loaded 2,000 archived draws per operator, navigated Weekly/History/Predict, ran all three Weekly analyses, and verified that analysis did not mutate existing storage. Both Malaysia and US-West-Coast timezone simulations passed. HTTP browser navigation was blocked in the test environment, so **end-to-end service-worker updates and real Android PWA usage remain unverified**.
+
+### Not yet delivered
+- No adaptive predictions or method weight changes are enabled; these still require walk-forward evaluation against fixed and random baselines.
+- True publication-time cutoffs need timestamped verified draw provenance before rigorous same-day historical replay.
+- The GitHub pull request remains **draft**. No merge, live deployment or automatic installed-app update has occurred. Keep v4.29 in production until validation and approval.
+
+ This feature is experimental and must not be described as identifying an operator's secret algorithm or increasing lottery winning odds.
 
 ## Event-driven draw workflow
 
