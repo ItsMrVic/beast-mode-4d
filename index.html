@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v4.29 — Stability Update</title>
+<title>Beast Mode 4D v4.30 — Weekly Intelligence Research</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -198,7 +198,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Outfit
 
 /* Bottom Nav */
 .bnav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--bg2);border-top:1px solid var(--border);padding:6px 0 env(safe-area-inset-bottom,8px);z-index:60}
-.bnav button{flex:1;background:none;border:none;color:var(--dim2);font-size:9px;font-family:inherit;cursor:pointer;padding:6px 0 2px;display:flex;flex-direction:column;align-items:center;gap:3px;font-weight:600;letter-spacing:0.5px}
+.bnav button{flex:1;min-width:44px;background:none;border:none;color:var(--dim2);font-size:9px;font-family:inherit;cursor:pointer;padding:6px 0 2px;display:flex;flex-direction:column;align-items:center;gap:3px;font-weight:600;letter-spacing:0.5px}
 .bnav button.active{color:var(--text)}
 .bnav button .ico{font-size:20px}
 .bnav button.active .ico{filter:drop-shadow(0 0 6px rgba(255,68,68,0.5))}
@@ -414,7 +414,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v4.29</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v4.30</span>
       <div class="sub">Historical Analysis & Walk-Forward Research + DeepSeek</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
@@ -429,6 +429,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
 <div class="page" id="pgDashboard"></div>
 <div class="page" id="pgPnl"></div>
 <div class="page" id="pgData"></div>
+<div class="page" id="pgWeekly"></div>
 
 <!-- Bottom Nav -->
 <div class="bnav">
@@ -439,6 +440,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <button onclick="navTo('Dashboard')"><span class="ico">📊</span>Dashboard</button>
   <button onclick="navTo('Pnl')"><span class="ico">💰</span>P&L</button>
   <button onclick="navTo('Data')"><span class="ico">💾</span>Data</button>
+  <button onclick="navTo('Weekly')"><span class="ico">🐉</span>Weekly</button>
 </div>
 
 <!-- Add Draw Modal (Enhanced with Auto-Fetch) -->
@@ -1227,7 +1229,7 @@ function navTo(page){
   activeNav=page;
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('pg'+page).classList.add('active');
-  document.querySelectorAll('.bnav button').forEach((b,i)=>{b.classList.toggle('active',['Predict','History','Live','Oracle','Dashboard','Pnl','Data'][i]===page)});
+  document.querySelectorAll('.bnav button').forEach((b,i)=>{b.classList.toggle('active',['Predict','History','Live','Oracle','Dashboard','Pnl','Data','Weekly'][i]===page)});
   render();
 }
 
@@ -1279,6 +1281,10 @@ function render(){
   else if(activeNav==='Dashboard')renderDashboard();
   else if(activeNav==='Pnl')renderPnl();
   else if(activeNav==='Data')renderData();
+  else if(activeNav==='Weekly'){
+    if(window.BeastWeeklyUI)window.BeastWeeklyUI.render({operators,today:malaysiaDateISO()});
+    else document.getElementById('pgWeekly').textContent='Weekly module unavailable — reconnect and refresh.';
+  }
   // Learning badge
   const indexed=operators.reduce((sum,op)=>sum+op.draws.length,0);
   document.getElementById('learningBadge').innerHTML=`<span class="learning-badge" title="Verified and saved historical draws, not trained AI accuracy">${indexed.toLocaleString('en-MY')} draws</span>`;
@@ -10153,10 +10159,7 @@ function savePnlData(arr){
   }
 }
 
-function todayDateStr(){
-  const d = new Date();
-  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-}
+function todayDateStr(){return malaysiaDateISO();}
 
 function pnlDayOfWeek(dateStr){
   try {
@@ -10921,7 +10924,7 @@ function runBeast(){
         const historic=dated.find(d=>d.name===op.name).draws;
         lastResults[op.name]=masterFusion(historic,targetDay,dated,moduleWeights,getToggles(op.name));
         const picks=lastResults[op.name].predictions.slice(0,10).map(([n])=>n);
-        history.push({date:targetDate,targetDate,createdDate:new Date().toISOString().slice(0,10),generatedAt:new Date().toISOString(),operator:op.name,targetDay,
+        history.push({date:targetDate,targetDate,createdDate:malaysiaDateISO(),generatedAt:new Date().toISOString(),operator:op.name,targetDay,
           predictions:picks,checked:false,hits:[],permHits:0,modules:Object.keys(getToggles(op.name)).filter(k=>getToggles(op.name)[k]!==false),
           scoringVersion:'4.16'});
       });
@@ -11622,7 +11625,7 @@ function exportData(){
   const data={version:'4.23',exported:new Date().toISOString(),operators,history,moduleWeights,moduleToggles,moduleTogglesPerOp,stats,winsLog};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=`beast4d-backup-${new Date().toISOString().slice(0,10)}.json`;
+  const a=document.createElement('a');a.href=url;a.download=`beast4d-backup-${malaysiaDateISO()}.json`;
   document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
   toast('Data exported successfully!');
 }
@@ -11997,8 +12000,8 @@ function getCurrentShichen(){
 }
 
 function isDrawDay(date){
-  const d=new Date(date);
-  const dayOfWeek=d.getDay(); // 0=Sun, 3=Wed, 6=Sat
+  // date must be a UTC-midnight calendar marker for a Malaysian draw date.
+  const dayOfWeek=date.getUTCDay();
   const isoDate=date.toISOString().slice(0,10);
   if(dayOfWeek===0||dayOfWeek===3||dayOfWeek===6)return{isDraw:true,type:'regular'};
   if(SPECIAL_DRAWS_2026.includes(isoDate))return{isDraw:true,type:'special'};
@@ -12006,18 +12009,16 @@ function isDrawDay(date){
 }
 
 function getNextDraw(){
-  const now=new Date();
+  // A 19:00 MYT draw is 11:00 UTC. Device timezone must not change the result.
+  const now=new Date(),today=malaysiaDateISO();
   for(let i=0;i<14;i++){
-    const check=new Date(now);
-    check.setDate(now.getDate()+i);
+    const iso=new Date(Date.parse(today+'T00:00:00Z')+i*86400000).toISOString().slice(0,10);
+    const check=new Date(iso+'T00:00:00Z');
     const info=isDrawDay(check);
-    if(info.isDraw){
-      const drawTime=new Date(check);
-      drawTime.setHours(19,0,0,0); // 7PM
-      // If today is draw day but 7PM already passed, skip to next
-      if(i===0&&now>drawTime)continue;
-      return{date:drawTime,type:info.type,dayName:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][drawTime.getDay()]};
-    }
+    if(!info.isDraw)continue;
+    const drawTime=new Date(iso+'T11:00:00Z');
+    if(now>=drawTime)continue;
+    return{date:drawTime,type:info.type,dayName:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][check.getUTCDay()]};
   }
   return null;
 }
@@ -12103,9 +12104,8 @@ function formatDrawCountdown(){
   // v4.13: clarify "next draw later today" vs a future weekday.
   // Calendar-day comparison (not 24h window) so an afternoon view of a same-day
   // evening draw reads "TONIGHT" instead of the weekday, which looked like it skipped today.
-  const nowD=new Date();
-  const isToday=next.date.getFullYear()===nowD.getFullYear()&&next.date.getMonth()===nowD.getMonth()&&next.date.getDate()===nowD.getDate();
-  const drawTimeStr=next.date.toLocaleTimeString('en-MY',{hour:'numeric',minute:'2-digit',hour12:true});
+  const isToday=new Date(next.date.getTime()+8*3600000).toISOString().slice(0,10)===malaysiaDateISO();
+  const drawTimeStr=next.date.toLocaleTimeString('en-MY',{timeZone:'Asia/Kuala_Lumpur',hour:'numeric',minute:'2-digit',hour12:true});
   // Display label: TONIGHT when same calendar day, else the weekday name.
   const displayLabel=isToday?(next.type==='special'?'TONIGHT (Special)':'TONIGHT'):fullName;
   
@@ -12169,5 +12169,6 @@ render();
 // Refresh on launch; scheduled GitHub Actions refreshes the published feed.
 autoFetchResults(true);
 </script>
-<script src="./cultural-theme.js?v=428" defer></script><script src="./cultural-art.js?v=429" defer></script></body>
+<script src="./cultural-theme.js?v=428" defer></script><script src="./cultural-art.js?v=429" defer></script>
+<script src="./weekly-intelligence.js?v=430"></script><script src="./weekly-bridge.js?v=430"></script><script src="./weekly-ui.js?v=430"></script></body>
 </html>
