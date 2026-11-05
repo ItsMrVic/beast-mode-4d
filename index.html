@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v4.27 — Stability Update</title>
+<title>Beast Mode 4D v4.28 — Stability Update</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -407,14 +407,14 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   } catch(e) {}
 })();
 </script>
-</head>
+<link rel="stylesheet" href="./cultural-theme.css?v=428"></head>
 <body>
 
 <div class="header">
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v4.27</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v4.28</span>
       <div class="sub">Historical Analysis & Walk-Forward Research + DeepSeek</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
@@ -8311,7 +8311,7 @@ let liveResults=null;
 let liveDate=malaysiaDateISO();
 
 
-// v4.27: Manual verified-board entry is a local user action, never a provider claim.
+// v4.28: Manual verified-board entry is a local user action, never a provider claim.
 function toggleManualResults(){
   const panel=document.getElementById('manualResultsPanel');
   if(panel)panel.hidden=!panel.hidden;
@@ -8376,7 +8376,7 @@ function saveManualResults(){
 }
 
 function renderLive(){
-  // v4.27 evaluation lab: optional, isolated from the existing prediction engines.
+  // v4.28 evaluation lab: optional, isolated from the existing prediction engines.
 
   const pg=document.getElementById('pgLive');
   const opLogosSmall={
@@ -8395,7 +8395,7 @@ function renderLive(){
   h+=`<div style="font-size:10px;color:var(--dim2);margin-bottom:9px">Offline historical snapshot through ${BUNDLED_ASOF}. New draws may require a feed sync or manual entry.</div>`;
   h+=`<button class="btn btn-sm btn-outline" onclick="mergeBundledHistory()" style="width:100%;margin-bottom:14px">📥 Merge archive again (optional)</button>`;
   h+=manualResultsPanelHTML();
-  h+='<a href="./evaluation-lab.html" style="display:block;text-align:center;padding:12px;margin:8px 0 14px;border:1px solid #8b6a38;border-radius:9px;color:#ffce73;text-decoration:none;font-weight:700">📊 v4.27 Evaluation Lab · Backtest & Ticket Ledger</a>';
+  h+='<a href="./evaluation-lab.html" style="display:block;text-align:center;padding:12px;margin:8px 0 14px;border:1px solid #8b6a38;border-radius:9px;color:#ffce73;text-decoration:none;font-weight:700">📊 v4.28 Evaluation Lab · Backtest & Ticket Ledger</a>';
 
   if(!liveResults){
     h+=`<div style="text-align:center;padding:40px 0;color:var(--dim3)">
@@ -8682,7 +8682,7 @@ function oracleAnalyze(opDraws,targetDay){
       break;
     }
   }
-  return {targetDay:targetDay||null,dayDrawsUsed:dayDraws.length,hasDayWindow,windows:windowAnalysis,consensusPerPos,predictions,sumZone,coldPerPos,dodgeVariants,modelVersion:'v4.27',scoreIsProbability:false};
+  return {targetDay:targetDay||null,dayDrawsUsed:dayDraws.length,hasDayWindow,windows:windowAnalysis,consensusPerPos,predictions,sumZone,coldPerPos,dodgeVariants,modelVersion:'v4.28',scoreIsProbability:false};
 }
 
 // ============================================================
@@ -10888,7 +10888,7 @@ function nextTargetDateMYT(day){
 }
 
 
-// v4.27: Persist the actual outputs of each generated mode, not recomputed guesses.
+// v4.28: Persist the actual outputs of each generated mode, not recomputed guesses.
 // Existing entries are never overwritten; duplicate runs for the same mode/date/operator are idempotent.
 function saveModeHistory(mode,operator,targetDate,targetDay,numbers,meta={}){
   const predictions=[...new Set((Array.isArray(numbers)?numbers:[]).filter(is4D))].slice(0,15);
@@ -12167,5 +12167,5 @@ render();
 // Refresh on launch; scheduled GitHub Actions refreshes the published feed.
 autoFetchResults(true);
 </script>
-</body>
+<script src="./cultural-theme.js?v=428" defer></script></body>
 </html>
