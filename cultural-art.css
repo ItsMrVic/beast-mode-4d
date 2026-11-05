@@ -63,3 +63,17 @@ html[data-culture] #pgPredict .btn-fire{box-shadow:0 2px 18px color-mix(in srgb,
 @keyframes cult-star3{to{opacity:0;transform:translate(80px,125px) rotate(180deg)}}
 @media(max-width:400px){#culture-showcase{min-height:170px;margin:11px 12px 13px}.cult-hero-copy{margin:20px 0 15px 21px;width:64%}.cult-hero-title{font-size:23px}.cult-hero-sub{font-size:10px}.cult-character{width:111px}.cult-dragon{width:82%}}
 @media(prefers-reduced-motion:reduce){#culture-showcase *,#culture-run-effect,#culture-run-effect *{animation:none!important;transition:none!important}#culture-run-effect{display:none!important}}
+
+/* Illustrated accents on existing research cards. */
+html[data-culture] .header{border-bottom-color:color-mix(in srgb,var(--culture-accent),transparent 67%);box-shadow:0 5px 23px #0003}
+html[data-culture] .header h1{color:var(--culture-accent);text-shadow:0 0 14px color-mix(in srgb,var(--culture-accent),transparent 79%)}
+html[data-culture] #pgPredict .optab{border-bottom-color:color-mix(in srgb,var(--culture-accent2),transparent 25%);background-image:radial-gradient(circle at 90% 4%,color-mix(in srgb,var(--culture-accent),transparent 89%),transparent 60%)}
+html[data-culture] #pgPredict .optab.active{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--culture-accent),transparent 50%),0 3px 14px #0004}
+html[data-culture] #pgPredict .section-title{color:var(--culture-accent);text-shadow:0 0 8px #0005}
+html[data-culture] #pgPredict .draw-item{border-color:color-mix(in srgb,var(--culture-accent),transparent 79%)}
+html[data-culture] #pgPredict .card{border-color:color-mix(in srgb,var(--culture-accent),transparent 72%);background-image:radial-gradient(circle at 100% 0%,color-mix(in srgb,var(--culture-accent),transparent 94%),transparent 60%)}
+body:not(:has(#pgPredict.active)) #culture-showcase{display:none}
+.cult-welcome-flyer{position:absolute;z-index:4;left:-165px;bottom:13px;width:135px;opacity:0;pointer-events:none;filter:drop-shadow(0 0 11px color-mix(in srgb,var(--culture-accent),transparent 35%));animation:cult-welcome-flight 5.5s cubic-bezier(.2,.65,.5,.95) both}
+.cult-welcome-flyer svg{width:100%;height:auto}
+@keyframes cult-welcome-flight{0%{opacity:0;transform:translateX(0) translateY(25px) rotate(-7deg)}12%{opacity:.9}50%{transform:translateX(45vw) translateY(-30px) rotate(6deg);opacity:1}85%{opacity:.9}100%{opacity:0;transform:translateX(105vw) translateY(-15px) rotate(-4deg)}}
+@media(prefers-reduced-motion:reduce){.cult-welcome-flyer{display:none!important}}
