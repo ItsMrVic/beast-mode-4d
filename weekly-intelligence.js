@@ -5,7 +5,7 @@
 "use strict";
 const VERSION="4.30.0";
 function number4(value){const s=String(value);if(!/^\d{1,4}$/.test(s))throw Error("Invalid four-digit number");return s.padStart(4,"0");}
-function dateKey(value){if(typeof value!=="string"||!/^\d{4}-\d{2}-\d{2}$/.test(value)||Number.isNaN(Date.parse(value+"T00:00:00Z")))throw Error("Invalid date");return value;}
+function dateKey(value){if(typeof value!=="string"||!/^\d{4}-\d{2}-\d{2}$/.test(value))throw Error("Invalid date");const d=new Date(value+"T00:00:00Z");if(Number.isNaN(d.getTime())||d.toISOString().slice(0,10)!==value)throw Error("Invalid date");return value;}
 function normalizeDraw(raw){
  if(!raw||!["Magnum","Toto","Da Ma Cai"].includes(raw.operator))throw Error("Invalid operator");
  const date=dateKey(raw.date),type=raw.type==="special"?"special":raw.type==="regular"?"regular":null;
