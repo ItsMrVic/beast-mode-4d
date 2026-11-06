@@ -7,10 +7,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png">
-<title>Beast Mode 4D v4.29 — Stability Update</title>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+
+
+<title>Beast Mode 4D v4.30 — Integrated Cultural Edition</title>
+
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 
@@ -407,19 +407,83 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   } catch(e) {}
 })();
 </script>
-<link rel="stylesheet" href="./cultural-theme.css?v=428"><link rel="stylesheet" href="./cultural-art.css?v=429"></head>
+
+<style id="b4d-integrated-festival-style">
+/* Built-in cultural and motion artwork, works offline. Preserves user-selected base theme. */
+:root{--f-bright:#f9cd67;--f-aura:#a52227;--f-deep:#290c20}
+#b4d-festival-scene{position:relative;isolation:isolate;height:148px;margin:0 12px 0;overflow:hidden;border:1px solid rgba(250,201,108,.48);border-radius:0 0 20px 20px;background:linear-gradient(123deg,var(--f-deep),var(--f-aura) 65%,#8e511f);color:#fff9e9;box-shadow:0 8px 30px rgba(0,0,0,.16);z-index:1;transition:height .25s ease,border-radius .25s ease}
+#b4d-festival-scene:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 78% 8%,rgba(255,235,170,.24),transparent 45%),radial-gradient(circle at 18% 90%,rgba(255,188,58,.17),transparent 37%),repeating-linear-gradient(132deg,transparent 0 32px,rgba(252,197,97,.025) 33px 34px);pointer-events:none}
+#b4d-festival-scene:after{content:"";position:absolute;left:4%;right:4%;bottom:7px;border-bottom:1px solid rgba(255,225,150,.30);box-shadow:0 2px 9px rgba(255,223,133,.25);pointer-events:none}
+#b4d-festival-scene .b4d-fest-text{position:absolute;left:17px;top:14px;width:calc(100% - 172px);max-width:370px;z-index:3;text-shadow:0 2px 9px rgba(0,0,0,.38)}
+#b4d-festival-scene .b4d-fest-eyebrow{font-size:9px;text-transform:uppercase;letter-spacing:2.1px;color:#ffe7a4;font-weight:800;margin-bottom:4px}
+#b4d-festival-scene .b4d-fest-title{font-size:19px;letter-spacing:-.5px;font-weight:900;line-height:1.15;color:#fff6da}
+#b4d-festival-scene .b4d-fest-desc{font-size:10px;line-height:1.5;opacity:.93;max-width:180px;margin-top:6px}
+#b4d-festival-scene .b4d-fest-ctrl{position:absolute;bottom:13px;left:17px;display:flex;gap:6px;z-index:6}
+#b4d-festival-scene .b4d-fest-button{cursor:pointer;background:rgba(19,8,20,.47);color:#ffeab2;border:1px solid rgba(255,218,151,.42);padding:5px 9px;border-radius:30px;font-size:9px;font-family:inherit;font-weight:750;backdrop-filter:blur(6px)}
+#b4d-festival-scene .b4d-fest-button:focus-visible{outline:2px solid #ffe095;outline-offset:2px}
+#b4d-festival-scene .b4d-fest-moon{position:absolute;border-radius:50%;width:90px;height:90px;right:82px;top:14px;background:radial-gradient(circle,#fff3cf 0,#f4c96e 40%,rgba(248,184,74,.18) 58%,transparent 72%);opacity:.40;filter:blur(3px)}
+#b4d-festival-scene .b4d-fest-landscape{position:absolute;inset:0;pointer-events:none;opacity:.50}
+#b4d-festival-scene .b4d-fest-lantern{position:absolute;top:-9px;left:12%;height:70px;width:45px;transform-origin:top center;animation:b4d-lantern-swing 4.8s ease-in-out infinite alternate;z-index:2}
+#b4d-festival-scene .b4d-fest-lantern.two{left:auto;right:4%;height:61px;width:40px;animation-delay:-1.9s}
+#b4d-festival-scene .b4d-fest-dragon{position:absolute;right:66px;top:48px;width:105px;height:71px;z-index:3;filter:drop-shadow(0 7px 7px rgba(37,2,0,.32));animation:b4d-dragon-fly 6.5s ease-in-out infinite}
+#b4d-festival-scene .b4d-fest-caishen{position:absolute;right:3px;bottom:2px;width:104px;height:124px;z-index:4;filter:drop-shadow(0 7px 5px rgba(20,0,0,.33));animation:b4d-caishen-float 3.5s ease-in-out infinite}
+#b4d-festival-scene .b4d-fest-glint{position:absolute;font-size:13px;color:#fff2b9;z-index:2;opacity:.8;text-shadow:0 0 9px #ffe37e;animation:b4d-glint 3.5s ease-in-out infinite}
+#b4d-festival-scene .b4d-fest-glint.a{right:45%;top:16%}
+#b4d-festival-scene .b4d-fest-glint.b{right:9%;top:23%;animation-delay:-1.2s}
+#b4d-festival-scene .b4d-fest-glint.c{right:39%;bottom:21%;animation-delay:-2.4s}
+#b4d-festival-scene .b4d-fest-float{position:absolute;left:0;top:0;pointer-events:none;z-index:8;font-size:23px;filter:drop-shadow(0 2px 4px #4b1b1b);animation:b4d-fortune-burst 1500ms cubic-bezier(.20,.68,.2,1) both;--dx:0px;--dy:-90px}
+#b4d-festival-scene.b4d-fest-collapsed{height:54px;border-radius:0 0 15px 15px}
+#b4d-festival-scene.b4d-fest-collapsed .b4d-fest-desc,#b4d-festival-scene.b4d-fest-collapsed .b4d-fest-ctrl,#b4d-festival-scene.b4d-fest-collapsed .b4d-fest-lantern{display:none}
+#b4d-festival-scene.b4d-fest-collapsed .b4d-fest-title{font-size:14px}
+#b4d-festival-scene.b4d-fest-collapsed .b4d-fest-text{top:9px}
+#b4d-festival-scene.b4d-fest-collapsed .b4d-fest-dragon{width:80px;height:52px;top:1px;right:74px}
+#b4d-festival-scene.b4d-fest-collapsed .b4d-fest-caishen{width:57px;height:69px;bottom:-12px}
+#b4d-festival-scene[data-motion="off"] *,#b4d-festival-scene[data-motion="off"] *:before{animation:none!important;transition:none!important}
+body[data-festival="deepavali"]{--f-deep:#230d3d;--f-aura:#83325c;--f-bright:#ffb452}
+body[data-festival="raya"]{--f-deep:#073c37;--f-aura:#178970;--f-bright:#c5edbf}
+body[data-festival="cny"]{--f-deep:#390b1a;--f-aura:#a71b27;--f-bright:#ffce6e}
+body[data-festival="merdeka"],body[data-festival="malaysiaday"]{--f-deep:#061c42;--f-aura:#3356a2;--f-bright:#ffcf3a}
+body[data-festival="christmas"]{--f-deep:#103d3c;--f-aura:#126c53;--f-bright:#f6c660}
+body[data-festival="chinese"]{--f-deep:#3a0e1b;--f-aura:#8e242c;--f-bright:#ffd06e}
+body[data-festival="deepavali"] .header{background:linear-gradient(180deg,rgba(149,67,133,.15),transparent)}
+body[data-festival="raya"] .header{background:linear-gradient(180deg,rgba(38,153,118,.15),transparent)}
+body[data-festival="cny"] .header,body[data-festival="chinese"] .header{background:linear-gradient(180deg,rgba(183,80,33,.12),transparent)}
+body[data-festival="merdeka"] .header,body[data-festival="malaysiaday"] .header{background:linear-gradient(180deg,rgba(58,102,177,.16),transparent)}
+body[data-festival="christmas"] .header{background:linear-gradient(180deg,rgba(29,137,87,.13),transparent)}
+@keyframes b4d-dragon-fly{0%,100%{transform:translate(0,0) rotate(-2deg)}50%{transform:translate(-18px,-8px) rotate(3deg)}}
+@keyframes b4d-caishen-float{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-8px) rotate(2deg)}}
+@keyframes b4d-lantern-swing{from{transform:rotate(-8deg)}to{transform:rotate(7deg)}}
+@keyframes b4d-glint{0%,100%{opacity:.15;transform:scale(.5)}50%{opacity:1;transform:scale(1.45)}}
+@keyframes b4d-fortune-burst{0%{opacity:0;transform:translate3d(0,0,0) scale(.5) rotate(0)}18%{opacity:1}100%{opacity:0;transform:translate3d(var(--dx),var(--dy),0) scale(1.2) rotate(55deg)}}
+#pgWeekly .wk-title small{white-space:nowrap;font-size:8px!important;letter-spacing:0;display:inline-block} .header .sub{letter-spacing:1.1px;line-height:1.45}
+@media (max-width:370px){#b4d-festival-scene .b4d-fest-title{font-size:17px}#b4d-festival-scene .b4d-fest-desc{font-size:9px;max-width:175px}#b4d-festival-scene .b4d-fest-dragon{width:93px;right:59px}#b4d-festival-scene .b4d-fest-caishen{width:96px;right:-6px}}
+@media (prefers-reduced-motion:reduce){#b4d-festival-scene *,#b4d-festival-scene *:before{animation:none!important;transition:none!important}}
+</style>
+
+</head>
 <body>
 
 <div class="header">
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v4.29</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v4.30</span>
       <div class="sub">Historical Analysis & Walk-Forward Research + DeepSeek</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
   </div>
 </div>
+
+
+<!-- v4.30 Integrated Cultural Edition: these vectors and animations are fully embedded -->
+<section id="b4d-festival-scene" data-motion="on" aria-label="Seasonal Malaysian celebration artwork">
+  <div class="b4d-fest-landscape"><svg viewBox="0 0 580 160" preserveAspectRatio="none" width="100%" height="100%" aria-hidden="true"><path d="M0 130Q80 85 152 128T306 126T580 120V160H0Z" fill="#f5b85e" opacity=".16"/><path d="M0 144Q98 109 186 145T375 139T580 138V160H0Z" fill="#fbe2aa" opacity=".2"/><g fill="none" stroke="#fff1bb" stroke-width="2" opacity=".4"><path d="M125 109q12-9 27 0q6-12 24-8q14 8 33 0"/><path d="M380 37q11-8 25 0q9-11 23-5q12 8 23 0"/></g></svg></div><div class="b4d-fest-moon" aria-hidden="true"></div>
+  <div class="b4d-fest-lantern"><svg viewBox="0 0 50 84" aria-hidden="true" width="100%" height="100%"><path d="M25 0 V17" stroke="#f8d47c" stroke-width="2"/><ellipse cx="25" cy="42" rx="17" ry="26" fill="#b8192d" stroke="#f9cf67" stroke-width="2"/><path d="M13 20Q25 15 37 20 M10 63Q25 68 40 63 M25 16V68 M17 18Q11 42 17 65 M33 18Q39 42 33 65" fill="none" stroke="#f3ad53" stroke-width="2"/><path d="M25 68v13" stroke="#ffd47b" stroke-width="2"/><circle cx="25" cy="42" r="9" fill="#df3b42" opacity=".7"/><text x="25" y="46" fill="#ffefb5" font-size="11" text-anchor="middle" font-family="serif">福</text></svg></div><div class="b4d-fest-lantern two"><svg viewBox="0 0 50 84" aria-hidden="true" width="100%" height="100%"><path d="M25 0 V17" stroke="#f8d47c" stroke-width="2"/><ellipse cx="25" cy="42" rx="17" ry="26" fill="#b8192d" stroke="#f9cf67" stroke-width="2"/><path d="M13 20Q25 15 37 20 M10 63Q25 68 40 63 M25 16V68 M17 18Q11 42 17 65 M33 18Q39 42 33 65" fill="none" stroke="#f3ad53" stroke-width="2"/><path d="M25 68v13" stroke="#ffd47b" stroke-width="2"/><circle cx="25" cy="42" r="9" fill="#df3b42" opacity=".7"/><text x="25" y="46" fill="#ffefb5" font-size="11" text-anchor="middle" font-family="serif">福</text></svg></div>
+  <div class="b4d-fest-dragon"><svg viewBox="0 0 166 108" aria-hidden="true" width="100%" height="100%"><defs><linearGradient id="b4d-dragon-grad" x1="0" y1="0" x2=".9" y2="1"><stop stop-color="#ffe38c"/><stop offset=".53" stop-color="#f3b93c"/><stop offset="1" stop-color="#bb731c"/></linearGradient></defs><path d="M13 75C-3 36 39 32 56 56S91 91 119 52" fill="none" stroke="#f5c955" stroke-width="19" stroke-linecap="round"/><path d="M13 75C-3 36 39 32 56 56S91 91 119 52" fill="none" stroke="#b67a19" stroke-width="2" stroke-dasharray="5 6"/><path d="M20 52L4 25 34 39 43 24 59 51" fill="#fbdc7f" stroke="#a9621a" stroke-width="2"/><path d="M77 79l-6 20 25-12 10 16 5-34" fill="#e4a633" stroke="#a35c20" stroke-width="2"/><path d="M111 60Q109 22 139 25Q157 25 160 45Q160 57 143 60L135 78L121 65L106 72Z" fill="url(#b4d-dragon-grad)" stroke="#8e5114" stroke-width="3"/><path d="M123 27l-5-20 16 15m6 2L157 4l-5 26" fill="#fbe9b0" stroke="#8e5114" stroke-width="2"/><circle cx="143" cy="41" r="4.5" fill="#2e1b14"/><circle cx="144" cy="40" r="1.4" fill="#fff"/><path d="M143 55q15 9 21-2m-29 8l1 17m8-17 10 10" fill="none" stroke="#fff0c1" stroke-width="2" stroke-linecap="round"/><path d="M152 50l11-4" stroke="#ba451b" stroke-width="3"/></svg></div><div class="b4d-fest-caishen"><svg viewBox="0 0 118 151" aria-hidden="true" width="100%" height="100%"><defs><linearGradient id="b4d-robe" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e72a37"/><stop offset="1" stop-color="#801627"/></linearGradient><linearGradient id="b4d-ingot" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff3b0"/><stop offset="1" stop-color="#ecad34"/></linearGradient></defs><ellipse cx="58" cy="145" rx="46" ry="5" fill="#2c0c0a" opacity=".26"/><path d="M42 70Q18 83 12 130L21 142H96L107 129Q98 87 78 70Z" fill="url(#b4d-robe)" stroke="#ffcf74" stroke-width="3"/><path d="M60 74Q48 96 56 141H67Q71 97 60 74Z" fill="#f6b335" opacity=".75"/><path d="M18 120Q4 114 6 101Q8 93 23 98L31 117Z" fill="#e7bb92" stroke="#fbe3a4" stroke-width="2"/><path d="M99 120q17-8 12-19Q108 93 93 98L86 117Z" fill="#e7bb92" stroke="#fbe3a4" stroke-width="2"/><ellipse cx="59" cy="57" rx="31" ry="32" fill="#f1c297" stroke="#e5a774" stroke-width="2"/><ellipse cx="28" cy="55" rx="5" ry="8" fill="#e8b38d"/><ellipse cx="91" cy="55" rx="5" ry="8" fill="#e8b38d"/><path d="M26 38L26 19 43 19 50 5H68L75 19H92V39Z" fill="#22131d" stroke="#f4c859" stroke-width="3"/><path d="M50 5h18v24H50Z" fill="#bf2e30" stroke="#f5cc68" stroke-width="2"/><circle cx="59" cy="17" r="6" fill="#ffd77b"/><path d="M36 50q7-5 14 0m17 0q8-5 14 0" fill="none" stroke="#331b1b" stroke-width="3" stroke-linecap="round"/><path d="M40 54v3m39-3v3" stroke="#311b14" stroke-width="3"/><path d="M51 70q9 9 18 0" fill="none" stroke="#963b36" stroke-width="3" stroke-linecap="round"/><path d="M46 76q13 24 26 0" fill="#f8f7ee" stroke="#b49a7d" stroke-width="1.5"/><path d="M45 81q3 11 14 14Q69 91 73 81" fill="#f3e9d0" stroke="#ae9570" stroke-width="1"/><path d="M45 105Q58 98 72 105L87 119Q63 131 32 119Z" fill="url(#b4d-ingot)" stroke="#f8de78" stroke-width="2"/><path d="M35 117q25 10 50 0l-6 10q-20 8-39 0Z" fill="#dc9631" stroke="#fddf78" stroke-width="1.5"/><ellipse cx="59" cy="115" rx="11" ry="3" fill="#ffe99e" opacity=".8"/><path d="M29 137v-19m59 19v-19" stroke="#ffc464" stroke-width="3"/><path d="M30 137h12m45 0H74" stroke="#f7c658" stroke-width="4"/></svg></div>
+  <span class="b4d-fest-glint a" aria-hidden="true">✦</span><span class="b4d-fest-glint b" aria-hidden="true">✧</span><span class="b4d-fest-glint c" aria-hidden="true">✦</span>
+  <div class="b4d-fest-text"><div class="b4d-fest-eyebrow" id="b4d-fest-kicker">BEAST MODE • FESTIVE EDITION</div><div class="b4d-fest-title" id="b4d-fest-title">Fortune & Prosperity</div><div class="b4d-fest-desc" id="b4d-fest-desc">Animated celebration artwork, with seasonal Malaysian festival themes.</div></div>
+  <div class="b4d-fest-ctrl"><button type="button" id="b4d-fest-mode" class="b4d-fest-button" aria-label="Toggle automatic festival artwork">🎊 Auto festivals: On</button><button type="button" id="b4d-fest-motion" class="b4d-fest-button" aria-label="Toggle decorative animations">✨ Motion: On</button></div>
+</section>
 
 <!-- Pages -->
 <div class="page active" id="pgPredict"></div>
@@ -429,6 +493,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
 <div class="page" id="pgDashboard"></div>
 <div class="page" id="pgPnl"></div>
 <div class="page" id="pgData"></div>
+<div class="page" id="pgWeekly"></div>
 
 <!-- Bottom Nav -->
 <div class="bnav">
@@ -439,6 +504,7 @@ select,input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var
   <button onclick="navTo('Dashboard')"><span class="ico">📊</span>Dashboard</button>
   <button onclick="navTo('Pnl')"><span class="ico">💰</span>P&L</button>
   <button onclick="navTo('Data')"><span class="ico">💾</span>Data</button>
+<button onclick="navTo('Weekly')"><span class="ico">🐉</span>Weekly</button>
 </div>
 
 <!-- Add Draw Modal (Enhanced with Auto-Fetch) -->
@@ -1227,8 +1293,8 @@ function navTo(page){
   activeNav=page;
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('pg'+page).classList.add('active');
-  document.querySelectorAll('.bnav button').forEach((b,i)=>{b.classList.toggle('active',['Predict','History','Live','Oracle','Dashboard','Pnl','Data'][i]===page)});
-  render();
+  document.querySelectorAll('.bnav button').forEach((b,i)=>{b.classList.toggle('active',['Predict','History','Live','Oracle','Dashboard','Pnl','Data','Weekly'][i]===page)});
+  if(page==='Weekly')renderWeeklyIntelligence();else render();
 }
 
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
@@ -2031,7 +2097,7 @@ function renderHistory(){
             <div style="display:flex;align-items:center;gap:6px">
               ${isSniper?`<span style="font-size:10px;color:#ff6633;font-weight:800">🎯 RESEARCH MATCH</span>`:isOracleSniper?`<span style="font-size:10px;color:#ff3366;font-weight:800">🎯 ORACLE RESEARCH MATCH</span>`:isOracle?`<span style="font-size:10px;color:#c084fc;font-weight:800">🔮 ORACLE</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isDodge?`<span style="font-size:10px;color:#ef4444;font-weight:800">🎰 DODGE</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isCrossOp?`<span style="font-size:10px;color:#f59e0b;font-weight:800">🔀 CROSS-OP</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isHotHand?`<span style="font-size:10px;color:#fb923c;font-weight:800">🔥 HOT HAND</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>${entry.hotHandMeta?.lane?`<span style="font-size:7px;background:#fb923c22;color:#fb923c;padding:1px 4px;border-radius:3px">${entry.hotHandMeta.lane}</span>`:''}`:isFusion?`<span style="font-size:10px;color:#eab308;font-weight:800">💎 FUSION</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isDeepLearn?`<span style="font-size:10px;color:#06b6d4;font-weight:800">🧠 DEEP LEARN</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:isControl?`<span style="font-size:10px;color:#64748b;font-weight:800">🎲 CONTROL</span><span style="font-size:8px;color:${opC[entry.subOperator]||'#888'};font-weight:700">${entry.subOperator||''}</span>`:`<span style="font-size:10px;font-weight:700;color:${opColor}">${entry.operator}</span>`}
               <span style="font-size:8px;background:var(--bg2);color:var(--dim2);padding:2px 6px;border-radius:3px">${entry.targetDay||''} · draw ${entry.targetDate||'unknown'}</span>
-              ${entry.generatedAt?`<span style="font-size:7px;color:var(--dim3);font-style:italic" title="${entry.generatedAt}">🕐 ${(()=>{const d=new Date(entry.generatedAt);return d.toLocaleDateString('en-MY',{month:'short',day:'numeric'})+' '+d.toLocaleTimeString('en-MY',{hour:'2-digit',minute:'2-digit',hour12:true});})()}</span>`:''}
+              ${entry.generatedAt?`<span style="font-size:7px;color:var(--dim3);font-style:italic" title="${entry.generatedAt}">🕐 ${(()=>{const d=new Date(entry.generatedAt);return d.toLocaleDateString('en-MY',{timeZone:'Asia/Kuala_Lumpur',month:'short',day:'numeric'})+' '+d.toLocaleTimeString('en-MY',{timeZone:'Asia/Kuala_Lumpur',hour:'2-digit',minute:'2-digit',hour12:true});})()}</span>`:''}
             </div>
             ${hasWin?`<div style="display:flex;align-items:center;gap:6px"><span style="font-size:9px;color:var(--green);font-weight:700">🏆 WIN</span><label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:9px;color:#ef4444" onclick="event.stopPropagation()"><input type="checkbox" ${entry.__delSel?'checked':''} onchange="toggleDeleteSelection('${entry.id}')" style="cursor:pointer;accent-color:#ef4444">🗑️</label></div>`:entry.checked?`<div style="display:flex;align-items:center;gap:6px"><span style="font-size:9px;color:var(--dim3)">✅ No recorded exact hit</span><label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:9px;color:#ef4444" onclick="event.stopPropagation()"><input type="checkbox" ${entry.__delSel?'checked':''} onchange="toggleDeleteSelection('${entry.id}')" style="cursor:pointer;accent-color:#ef4444">🗑️</label></div>`:`<div style="display:flex;align-items:center;gap:6px"><span style="font-size:9px;color:${observedMatch?'#f59e0b':'#a78bfa'}">${observedMatch?'🧲 Result match · not checked':'⏳ Not checked'}</span><label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:9px;color:#ef4444" onclick="event.stopPropagation()"><input type="checkbox" ${entry.__delSel?'checked':''} onchange="toggleDeleteSelection('${entry.id}')" style="cursor:pointer;accent-color:#ef4444">🗑️</label></div>`}
           </div>
@@ -8301,8 +8367,8 @@ function refreshBundledHistory(){
   alert('Not enough browser storage; your existing data has not been replaced. Export a backup and free storage.');
 }
 
-function malaysiaDateISO(){
-  const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+function malaysiaDateISO(input=new Date()){
+  const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(input);
   const get=t=>parts.find(p=>p.type===t).value;
   return `${get('year')}-${get('month')}-${get('day')}`;
 }
@@ -10921,7 +10987,7 @@ function runBeast(){
         const historic=dated.find(d=>d.name===op.name).draws;
         lastResults[op.name]=masterFusion(historic,targetDay,dated,moduleWeights,getToggles(op.name));
         const picks=lastResults[op.name].predictions.slice(0,10).map(([n])=>n);
-        history.push({date:targetDate,targetDate,createdDate:new Date().toISOString().slice(0,10),generatedAt:new Date().toISOString(),operator:op.name,targetDay,
+        history.push({date:targetDate,targetDate,createdDate:malaysiaDateISO(),generatedAt:new Date().toISOString(),operator:op.name,targetDay,
           predictions:picks,checked:false,hits:[],permHits:0,modules:Object.keys(getToggles(op.name)).filter(k=>getToggles(op.name)[k]!==false),
           scoringVersion:'4.16'});
       });
@@ -10967,53 +11033,81 @@ function parseNumbersFromHTML(html){
 
 function formatDateForFetch(dateStr){
   // Convert 2026-04-08 to various formats needed by sites
-  const d=new Date(dateStr);
-  const dd=String(d.getDate()).padStart(2,'0');
-  const mm=String(d.getMonth()+1).padStart(2,'0');
-  const yyyy=d.getFullYear();
+  const d=new Date(dateStr+'T00:00:00Z');
+  const dd=String(d.getUTCDate()).padStart(2,'0');
+  const mm=String(d.getUTCMonth()+1).padStart(2,'0');
+  const yyyy=d.getUTCFullYear();
   return{ddmmyyyy:`${dd}-${mm}-${yyyy}`,iso:dateStr,display:`${dd}/${mm}/${yyyy}`};
 }
 
+const VERIFIED_CACHE_KEY='b4d_verified_feed_v430';
+function vettedVerifiedBoard(row){
+  if(!row||row.status!=='checked'||!['MAGNUM','TOTO','DAMACAI'].includes(row.operator)||
+     !/^\d{4}-\d{2}-\d{2}$/.test(row.date||'')||row.date>malaysiaDateISO())return null;
+  const draw={date:row.date,day:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(row.date+'T00:00:00Z').getUTCDay()],
+    top3:row.top3,special:row.special,consolation:row.consolation};
+  return validDraw(draw)&&isCompletePrizeBoard(draw)?{operator:row.operator,...draw}:null;
+}
+function applyVerifiedBoards(rows){
+  const proposed=operators.map(o=>({...o,draws:[...o.draws]}));
+  let added=0,conflicts=0,skipped=0,invalid=0;
+  for(const row of rows){
+    const checked=vettedVerifiedBoard(row);
+    if(!checked){invalid++;continue;}
+    const op=proposed.find(o=>o.name===checked.operator);
+    const existing=op.draws.find(d=>d.date===checked.date);
+    if(existing){
+      if(JSON.stringify([existing.top3,existing.special,existing.consolation])!==JSON.stringify([checked.top3,checked.special,checked.consolation]))conflicts++;
+      else skipped++;
+      continue;
+    }
+    const {operator,...draw}=checked;
+    op.draws.push(draw);added++;
+  }
+  if(added){
+    proposed.forEach(o=>o.draws.sort((a,b)=>b.date.localeCompare(a.date)));
+    // Keep the in-memory copy unchanged if storage exceeds the browser quota.
+    localStorage.setItem(KEYS.ops,JSON.stringify(proposed));
+    operators=proposed;
+  }
+  return {added,conflicts,skipped,invalid};
+}
 async function autoFetchResults(silent=false){
-  const el=document.getElementById('fetchStatus');
-  const btn=document.getElementById('fetchBtn');
+  const el=document.getElementById('fetchStatus'),btn=document.getElementById('fetchBtn');
   if(btn)btn.disabled=true;
+  let payload=null,offline=false,cachedAt=null;
   try{
-    const response=await fetch('./data/verified-results.json?t='+Date.now(),{cache:'no-store'});
-    if(!response.ok)throw Error('Verified-results feed unavailable (HTTP '+response.status+')');
-    const payload=await response.json();
-    if(payload.schema!==1||!Array.isArray(payload.draws))throw Error('Unexpected verified-results format');
-    const proposed=operators.map(o=>({...o,draws:[...o.draws]}));
-    let added=0,conflicts=0,skipped=0;
-    for(const row of payload.draws){
-      if(!row||row.status!=='checked'||!['MAGNUM','TOTO','DAMACAI'].includes(row.operator)||!/^\d{4}-\d{2}-\d{2}$/.test(row.date||'')||row.date>malaysiaDateISO())continue;
-      const draw={date:row.date,day:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(row.date+'T00:00:00Z').getUTCDay()],top3:row.top3,special:row.special,consolation:row.consolation};
-      if(!validDraw(draw)||!isCompletePrizeBoard(draw))continue;
-      const op=proposed.find(o=>o.name===row.operator);
-      const existing=op.draws.find(d=>d.date===draw.date);
-      if(existing){
-        if(JSON.stringify([existing.top3,existing.special,existing.consolation])!==JSON.stringify([draw.top3,draw.special,draw.consolation]))conflicts++;
-        else skipped++;
-        continue;
-      }
-      op.draws.push(draw);added++;
+    try{
+      // Only the project's checked-results feed can refresh the live cache.
+      const response=await fetch('./data/verified-results.json?t='+Date.now(),{cache:'no-store'});
+      if(!response.ok)throw Error('HTTP '+response.status);
+      const result=await response.json();
+      if(result.schema!==1||!Array.isArray(result.draws))throw Error('Unsupported feed schema');
+      payload=result;
+      // Cache a bounded set, preserving checked status and 4-digit strings.
+      const recent=result.draws.filter(r=>vettedVerifiedBoard(r)).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,240);
+      try{localStorage.setItem(VERIFIED_CACHE_KEY,JSON.stringify({cachedAt:new Date().toISOString(),schema:1,draws:recent}));}catch(e){console.warn('Verified feed cache unavailable',e);}
+    }catch(networkError){
+      offline=true;
+      try{
+        const previous=JSON.parse(localStorage.getItem(VERIFIED_CACHE_KEY)||'null');
+        if(previous?.schema===1&&Array.isArray(previous.draws)){
+          payload=previous;cachedAt=previous.cachedAt;
+        }
+      }catch(ignore){}
+      if(!payload)throw Error('Checked-results feed unavailable; offline archive remains available');
     }
-    if(added){
-      proposed.forEach(o=>o.draws.sort((a,b)=>b.date.localeCompare(a.date)));
-      // Commit a single validated snapshot; keep memory unchanged on quota failure.
-      localStorage.setItem(KEYS.ops,JSON.stringify(proposed));
-      operators=proposed;
-    }
-    const status='Verified feed: '+added+' new draws, '+skipped+' already stored, '+conflicts+' conflicts kept';
+    const {added,conflicts,skipped,invalid}=applyVerifiedBoards(payload.draws);
+    const status=(offline?'Offline cached feed':'Checked feed')+': '+added+' new, '+skipped+' saved, '+conflicts+' conflicts preserved'+(invalid?', '+invalid+' invalid skipped':'');
+    if(el)el.textContent=status+(offline?' · Last cache: '+(cachedAt?cachedAt.slice(0,10):'unknown'):'');
     try{localStorage.setItem('b4d_verified_sync_status',new Date().toISOString()+' — '+status);}catch(ignore){}
-    if(el)el.textContent=status+' · Source: 4dlivetoday.com';
     if(!silent)toast(status);
     if(added)render();
-    return {added,conflicts,skipped};
+    return{added,conflicts,skipped,invalid,offline};
   }catch(error){
-    if(el)el.textContent='Automatic sync unavailable: '+error.message;
-    if(!silent)toast('Results sync unavailable; saved history unchanged');
-    console.warn('Verified results sync failed',error);
+    if(el)el.textContent='Network feed unavailable; saved and bundled offline draws still work.';
+    if(!silent)toast('Saved draws available offline; live results not refreshed');
+    console.warn('Verified results sync skipped',error.message);
     return null;
   }finally{if(btn)btn.disabled=false;}
 }
@@ -11622,7 +11716,7 @@ function exportData(){
   const data={version:'4.23',exported:new Date().toISOString(),operators,history,moduleWeights,moduleToggles,moduleTogglesPerOp,stats,winsLog};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=`beast4d-backup-${new Date().toISOString().slice(0,10)}.json`;
+  const a=document.createElement('a');a.href=url;a.download=`beast4d-backup-${malaysiaDateISO()}.json`;
   document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
   toast('Data exported successfully!');
 }
@@ -11962,7 +12056,7 @@ const MANTRAS=[
 ];
 
 function getTodayMantra(){
-  const today=new Date().toDateString();
+  const today=malaysiaDateISO();
   // Seed by date string hash so it's stable through the day
   let hash=0;
   for(let i=0;i<today.length;i++)hash=((hash<<5)-hash)+today.charCodeAt(i);
@@ -11990,33 +12084,31 @@ const SHICHEN=[
 ];
 
 function getCurrentShichen(){
-  const h=new Date().getHours();
+  const h=Number(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',hour:'2-digit',hourCycle:'h23'}).format(new Date()));
   // 23-1 = 0, 1-3 = 1, etc.
   const idx=Math.floor(((h+1)%24)/2);
   return SHICHEN[idx];
 }
 
 function isDrawDay(date){
-  const d=new Date(date);
-  const dayOfWeek=d.getDay(); // 0=Sun, 3=Wed, 6=Sat
-  const isoDate=date.toISOString().slice(0,10);
-  if(dayOfWeek===0||dayOfWeek===3||dayOfWeek===6)return{isDraw:true,type:'regular'};
+  const isoDate=malaysiaDateISO(date);
+  const weekday=new Date(isoDate+'T00:00:00Z').getUTCDay();
+  if(weekday===0||weekday===3||weekday===6)return{isDraw:true,type:'regular'};
   if(SPECIAL_DRAWS_2026.includes(isoDate))return{isDraw:true,type:'special'};
   return{isDraw:false};
 }
-
 function getNextDraw(){
-  const now=new Date();
-  for(let i=0;i<14;i++){
-    const check=new Date(now);
-    check.setDate(now.getDate()+i);
-    const info=isDrawDay(check);
-    if(info.isDraw){
-      const drawTime=new Date(check);
-      drawTime.setHours(19,0,0,0); // 7PM
-      // If today is draw day but 7PM already passed, skip to next
-      if(i===0&&now>drawTime)continue;
-      return{date:drawTime,type:info.type,dayName:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][drawTime.getDay()]};
+  // 19:00 MYT corresponds to 11:00 UTC throughout the year (Malaysia has no DST).
+  const now=new Date(),today=malaysiaDateISO(now);
+  const day0=Date.parse(today+'T00:00:00Z');
+  for(let i=0;i<15;i++){
+    const calendar=new Date(day0+i*86400000);
+    const y=calendar.getUTCFullYear(),m=calendar.getUTCMonth(),d=calendar.getUTCDate();
+    const iso=calendar.toISOString().slice(0,10);
+    const actual=new Date(Date.UTC(y,m,d,11,0,0,0));
+    const info=isDrawDay(actual);
+    if(info.isDraw&&actual.getTime()>=now.getTime()){
+      return {date:actual,type:info.type,dayName:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][calendar.getUTCDay()]};
     }
   }
   return null;
@@ -12066,7 +12158,7 @@ function scheduleNextDrawNotification(){
         const emoji=next.type==='special'?'⭐':'🎰';
         const title=next.type==='special'?'⭐ SPECIAL Draw Reminder':'🎰 4D Draw Reminder';
         const body=r.label==='now'
-          ?`${emoji} Draw starting now! (${next.dayName} ${next.date.toLocaleDateString('en-MY',{day:'numeric',month:'short'})})`
+          ?`${emoji} Draw starting now! (${next.dayName} ${next.date.toLocaleDateString('en-MY',{timeZone:'Asia/Kuala_Lumpur',day:'numeric',month:'short'})})`
           :`${emoji} Draw in ${r.label}. Open Beast Mode 4D to run your predictions!`;
         try{
           new Notification(title,{body,icon:'icon-192.png',badge:'icon-192.png',tag:'b4d-draw-'+r.label,requireInteraction:r.label==='now'});
@@ -12103,9 +12195,8 @@ function formatDrawCountdown(){
   // v4.13: clarify "next draw later today" vs a future weekday.
   // Calendar-day comparison (not 24h window) so an afternoon view of a same-day
   // evening draw reads "TONIGHT" instead of the weekday, which looked like it skipped today.
-  const nowD=new Date();
-  const isToday=next.date.getFullYear()===nowD.getFullYear()&&next.date.getMonth()===nowD.getMonth()&&next.date.getDate()===nowD.getDate();
-  const drawTimeStr=next.date.toLocaleTimeString('en-MY',{hour:'numeric',minute:'2-digit',hour12:true});
+  const isToday=malaysiaDateISO(next.date)===malaysiaDateISO();
+  const drawTimeStr=next.date.toLocaleTimeString('en-MY',{timeZone:'Asia/Kuala_Lumpur',hour:'numeric',minute:'2-digit',hour12:true});
   // Display label: TONIGHT when same calendar day, else the weekday name.
   const displayLabel=isToday?(next.type==='special'?'TONIGHT (Special)':'TONIGHT'):fullName;
   
@@ -12169,5 +12260,248 @@ render();
 // Refresh on launch; scheduled GitHub Actions refreshes the published feed.
 autoFetchResults(true);
 </script>
-<script src="./cultural-theme.js?v=428" defer></script><script src="./cultural-art.js?v=429" defer></script></body>
+
+<style id="b4d-weekly-v430-style">
+/* Self-contained, accessible visual improvements; no missing remote assets */
+#pgWeekly .wk-hero{background:linear-gradient(120deg,rgba(125,27,28,.27),rgba(184,125,21,.14));border:1px solid rgba(218,165,32,.30);border-radius:16px;padding:16px;margin:12px 0 14px;position:relative;overflow:hidden}
+#pgWeekly .wk-hero:after{content:"龍";position:absolute;right:8px;top:-18px;font-size:90px;color:rgba(220,170,59,.09);font-weight:900;pointer-events:none}
+#pgWeekly .wk-title{font-size:18px;font-weight:850;color:var(--text);position:relative;z-index:1}
+#pgWeekly .wk-sub{font-size:11px;color:var(--dim2);line-height:1.7;margin-top:6px;position:relative;z-index:1}
+#pgWeekly .wk-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#pgWeekly .wk-control{display:flex;flex-direction:column;gap:5px;margin:10px 0}
+#pgWeekly .wk-control label{font-size:11px;font-weight:700;color:var(--dim2)}
+#pgWeekly select,#pgWeekly input{background:var(--bg3);color:var(--text);border:1px solid var(--border);padding:10px;border-radius:8px;width:100%;box-sizing:border-box;font-size:12px}
+#pgWeekly .wk-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}
+#pgWeekly .wk-stat{border:1px solid var(--border);border-radius:10px;padding:12px;background:var(--bg3)}
+#pgWeekly .wk-num{font-size:22px;font-weight:850;color:#dca33a;font-variant-numeric:tabular-nums}
+#pgWeekly .wk-label{font-size:10px;color:var(--dim2);margin-top:3px}
+#pgWeekly .wk-barrow{display:flex;align-items:center;gap:8px;margin:8px 0;font-size:12px}
+#pgWeekly .wk-bardigit{width:20px;text-align:center;font-weight:800}
+#pgWeekly .wk-bartrack{height:9px;border-radius:10px;background:var(--bg3);flex:1;overflow:hidden}
+#pgWeekly .wk-bar{height:100%;background:linear-gradient(90deg,#ac3033,#ddae41);border-radius:10px}
+#pgWeekly .wk-panel{border:1px solid var(--border);border-radius:12px;padding:13px;margin-top:12px;background:var(--bg2)}
+#pgWeekly .wk-panel h3{font-size:13px;margin:0 0 8px;color:var(--text)}
+#pgWeekly .wk-small{font-size:11px;line-height:1.7;color:var(--dim2)}
+#pgWeekly .wk-pill{display:inline-block;font-size:10px;border-radius:30px;border:1px solid rgba(220,170,59,.3);padding:4px 8px;margin:3px 4px 3px 0;color:var(--text)}
+#pgWeekly .wk-events{display:grid;gap:7px;margin-top:8px}
+#pgWeekly .wk-event{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--border);padding:6px 0;font-size:11px;color:var(--dim2)}
+#pgWeekly .wk-summary{font-weight:750;font-size:11px;line-height:1.8;color:var(--text)}
+#pgWeekly .wk-warning{color:#dfb14c;font-size:10px;line-height:1.6;margin-top:12px}
+@media(max-width:350px){#pgWeekly .wk-grid{grid-template-columns:1fr}}
+</style>
+<script>
+/* BEAST MODE 4D v4.30 — Weekly Intelligence (standalone / read-only).
+ * Pattern labels describe historical distributions; they are not operator RNG identification.
+ * No changes to weights, forecasts, stored draws or betting history.
+ */
+(function(){
+ 'use strict';
+ const DAY=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+ const permitted=new Set(['MAGNUM','TOTO','DAMACAI']);
+ const isISO=x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)&&!Number.isNaN(Date.parse(x+'T00:00:00Z'))&&new Date(x+'T00:00:00Z').toISOString().slice(0,10)===x;
+ const dayIndex=s=>new Date(s+'T00:00:00Z').getUTCDay();
+ const monday=s=>{const dt=Date.parse(s+'T00:00:00Z'),wd=new Date(dt).getUTCDay();return new Date(dt-((wd+6)%7)*86400000).toISOString().slice(0,10);};
+ const four=x=>typeof x==='string'&&/^\d{4}$/.test(x);
+ const sig=s=>s.split('').sort().join('');
+ function distribution(rows){
+   const counts=Array(10).fill(0),sums=[];let numbers=0,repeated=0,odd=0;
+   for(const row of rows)for(const n of row.numbers){
+     numbers++;const arr=n.split('').map(Number);
+     arr.forEach(k=>{counts[k]++;if(k%2)odd++;});
+     sums.push(arr.reduce((x,y)=>x+y,0));
+     if(new Set(arr).size<4)repeated++;
+   }
+   const digits=numbers*4,total=sums.reduce((a,b)=>a+b,0);
+   return {drawCount:rows.length,numberCount:numbers,digits:counts,
+      meanDigitSum:numbers?total/numbers:null,
+      repeatedPct:numbers?100*repeated/numbers:null,
+      oddPct:digits?100*odd/digits:null,
+      status:rows.length<30?'insufficient-data':'descriptive'};
+ }
+ const tv=(a,b)=>{const sa=a.reduce((p,c)=>p+c,0),sb=b.reduce((p,c)=>p+c,0);
+   return sa&&sb?100*a.reduce((total,n,i)=>total+Math.abs(n/sa-b[i]/sb),0)/2:null;};
+ function normalize(ops,opName,cutoff,maxDraws){
+   const op=ops.find(x=>x.name===opName);
+   if(!op||!Array.isArray(op.draws))throw Error('Operator database not available');
+   if(!isISO(cutoff))throw Error('Choose a valid date');
+   const issues=[],seen=new Set(),rows=[];
+   const sorted=[...op.draws].sort((a,b)=>(b?.date||'').localeCompare(a?.date||''));
+   for(const d of sorted){
+     if(!isISO(d?.date)){issues.push('Invalid date in source');continue;}
+     if(d.date>cutoff)continue;
+     if(seen.has(d.date)){issues.push('Duplicate date '+d.date);continue;}
+     seen.add(d.date);
+     const board=[...(Array.isArray(d.top3)?d.top3.slice(0,3):[]),
+       ...(Array.isArray(d.special)?d.special.slice(0,10):[]),
+       ...(Array.isArray(d.consolation)?d.consolation.slice(0,10):[])];
+     const numbers=board.filter(four);
+     if(numbers.length<3){issues.push('Incomplete draw '+d.date);continue;}
+     if(numbers.length<23)issues.push('Partial prize board '+d.date+' ('+numbers.length+'/23)');
+     const weekday=DAY[dayIndex(d.date)];
+     if(d.day&&d.day!==weekday)issues.push('Weekday mismatch '+d.date);
+     const special=!['Wed','Sat','Sun'].includes(weekday);
+     rows.push({date:d.date,weekday,numbers,special,week:monday(d.date),signatures:new Set(numbers.map(sig))});
+     if(rows.length>=maxDraws)break;
+   }
+   return {rows,issues};
+ }
+ function weekMetrics(events){
+   const weeks=new Map();
+   for(const d of events){
+     if(!weeks.has(d.week))weeks.set(d.week,{start:d.week,events:[]});
+     weeks.get(d.week).events.push(d);
+   }
+   const arr=[...weeks.values()].sort((a,b)=>b.start.localeCompare(a.start));
+   for(const week of arr){
+     week.events.sort((a,b)=>a.date.localeCompare(b.date));
+     week.specials=week.events.filter(e=>e.special);
+     week.wed=week.events.find(e=>e.weekday==='Wed')||null;
+     week.sat=week.events.find(e=>e.weekday==='Sat')||null;
+     week.sun=week.events.find(e=>e.weekday==='Sun')||null;
+     const pairs=[[week.wed,week.sat],[week.wed,week.sun],[week.sat,week.sun]].filter(p=>p[0]&&p[1]);
+     week.permutationOverlap=pairs.map(([a,b])=>({days:a.weekday+'–'+b.weekday,
+       common:[...a.signatures].filter(s=>b.signatures.has(s)).length}));
+     week.digitProfile=distribution(week.events);
+     const sum=week.digitProfile.meanDigitSum,rep=week.digitProfile.repeatedPct,odd=week.digitProfile.oddPct;
+     const tags=[];
+     if(sum!==null&&sum>=20)tags.push('Higher digit sums');
+     if(sum!==null&&sum<=16)tags.push('Lower digit sums');
+     if(rep!==null&&rep>=65)tags.push('More repeating digits');
+     if(odd!==null&&odd>=58)tags.push('Odd-digit heavy');
+     if(odd!==null&&odd<=42)tags.push('Even-digit heavy');
+     if(week.specials.length)tags.push('Non-regular draw recorded');
+     if(!tags.length)tags.push('No unusual profile identified');
+     week.tags=tags;
+   }
+   return arr;
+ }
+ function inspect(operators,opName,cutoff,maxDraws){
+   if(!Array.isArray(operators)||!permitted.has(opName))throw Error('Unrecognized operator');
+   maxDraws=Math.max(30,Math.min(2200,Number(maxDraws)||300));
+   const {rows,issues}=normalize(operators,opName,cutoff,maxDraws);
+   const profile=distribution(rows),weeks=weekMetrics(rows);
+   const weekdays={};for(const d of ['Wed','Sat','Sun','Tue'])weekdays[d]=distribution(rows.filter(x=>x.weekday===d));
+   const withSpecial=weeks.filter(x=>x.specials.length),regularWeeks=weeks.filter(x=>!x.specials.length&&x.wed&&x.sat&&x.sun);
+   const specialRows=withSpecial.flatMap(w=>w.events),regularRows=regularWeeks.flatMap(w=>w.events);
+   return {opName,cutoff,maxDraws,events:rows,issues,profile,weeks,latestWeek:weeks[0]||null,weekdays,
+     specialComparison:{withSpecial:distribution(specialRows),withoutSpecial:distribution(regularRows)},
+     drift:{wedSat:tv(weekdays.Wed.digits,weekdays.Sat.digits),wedSun:tv(weekdays.Wed.digits,weekdays.Sun.digits)},
+     countedSpecial:rows.filter(x=>x.special).length};
+ }
+ window.BeastWeeklyIntelligence=Object.freeze({inspect,distribution,monday});
+})();
+const BeastWeeklyBridge=Object.freeze({
+ inspect(ops,engine,opName,cutoff,maxDraws){
+   const result=engine.inspect(ops,opName,cutoff,maxDraws);
+   return {...result,imported:result.events.length};
+ }
+});
+window.BeastWeeklyBridge=BeastWeeklyBridge;
+function wkEscape(x){return String(x).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+function wkPct(v){return v===null?'–':v.toFixed(1)+'%';}
+function wkVal(v){return v===null?'–':v.toFixed(1);}
+function renderWeeklyIntelligence(){
+ const target=document.getElementById('pgWeekly');if(!target)return;
+ target.innerHTML=`<div class="wk-hero"><div class="wk-title">🐉 Weekly Pattern Intelligence <small style="font-size:9px;color:#d8ac4d">v4.30 RESEARCH</small></div><div class="wk-sub">Explore Wednesday → Saturday → Sunday changes and Tuesday / Special Draw records. Historical descriptions only; no predictive edge has been demonstrated.</div></div>
+ <div class="card">
+ <div class="wk-grid"><div class="wk-control"><label for="weeklyOp">Operator</label><select id="weeklyOp"><option value="MAGNUM">Magnum</option><option value="TOTO">Sports Toto</option><option value="DAMACAI">Da Ma Cai</option></select></div>
+ <div class="wk-control"><label for="weeklyCutoff">Historical cutoff (MYT)</label><input type="date" id="weeklyCutoff"></div>
+ <div class="wk-control"><label for="weeklyWindow">Recent verified records</label><select id="weeklyWindow"><option value="150">150 draws</option><option value="300">300 draws</option><option value="600">600 draws</option><option value="1200">1,200 draws</option><option value="2200" selected>All saved draws</option></select></div>
+ <div style="align-self:end;padding-bottom:10px"><button class="btn btn-fire" id="weeklyRun" style="width:100%">🐉 Analyze Week</button></div></div>
+ <div id="weeklyReport" aria-live="polite"><div class="wk-small">Select an operator and analyze the available draw archive.</div></div></div>`;
+ const cutoff=document.getElementById('weeklyCutoff');
+ cutoff.value=malaysiaDateISO();cutoff.max=malaysiaDateISO();
+ // Explicitly no writes to prediction logic or localStorage.
+ document.getElementById('weeklyRun').addEventListener('click',runWeeklyIntelligence);
+}
+function runWeeklyIntelligence(){
+ const report=document.getElementById('weeklyReport');
+ try{
+   const res=BeastWeeklyBridge.inspect(operators,window.BeastWeeklyIntelligence,
+      document.getElementById('weeklyOp').value,document.getElementById('weeklyCutoff').value,
+      document.getElementById('weeklyWindow').value);
+   const p=res.profile;
+   if(!p.drawCount){report.innerHTML='<div class="wk-warning">No saved draws before the selected cutoff. Choose a later date or import verified results in Data.</div>';return;}
+   const max=Math.max(...p.digits,1),latest=res.latestWeek;
+   const bars=p.digits.map((n,i)=>`<div class="wk-barrow"><span class="wk-bardigit">${i}</span><div class="wk-bartrack"><div class="wk-bar" style="width:${(100*n/max).toFixed(1)}%"></div></div><span style="width:49px;text-align:right">${n}</span></div>`).join('');
+   const recent=res.events.filter(d=>d.special).slice(0,6);
+   const renderWeek=latest?`<div class="wk-panel"><h3>🗓 Latest historical week · ${wkEscape(latest.start)}</h3>
+      <div>${latest.tags.map(t=>'<span class="wk-pill">'+wkEscape(t)+'</span>').join('')}</div>
+      <div class="wk-events">${latest.events.map(e=>`<div class="wk-event"><span>${e.special?'✨ Potential Special / non-regular':'📅 '+wkEscape(e.weekday)} · ${wkEscape(e.date)}</span><span>${e.numbers.length} numbers</span></div>`).join('')}</div>
+      <div class="wk-small" style="margin-top:8px">${latest.wed?'Wednesday recorded':'Wednesday unavailable'} · ${latest.sat?'Saturday recorded':'Saturday pending / unavailable'} · ${latest.sun?'Sunday recorded':'Sunday pending / unavailable'}</div>
+      <div class="wk-small">Digit-permutation overlaps (within prize boards): ${latest.permutationOverlap.length?latest.permutationOverlap.map(x=>x.days+': '+x.common).join('; '):'Not enough paired draws in this week'}</div></div>`:'';
+   const cmp=res.specialComparison;
+   const regularCmp=cmp.withoutSpecial.numberCount&&cmp.withSpecial.numberCount
+     ?`Historical comparison: weeks containing non-regular draws had mean digit sum ${wkVal(cmp.withSpecial.meanDigitSum)} vs ${wkVal(cmp.withoutSpecial.meanDigitSum)} for complete regular-only weeks. This does not establish causation or predictive power.`
+     :'Too few comparable complete weeks to evaluate differences after a Special Draw.';
+   report.innerHTML=`
+    <div class="wk-stats"><div class="wk-stat"><div class="wk-num">${p.drawCount.toLocaleString('en-MY')}</div><div class="wk-label">Saved draws analyzed</div></div><div class="wk-stat"><div class="wk-num">${p.numberCount.toLocaleString('en-MY')}</div><div class="wk-label">Prize numbers analyzed</div></div><div class="wk-stat"><div class="wk-num">${res.countedSpecial}</div><div class="wk-label">Non-regular / potential Special draws</div></div><div class="wk-stat"><div class="wk-num">${wkVal(p.meanDigitSum)}</div><div class="wk-label">Mean 4-digit sum (0–36)</div></div></div>
+    <div class="wk-panel"><h3>📊 Digit distribution (0–9)</h3>${bars}<div class="wk-small">Odd digits: ${wkPct(p.oddPct)} · Four-digit numbers with repeated digits: ${wkPct(p.repeatedPct)}</div></div>
+    ${renderWeek}
+    <div class="wk-panel"><h3>🧭 Wednesday → Weekend shifts</h3><div class="wk-small">Wednesday: ${res.weekdays.Wed.drawCount} draws · Saturday: ${res.weekdays.Sat.drawCount} · Sunday: ${res.weekdays.Sun.drawCount}</div>
+    <div class="wk-small">Historical digit-mix difference: Wed→Sat ${wkPct(res.drift.wedSat)}; Wed→Sun ${wkPct(res.drift.wedSun)} (total variation; 0% means identical distributions). Observed variation alone is not evidence of an operator changing its RNG.</div></div>
+    <div class="wk-panel"><h3>✨ Special Draw impact research</h3><div class="wk-small">${wkEscape(regularCmp)}</div>
+    <div class="wk-small" style="margin-top:6px">Recent non-regular draw dates: ${recent.length?recent.map(x=>x.date).join(', '):'None in selected sample'}</div></div>
+    <div class="wk-panel"><h3>🔎 Data quality</h3><div class="wk-small">${res.issues.length} issues flagged${res.issues.length?' · '+res.issues.slice(0,3).map(wkEscape).join('; '):' · No issues in analyzed records'}. Only saved draws up to the selected Malaysian calendar date are used.</div></div>
+    <div class="wk-warning">🔒 Read-only research mode. No changes to Oracle, Hot Hand, Deep Learn, weight settings, ticket picks or stored prediction history. Historical lottery results cannot reliably disclose an operator's internal random-number generator.</div>`;
+ }catch(e){report.textContent='Analysis unavailable: '+e.message;console.error('Weekly Intelligence',e);}
+}
+</script>
+
+<script id="b4d-integrated-festival-script">
+(function(){'use strict';
+// Only new namespaced storage keys; never overwrite b4d_ops, b4d_hist, predictions or user theme.
+const el=document.getElementById('b4d-festival-scene');if(!el)return;
+const get=(key,def)=>{try{return localStorage.getItem(key)??def;}catch(e){return def;}};
+const put=(key,value)=>{try{localStorage.setItem(key,value);}catch(e){}};
+const dayMYT=()=>{const parts=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()).map(p=>[p.type,p.value]));return `${parts.year}-${parts.month}-${parts.day}`;};
+const daysBetween=(a,b)=>(Date.parse(a+'T00:00:00Z')-Date.parse(b+'T00:00:00Z'))/86400000;
+const events=[
+  ['2026-02-17','cny','Chinese New Year','🧧',5,8],['2026-03-21','raya','Selamat Hari Raya Aidilfitri','🌙',5,5],['2026-11-08','deepavali','Happy Deepavali','🪔',5,5],
+  ['2027-02-06','cny','Chinese New Year','🧧',5,8],['2027-03-10','raya','Selamat Hari Raya Aidilfitri','🌙',5,5],['2027-10-28','deepavali','Happy Deepavali','🪔',5,5],
+  ['2028-01-26','cny','Chinese New Year','🧧',5,8],['2028-02-27','raya','Selamat Hari Raya Aidilfitri','🌙',5,5],['2028-10-17','deepavali','Happy Deepavali','🪔',5,5],
+];
+for(const year of [2026,2027,2028,2029,2030]){
+  events.push([`${year}-08-31`,'merdeka','Selamat Hari Merdeka','🇲🇾',3,2]);
+  events.push([`${year}-09-16`,'malaysiaday','Selamat Hari Malaysia','🇲🇾',3,2]);
+  events.push([`${year}-12-25`,'christmas','Merry Christmas','🎄',5,5]);
+}
+const descriptions={chinese:'Chinese-inspired fortune art • Dragon, lanterns & God of Wealth',cny:'Red lanterns • Prosperity • Togetherness',raya:'Moonlit blessings • Family • Renewal',deepavali:'Festival of Lights • Joy, light & prosperity',merdeka:'Celebrating Malaysia’s independence',malaysiaday:'Celebrating our Malaysian unity',christmas:'Season of warmth, giving & celebration'};
+let auto=get('b4d_festival_mode','auto')==='auto';let motion=get('b4d_festival_motion','on')!=='off';
+const setText=(id,text)=>{const node=document.getElementById(id);if(node)node.textContent=text;};
+function sync(){
+ const today=dayMYT();const matches=events.map(x=>({date:x[0],code:x[1],title:x[2],emoji:x[3],start:x[4],end:x[5],delta:daysBetween(today,x[0])})).filter(x=>x.delta>=-x.start&&x.delta<=x.end).sort((a,b)=>Math.abs(a.delta)-Math.abs(b.delta));
+ const chosen=auto&&matches.length?matches[0]:null;const code=chosen?chosen.code:'chinese';document.body.dataset.festival=code;
+ setText('b4d-fest-kicker',chosen?chosen.emoji+'  MALAYSIAN FESTIVE SEASON':'🐉  中華福運 • FORTUNE EDITION');
+ setText('b4d-fest-title',chosen?chosen.title:'Fortune & Prosperity');
+ setText('b4d-fest-desc',descriptions[code]);
+ setText('b4d-fest-mode','🎊 Auto festivals: '+(auto?'On':'Off'));
+ setText('b4d-fest-motion','✨ Motion: '+(motion?'On':'Off'));
+ el.dataset.motion=motion?'on':'off';
+}
+document.getElementById('b4d-fest-mode').addEventListener('click',()=>{auto=!auto;put('b4d_festival_mode',auto?'auto':'chinese');sync();});
+document.getElementById('b4d-fest-motion').addEventListener('click',()=>{motion=!motion;put('b4d_festival_motion',motion?'on':'off');sync();});
+// Display miniature decorative scene on non-Predict pages so controls stay unobstructed.
+function layout(){const pg=document.querySelector('.page.active');const expand=pg&&(pg.id==='pgPredict'||pg.id==='pgWeekly');el.classList.toggle('b4d-fest-collapsed',!expand);}
+const obs=new MutationObserver(layout);document.querySelectorAll('.page').forEach(p=>obs.observe(p,{attributes:true,attributeFilter:['class']}));
+function burst(){if(!motion||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+ const glyphs=['✨','🪙','✦','🌟','💫','🧧'];const width=el.clientWidth;for(let i=0;i<15;i++){
+ const a=document.createElement('span');a.className='b4d-fest-float';a.setAttribute('aria-hidden','true');a.textContent=glyphs[i%glyphs.length];
+ const x=Math.round(width*(.2+.65*((i*19)%17)/17));a.style.left=x+'px';a.style.top=(65+(i%3)*15)+'px';a.style.setProperty('--dx',((i%2?1:-1)*(15+(i*23)%100))+'px');a.style.setProperty('--dy',(-50-(i*11)%90)+'px');a.style.animationDelay=(i%5*46)+'ms';el.appendChild(a);a.addEventListener('animationend',()=>a.remove(),{once:true});
+ }
+ // Clean even in unusual browsers with disabled animation
+ if(el.querySelectorAll('.b4d-fest-float').length>35)el.querySelectorAll('.b4d-fest-float').forEach(a=>a.remove());
+}
+// Decoration only: never call generation or intercept prediction engine behavior.
+document.addEventListener('click',function(e){const button=e.target.closest('button');if(!button)return;
+ const parent=button.closest('#pgPredict,#pgOracle,#pgWeekly');if(parent && /(generate|predict now|run oracle|analyze week|analyse|run prediction)/i.test((button.innerText||button.textContent||'').trim()))burst();
+},false);
+sync();layout();
+// Festival logic uses MYT, rechecked on page resume and periodically for long-running tabs.
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync();});
+setInterval(sync,60*60*1000);
+})();
+</script>
+
+</body>
 </html>
