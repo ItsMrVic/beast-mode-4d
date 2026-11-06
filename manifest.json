@@ -1,7 +1,7 @@
 {
-  "name": "BEAST MODE 4D v4.31 — My Tickets",
+  "name": "BEAST MODE 4D v4.33 — Malaysian Theme Gallery",
   "short_name": "Beast 4D",
-  "description": "Malaysian 4D historical analysis and personal purchased-number tracker. Exact and permutation matches across Magnum, Sports Toto and Da Ma Cai. Numeric matches are not proof of a payable win.",
+  "description": "Malaysian 4D historical analysis and purchased-number tracker, with an interactive festive theme gallery and an automatic Malaysia festival calendar. Numeric matches do not prove a payable win.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
