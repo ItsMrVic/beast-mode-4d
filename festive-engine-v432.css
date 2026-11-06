@@ -24,7 +24,7 @@
 #b4d-festival-scene .b4d-fest-desc{font-size:10px;max-width:190px}
 @keyframes fest-v432-hover{0%,100%{transform:translateY(2px) rotate(-1deg)}50%{transform:translateY(-7px) rotate(2deg)}}
 @keyframes fest-v432-twinkle{0%{opacity:.25;transform:scale(.75) rotate(-8deg)}100%{opacity:1;transform:scale(1.13) rotate(8deg)}}
-@keyframes fest-v432-flag{0%,100%{transform:rotate(-2deg) skewY(-1deg)}50%{transform:rotate(2deg) skewY(2deg)}}
+@keyframes fest-v432-flag{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-3px) rotate(1deg)}}
 #b4d-festival-scene[data-motion="off"] .fest-v432-art *,
 #b4d-festival-scene[data-motion="off"] .fest-v432-emblem{animation:none!important;transition:none!important}
 @media (prefers-reduced-motion:reduce){#b4d-festival-scene .fest-v432-art *,#b4d-festival-scene .fest-v432-emblem{animation:none!important;transition:none!important}}
