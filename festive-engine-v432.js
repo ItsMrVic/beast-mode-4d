@@ -168,7 +168,11 @@ function eventsForYear(year){
  return out.sort(function(a,b){return a.date.localeCompare(b.date)||b.priority-a.priority;});
 }
 var region=safeGet(KEY_STATE,'MY');if(!STATES[region])region='MY';
-var auto=safeGet(KEY_MODE,'auto')==='auto',motion=safeGet(KEY_MOTION,'on')!=='off';
+var mode=safeGet(KEY_MODE,'auto');
+if(['auto','manual','chinese'].indexOf(mode)<0)mode='auto';
+var manualTheme=safeGet('b4d_festival_manual_theme_v433','deepavali');
+if(!C[manualTheme]&&manualTheme!=='chinese')manualTheme='deepavali';
+var motion=safeGet(KEY_MOTION,'on')!=='off';
 var preview=null,dialog=null;
 function resolve(date,selectedRegion){
  var d=ordinal(date),y=Number(date.slice(0,4)),s=selectedRegion||region,matching=[];
@@ -183,7 +187,14 @@ function resolve(date,selectedRegion){
  matching.sort(function(a,b){var as=a.priority-Math.abs(a.delta)*6,bs=b.priority-Math.abs(b.delta)*6;return bs-as||Math.abs(a.delta)-Math.abs(b.delta)||a.id.localeCompare(b.id);});
  return matching[0]||null;
 }
-function activeTheme(){var t=preview&&C[preview]?{id:preview,title:C[preview][0],emoji:C[preview][1],visual:C[preview][2],desc:C[preview][4]}:(auto?resolve(malaysiaDate()):null);return t||{id:'chinese',title:'Fortune & Prosperity',emoji:'🐉',visual:'chinese',desc:'Chinese-inspired fortune art • dragon, lanterns and God of Wealth'};}
+function themeById(id){
+ if(id&&C[id])return {id:id,title:C[id][0],emoji:C[id][1],visual:C[id][2],desc:C[id][4]};
+ return {id:'chinese',title:'Fortune & Prosperity',emoji:'🐉',visual:'chinese',desc:'Chinese-inspired fortune art • dragon, lanterns and God of Wealth'};
+}
+function chosenId(){if(preview!==null)return preview;return mode==='manual'?manualTheme:mode==='auto'?(resolve(malaysiaDate())||{id:'chinese'}).id:'chinese';}
+function activeTheme(){return themeById(chosenId());}
+function persistMode(next){mode=next;safeSet(KEY_MODE,mode);}
+function getMode(){return mode;}
 function setText(id,s){var n=document.getElementById(id);if(n)n.textContent=s;}
 function apply(){
  var t=activeTheme(),visual=t.visual,col=COLORS[visual]||COLORS.chinese;
@@ -193,7 +204,7 @@ function apply(){
  setText('b4d-fest-title',t.emoji+' '+t.title);
  setText('b4d-fest-desc',t.desc);
  setText('b4d-fest-kicker',(t.id==='chinese'?'🐉 中華福運 • FORTUNE EDITION':'MALAYSIA • CULTURAL CELEBRATIONS'));
- setText('b4d-fest-mode','🎊 Auto festivals: '+(auto?'On':'Off'));
+ setText('b4d-fest-mode',mode==='manual'?'🎨 Manual theme':('🎊 Auto festivals: '+(mode==='auto'?'On':'Off')));
  setText('b4d-fest-motion','✨ Motion: '+(motion?'On':'Off'));
  scene.dataset.motion=motion?'on':'off';
  var art=scene.querySelector('#fest-v432-art');
@@ -217,24 +228,54 @@ function burst(){
  if(scene.querySelectorAll('.b4d-fest-float').length>40)scene.querySelectorAll('.b4d-fest-float').forEach(function(el){el.remove();});
 }
 function layout(){var pg=document.querySelector('.page.active'),open=pg&&(pg.id==='pgPredict'||pg.id==='pgWeekly');scene.classList.toggle('b4d-fest-collapsed',!open);}
+function makeGalleryArt(visual){
+ if(visual==='chinese'||visual==='cny'){
+ return '<svg viewBox="0 0 200 146" aria-hidden="true"><g fill="none" stroke="#f5d48e" stroke-width="3"><path d="M0 118q30-17 57 0 24 14 48-3m26-14q35-22 69 0" opacity=".7"/><path d="M52 0v22m88-22v22"/></g><g fill="#bd283d" stroke="#f3c568" stroke-width="3"><ellipse cx="52" cy="62" rx="27" ry="38"/><ellipse cx="140" cy="62" rx="27" ry="38"/></g><g stroke="#ffd884" stroke-width="3" fill="none"><path d="M52 24v74m-16-67v65m32-65v65M140 24v74m-16-67v65m32-65v65M52 100v31m88-31v31"/></g><g fill="#ffebbd"><path d="M87 79q15-22 29-1l-15 23z"/></g><text x="101" y="139" fill="#ffe6ae" font-size="20" font-weight="bold" text-anchor="middle">福</text></svg>';
+ }
+ return ICONS[visual]||ICONS.celebration;
+}
+function renderModalPreview(){
+ if(!dialog)return;
+ var theme=activeTheme(),palette=COLORS[theme.visual]||COLORS.chinese;
+ var card=document.getElementById('fest-v433-preview-card');
+ if(!card)return;
+ card.style.setProperty('--gallery-dark',palette[0]);
+ card.style.setProperty('--gallery-mid',palette[1]);
+ card.style.setProperty('--gallery-gold',palette[2]);
+ var picture=document.getElementById('fest-v433-preview-art');
+ picture.innerHTML=makeGalleryArt(theme.visual);
+ setText('fest-v433-preview-title',theme.emoji+' '+theme.title);
+ setText('fest-v433-preview-desc',theme.desc);
+ setText('fest-v433-selected',mode==='manual'?'Saved: Manual theme':mode==='chinese'?'Saved: Everyday Chinese theme':'Saved: Automatic Malaysia calendar');
+ document.getElementById('fest-v433-use').disabled=(preview===null);
+}
 function openCalendar(){
  if(!dialog){
- dialog=document.createElement('div');dialog.className='fest-v432-modal';dialog.id='fest-v432-dialog';dialog.setAttribute('role','dialog');dialog.setAttribute('aria-modal','true');dialog.setAttribute('aria-label','Malaysian festive calendar');
- dialog.innerHTML='<div class="fest-v432-panel"><h2>🇲🇾 Malaysian Festive Calendar</h2><p>Automatic theme switching follows Malaysian time. Select a region for state holidays, or preview any celebration. Public holidays depend on the state; variable religious dates may change after official announcements.</p><label for="fest-v432-state">My holiday region</label><select id="fest-v432-state"></select><label for="fest-v432-preview">Preview a celebration</label><select id="fest-v432-preview"></select><p id="fest-v432-current"></p><div class="fest-v432-list" id="fest-v432-list"></div><button id="fest-v432-close" type="button">Close</button><p class="fest-v432-foot">Dates verified for 2026–2027. Fixed calendar celebrations continue in future years; moving lunar/religious dates need new official-year data. A cultural observance is not necessarily a public holiday. Illustrations are decorative and do not affect predictions.</p></div>';
+ dialog=document.createElement('div');dialog.className='fest-v432-modal';dialog.id='fest-v432-dialog';dialog.setAttribute('role','dialog');dialog.setAttribute('aria-modal','true');dialog.setAttribute('aria-label','Malaysian theme gallery and festive calendar');
+ dialog.innerHTML='<div class="fest-v432-panel fest-v433-panel"><h2>🎨 Malaysian Theme Gallery</h2><p>Choose a celebration to see its artwork below, then tap <strong>Use This Theme</strong> to keep it. Your choice stays saved even after closing the app.</p><label for="fest-v432-state">Public holiday region</label><select id="fest-v432-state"></select><label for="fest-v432-preview">Choose a theme to preview</label><select id="fest-v432-preview"></select><div class="fest-v433-preview" id="fest-v433-preview-card"><div class="fest-v433-preview-visual" id="fest-v433-preview-art" aria-hidden="true"></div><div class="fest-v433-preview-copy"><strong id="fest-v433-preview-title"></strong><span id="fest-v433-preview-desc"></span></div><div class="fest-v433-preview-star fest-v433-preview-star-one">✦</div><div class="fest-v433-preview-star fest-v433-preview-star-two">✧</div></div><p class="fest-v433-status" id="fest-v433-selected"></p><div class="fest-v433-actions"><button id="fest-v433-use" class="fest-v433-primary" type="button">✓ Use This Theme</button><button id="fest-v433-auto" type="button">📅 Automatic</button><button id="fest-v433-default" type="button">🐉 Default Chinese</button><button id="fest-v432-close" type="button">✕ Close</button></div><details class="fest-v433-calendar-details"><summary>📆 Browse Malaysian celebration dates</summary><p id="fest-v432-current"></p><div class="fest-v432-list" id="fest-v432-list"></div><p class="fest-v432-foot">Dates curated for 2026–2027. Fixed annual dates continue; moving lunar and religious dates need refreshed official-year data. Regional celebrations are not necessarily nationwide public holidays. The illustrations are decorative only.</p></details></div>';
  document.body.appendChild(dialog);
  var sel=document.getElementById('fest-v432-state'),p=document.getElementById('fest-v432-preview');
  Object.keys(STATES).forEach(function(k){var o=document.createElement('option');o.value=k;o.textContent=STATES[k];sel.appendChild(o);});
- var a=document.createElement('option');a.value='';a.textContent='Automatic date';p.appendChild(a);
+ var a=document.createElement('option');a.value='chinese';a.textContent='🐉 Everyday Chinese Prosperity';p.appendChild(a);
  Object.keys(C).forEach(function(k){var o=document.createElement('option');o.value=k;o.textContent=C[k][1]+' '+C[k][0];p.appendChild(o);});
- sel.addEventListener('change',function(){region=sel.value;safeSet(KEY_STATE,region);apply();renderCalendarList();});
- p.addEventListener('change',function(){preview=p.value||null;apply();});
+ sel.addEventListener('change',function(){region=sel.value;safeSet(KEY_STATE,region);renderCalendarList();});
+ p.addEventListener('change',function(){preview=p.value;apply();renderModalPreview();});
+ document.getElementById('fest-v433-use').addEventListener('click',function(){
+   if(preview===null)return;
+   manualTheme=preview;safeSet('b4d_festival_manual_theme_v433',manualTheme);
+   persistMode('manual');closeCalendar();
+ });
+ document.getElementById('fest-v433-auto').addEventListener('click',function(){persistMode('auto');closeCalendar();});
+ document.getElementById('fest-v433-default').addEventListener('click',function(){persistMode('chinese');closeCalendar();});
  document.getElementById('fest-v432-close').addEventListener('click',closeCalendar);
  dialog.addEventListener('click',function(e){if(e.target===dialog)closeCalendar();});
  dialog.addEventListener('keydown',function(e){if(e.key==='Escape')closeCalendar();});
  }
  document.getElementById('fest-v432-state').value=region;
- document.getElementById('fest-v432-preview').value=preview||'';
- renderCalendarList();dialog.classList.add('is-open');
+ var id=mode==='manual'?manualTheme:mode==='auto'?(resolve(malaysiaDate())||{id:'chinese'}).id:'chinese';
+ preview=id;
+ document.getElementById('fest-v432-preview').value=id;
+ renderCalendarList();dialog.classList.add('is-open');apply();renderModalPreview();
  document.getElementById('fest-v432-preview').focus();
 }
 function renderCalendarList(){
@@ -249,16 +290,16 @@ function renderCalendarList(){
 function closeCalendar(){if(!dialog)return;dialog.classList.remove('is-open');preview=null;apply();}
 function init(){
  var mode=document.getElementById('b4d-fest-mode'),m=document.getElementById('b4d-fest-motion');
- if(mode)mode.addEventListener('click',function(){auto=!auto;safeSet(KEY_MODE,auto?'auto':'chinese');preview=null;apply();});
+ if(mode)mode.addEventListener('click',function(){persistMode(getMode()==='auto'?'chinese':'auto');preview=null;apply();});
  if(m)m.addEventListener('click',function(){motion=!motion;safeSet(KEY_MOTION,motion?'on':'off');apply();});
  var controls=scene.querySelector('.b4d-fest-ctrl');
  if(controls&&!document.getElementById('fest-v432-open')){var b=document.createElement('button');b.type='button';b.id='fest-v432-open';b.className='b4d-fest-button';b.textContent='📅 Calendar';b.setAttribute('aria-label','Open Malaysian celebrations calendar and preview');b.addEventListener('click',openCalendar);controls.appendChild(b);}
  document.querySelectorAll('.page').forEach(function(pg){new MutationObserver(layout).observe(pg,{attributes:true,attributeFilter:['class']});});
  document.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;var parent=b.closest('#pgPredict,#pgOracle,#pgWeekly');if(parent&&/(generate|predict now|run oracle|analy[sz]e week|run prediction)/i.test(b.innerText||b.textContent||''))burst();},false);
  document.addEventListener('visibilitychange',function(){if(!document.hidden)apply();});
- window.setInterval(function(){if(auto&&!preview)apply();},30*60*1000);
+ window.setInterval(function(){if(getMode()==='auto'&&preview===null)apply();},30*60*1000);
  apply();layout();
 }
-window.B4DFestiveV432=Object.freeze({resolve:resolve,eventsForYear:eventsForYear,refresh:apply});
+window.B4DFestiveV432=Object.freeze({resolve:resolve,eventsForYear:eventsForYear,refresh:apply,mode:getMode,theme:chosenId});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
