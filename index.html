@@ -467,7 +467,7 @@ body[data-festival="christmas"] .header{background:linear-gradient(180deg,rgba(2
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v4.30</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v4.31</span>
       <div class="sub">Historical Analysis & Walk-Forward Research + DeepSeek</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
@@ -494,6 +494,7 @@ body[data-festival="christmas"] .header{background:linear-gradient(180deg,rgba(2
 <div class="page" id="pgPnl"></div>
 <div class="page" id="pgData"></div>
 <div class="page" id="pgWeekly"></div>
+<div class="page" id="pgTickets"></div>
 
 <!-- Bottom Nav -->
 <div class="bnav">
@@ -505,6 +506,7 @@ body[data-festival="christmas"] .header{background:linear-gradient(180deg,rgba(2
   <button onclick="navTo('Pnl')"><span class="ico">💰</span>P&L</button>
   <button onclick="navTo('Data')"><span class="ico">💾</span>Data</button>
 <button onclick="navTo('Weekly')"><span class="ico">🐉</span>Weekly</button>
+<button onclick="navTo('Tickets')"><span class="ico">🎟️</span>Tickets</button>
 </div>
 
 <!-- Add Draw Modal (Enhanced with Auto-Fetch) -->
@@ -1293,7 +1295,7 @@ function navTo(page){
   activeNav=page;
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('pg'+page).classList.add('active');
-  document.querySelectorAll('.bnav button').forEach((b,i)=>{b.classList.toggle('active',['Predict','History','Live','Oracle','Dashboard','Pnl','Data','Weekly'][i]===page)});
+  document.querySelectorAll('.bnav button').forEach((b,i)=>{b.classList.toggle('active',['Predict','History','Live','Oracle','Dashboard','Pnl','Data','Weekly','Tickets'][i]===page)});
   if(page==='Weekly')renderWeeklyIntelligence();else render();
 }
 
@@ -1345,6 +1347,7 @@ function render(){
   else if(activeNav==='Dashboard')renderDashboard();
   else if(activeNav==='Pnl')renderPnl();
   else if(activeNav==='Data')renderData();
+  else if(activeNav==='Tickets')renderTickets();
   // Learning badge
   const indexed=operators.reduce((sum,op)=>sum+op.draws.length,0);
   document.getElementById('learningBadge').innerHTML=`<span class="learning-badge" title="Verified and saved historical draws, not trained AI accuracy">${indexed.toLocaleString('en-MY')} draws</span>`;
@@ -11050,27 +11053,31 @@ function vettedVerifiedBoard(row){
 }
 function applyVerifiedBoards(rows){
   const proposed=operators.map(o=>({...o,draws:[...o.draws]}));
-  let added=0,conflicts=0,skipped=0,invalid=0;
+  let added=0,repaired=0,conflicts=0,skipped=0,invalid=0;
   for(const row of rows){
     const checked=vettedVerifiedBoard(row);
     if(!checked){invalid++;continue;}
     const op=proposed.find(o=>o.name===checked.operator);
     const existing=op.draws.find(d=>d.date===checked.date);
     if(existing){
-      if(JSON.stringify([existing.top3,existing.special,existing.consolation])!==JSON.stringify([checked.top3,checked.special,checked.consolation]))conflicts++;
+      if(!isCompletePrizeBoard(existing)){
+        const {operator,...replacement}=checked;
+        op.draws=op.draws.map(row=>row.date===checked.date?replacement:row);
+        repaired++;
+      }else if(JSON.stringify([existing.top3,existing.special,existing.consolation])!==JSON.stringify([checked.top3,checked.special,checked.consolation]))conflicts++;
       else skipped++;
       continue;
     }
     const {operator,...draw}=checked;
     op.draws.push(draw);added++;
   }
-  if(added){
+  if(added||repaired){
     proposed.forEach(o=>o.draws.sort((a,b)=>b.date.localeCompare(a.date)));
     // Keep the in-memory copy unchanged if storage exceeds the browser quota.
     localStorage.setItem(KEYS.ops,JSON.stringify(proposed));
     operators=proposed;
   }
-  return {added,conflicts,skipped,invalid};
+  return {added,repaired,conflicts,skipped,invalid};
 }
 async function autoFetchResults(silent=false){
   const el=document.getElementById('fetchStatus'),btn=document.getElementById('fetchBtn');
@@ -11097,13 +11104,13 @@ async function autoFetchResults(silent=false){
       }catch(ignore){}
       if(!payload)throw Error('Checked-results feed unavailable; offline archive remains available');
     }
-    const {added,conflicts,skipped,invalid}=applyVerifiedBoards(payload.draws);
-    const status=(offline?'Offline cached feed':'Checked feed')+': '+added+' new, '+skipped+' saved, '+conflicts+' conflicts preserved'+(invalid?', '+invalid+' invalid skipped':'');
+    const {added,repaired,conflicts,skipped,invalid}=applyVerifiedBoards(payload.draws);
+    const status=(offline?'Offline cached feed':'Checked feed')+': '+added+' new, '+repaired+' completed, '+skipped+' saved, '+conflicts+' conflicts preserved'+(invalid?', '+invalid+' invalid skipped':'');
     if(el)el.textContent=status+(offline?' · Last cache: '+(cachedAt?cachedAt.slice(0,10):'unknown'):'');
     try{localStorage.setItem('b4d_verified_sync_status',new Date().toISOString()+' — '+status);}catch(ignore){}
     if(!silent)toast(status);
-    if(added)render();
-    return{added,conflicts,skipped,invalid,offline};
+    if(added||repaired)render();
+    return{added,repaired,conflicts,skipped,invalid,offline};
   }catch(error){
     if(el)el.textContent='Network feed unavailable; saved and bundled offline draws still work.';
     if(!silent)toast('Saved draws available offline; live results not refreshed');
@@ -11713,7 +11720,7 @@ function checkResults(){
 }
 
 function exportData(){
-  const data={version:'4.23',exported:new Date().toISOString(),operators,history,moduleWeights,moduleToggles,moduleTogglesPerOp,stats,winsLog};
+  const data={version:'4.31',exported:new Date().toISOString(),operators,history,moduleWeights,moduleToggles,moduleTogglesPerOp,stats,winsLog,tickets:b4dTicketRead()};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;a.download=`beast4d-backup-${malaysiaDateISO()}.json`;
@@ -11761,7 +11768,10 @@ function importData(event){
       // exported before the wins log existed).
       winsLog=Array.isArray(data.winsLog)?data.winsLog:[];
       try{harvestWins();}catch(e){}
-      saveAll();render();toast('Data imported successfully!');
+      saveAll();
+      // Old backups without tickets leave saved tickets intact.
+      if(Array.isArray(data.tickets))b4dTicketRestore(data.tickets);
+      render();toast('Data imported successfully!');
     }catch(err){alert('Error reading file: '+err.message);}
   };
   reader.readAsText(file);event.target.value='';
@@ -12503,5 +12513,203 @@ setInterval(sync,60*60*1000);
 })();
 </script>
 
+<style id="b4d-tickets-v431-style">
+#pgTickets .tk-hero{border-radius:16px;background:linear-gradient(125deg,rgba(189,40,48,.23),rgba(201,146,25,.15));border:1px solid rgba(233,182,69,.35);padding:17px;margin:9px 0 14px;position:relative;overflow:hidden}
+#pgTickets .tk-hero::after{content:'🧧';position:absolute;right:10px;top:-8px;font-size:82px;opacity:.12;pointer-events:none}
+#pgTickets .tk-title{font-size:20px;font-weight:900;color:var(--text);position:relative}
+#pgTickets .tk-sub{font-size:11px;line-height:1.55;color:var(--dim2);margin-top:6px;position:relative}
+#pgTickets .tk-panel{border:1px solid var(--border);background:var(--bg2);border-radius:14px;padding:14px;margin:12px 0}
+#pgTickets .tk-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+#pgTickets label{font-size:10px;font-weight:700;color:var(--dim2);display:block;margin-bottom:6px}
+#pgTickets input,#pgTickets select,#pgTickets textarea{width:100%;min-width:0;box-sizing:border-box;border:1px solid var(--border);border-radius:9px;background:var(--bg3);color:var(--text);padding:11px 10px;font-size:13px;font-family:inherit}
+#pgTickets textarea{resize:vertical;min-height:80px;font-family:monospace;letter-spacing:1px;line-height:1.6}
+#pgTickets .tk-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+#pgTickets .tk-btn{border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);padding:11px 14px;cursor:pointer;font-size:11px;font-weight:800;flex:1;min-width:95px}
+#pgTickets .tk-btn-primary{background:linear-gradient(120deg,#a71929,#d54b31);color:#fff;border-color:#e8733b}
+#pgTickets .tk-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+#pgTickets .tk-summary>div{border:1px solid var(--border);border-radius:11px;padding:9px 5px;text-align:center;background:var(--bg3)}
+#pgTickets .tk-stat{font-size:20px;font-weight:900;color:var(--text)}
+#pgTickets .tk-stat-label{font-size:9px;color:var(--dim2)}
+#pgTickets .tk-card{border:1px solid var(--border);background:var(--bg3);border-radius:12px;padding:12px;margin:10px 0}
+#pgTickets .tk-card-match{border-color:rgba(57,197,105,.55);box-shadow:inset 3px 0 rgba(57,197,105,.5)}
+#pgTickets .tk-card-head{display:flex;justify-content:space-between;align-items:start;gap:8px}
+#pgTickets .tk-digits{font-family:monospace;font-size:23px;font-weight:900;letter-spacing:3px;color:var(--text)}
+#pgTickets .tk-pill{font-size:10px;font-weight:800;display:inline-block;padding:5px 8px;border-radius:99px;background:rgba(160,160,160,.16);color:var(--dim2);white-space:nowrap}
+#pgTickets .tk-pill-hit{background:rgba(32,176,94,.17);color:#38cf7d}
+#pgTickets .tk-pill-pending{background:rgba(244,172,55,.14);color:#efb452}
+#pgTickets .tk-pill-miss{background:rgba(130,130,130,.14);color:var(--dim2)}
+#pgTickets .tk-meta{font-size:10px;color:var(--dim2);line-height:1.6;margin:5px 0}
+#pgTickets .tk-match{padding:8px 9px;margin-top:7px;border-radius:8px;background:rgba(31,142,73,.11);font-size:11px;line-height:1.6;color:var(--text)}
+#pgTickets .tk-waiting{font-size:10px;color:var(--dim2);line-height:1.55;padding:8px 0}
+#pgTickets .tk-delete{border:0;background:transparent;color:var(--dim2);font-size:10px;text-decoration:underline;padding:5px;cursor:pointer}
+#pgTickets .tk-note{font-size:10px;line-height:1.65;color:var(--dim2)}
+#pgTickets .tk-empty{padding:26px 12px;text-align:center;color:var(--dim2);font-size:12px;line-height:1.7}
+@media(max-width:350px){#pgTickets .tk-grid{grid-template-columns:1fr}#pgTickets .tk-digits{font-size:20px}#pgTickets .tk-summary{gap:4px}}
+.bnav{overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none}.bnav::-webkit-scrollbar{display:none}.bnav button{min-width:45px;letter-spacing:0;font-size:8.2px}.bnav button .ico{font-size:18px}
+</style>
+<script id="b4d-ticket-v431-script">
+/* BEAST MODE 4D v4.31 — My Tickets: personal number-match tracker.
+   This checks confirmed/present local result boards; it does not certify a payout.
+   Permutation means digit multiset equality (including duplicate digits and leading zero).
+   A result at another operator is a cross-operator number match, not a winning ticket. */
+const B4D_TICKET_KEY='b4d_my_tickets_v431';
+const B4D_TICKET_ALERT_KEY='b4d_ticket_alerts_v431';
+const B4D_TICKET_NAMES={MAGNUM:'Magnum',TOTO:'Sports Toto',DAMACAI:'Da Ma Cai'};
+let b4dTicketDateFilter='today';
+let b4dTicketRefreshAt=0;
+function b4dTicketClean(rows){
+  if(!Array.isArray(rows))return [];
+  const seen=new Set();
+  return rows.filter(row=>{
+    if(!row||typeof row!=='object'||typeof row.id!=='string'||!row.id||seen.has(row.id)||
+       typeof row.number!=='string'||!/^\d{4}$/.test(row.number)||
+       typeof row.date!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(row.date)||
+       !Number.isFinite(Date.parse(row.date+'T00:00:00Z'))||
+       !['ANY','MAGNUM','TOTO','DAMACAI'].includes(row.playedAt)||
+       !['unspecified','straight','ibox'].includes(row.ticketType))return false;
+    seen.add(row.id);return true;
+  }).slice(0,1500).map(row=>({id:row.id,date:row.date,number:row.number,
+    playedAt:row.playedAt,ticketType:row.ticketType,createdAt:typeof row.createdAt==='string'?row.createdAt:''}));
+}
+function b4dTicketRead(){try{return b4dTicketClean(JSON.parse(localStorage.getItem(B4D_TICKET_KEY)||'[]'));}catch(_){return [];}}
+function b4dTicketStore(rows){try{localStorage.setItem(B4D_TICKET_KEY,JSON.stringify(b4dTicketClean(rows)));return true;}catch(e){alert('Unable to save tickets on this device. Check browser storage, or export a backup.');return false;}}
+function b4dTicketRestore(rows){if(!Array.isArray(rows))return; b4dTicketStore(rows);}
+function b4dTicketEscape(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function b4dTicketDigits(v){return v.split('').sort().join('');}
+function b4dTicketMatches(ticket){
+  const matched=[];const ready=[],waiting=[];
+  const sig=b4dTicketDigits(ticket.number);
+  for(const op of ['MAGNUM','TOTO','DAMACAI']){
+    const saved=findStoredDraw(op,ticket.date),board=saved?.draw;
+    if(!board){waiting.push(op);continue;}
+    if(isCompletePrizeBoard(board))ready.push(op);else waiting.push(op);
+    const prizeGroups=[['1st',board.top3?.slice(0,1)],['2nd',board.top3?.slice(1,2)],
+      ['3rd',board.top3?.slice(2,3)],['Special',board.special],['Consolation',board.consolation]];
+    for(const [prize,values] of prizeGroups){
+      for(const actual of (Array.isArray(values)?values:[])){
+        if(typeof actual!=='string'||!/^\d{4}$/.test(actual)||b4dTicketDigits(actual)!==sig)continue;
+        matched.push({operator:op,actual,prize,kind:actual===ticket.number?'EXACT':'PERM',
+          sameOperator:ticket.playedAt!=='ANY'&&op===ticket.playedAt});
+      }
+    }
+  }
+  matched.sort((a,b)=>Number(b.kind==='EXACT')-Number(a.kind==='EXACT')||Number(b.sameOperator)-Number(a.sameOperator));
+  const status=matched.length?'MATCH':waiting.length?'PENDING':'NO_MATCH';
+  return {matched,ready,waiting,status};
+}
+function b4dTicketAdd(){
+ const date=document.getElementById('tkDate')?.value;
+ const raw=document.getElementById('tkNumbers')?.value||'';
+ const playedAt=document.getElementById('tkOperator')?.value||'ANY';
+ const ticketType=document.getElementById('tkType')?.value||'unspecified';
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(date||'')||!Number.isFinite(Date.parse(date+'T00:00:00Z'))){toast('Choose a valid draw date');return;}
+ if(!raw.trim()){toast('Enter at least one 4-digit number');return;}
+ const nums=raw.trim().split(/[\s,;]+/);
+ if(nums.length>100){alert('Save no more than 100 numbers at a time.');return;}
+ if(nums.some(n=>!/^\d{4}$/.test(n))){alert('Each purchased number must have exactly four digits, including leading zeros (example: 0123). Separate numbers with commas, spaces or new lines.');return;}
+ const current=b4dTicketRead(),existing=new Set(current.map(t=>[t.date,t.number,t.playedAt,t.ticketType].join('|')));
+ const newRows=[],now=new Date().toISOString();
+ for(const number of nums){const k=[date,number,playedAt,ticketType].join('|');if(existing.has(k))continue;existing.add(k);
+   newRows.push({id:'tk'+Date.now().toString(36)+(Math.random().toString(36).slice(2,9)),date,number,playedAt,ticketType,createdAt:now});}
+ if(!newRows.length){toast('These numbers were already saved for this date and operator');return;}
+ if(!b4dTicketStore([...newRows,...current]))return;
+ b4dTicketDateFilter=date;
+ renderTickets();
+ toast('✅ '+newRows.length+' number'+(newRows.length===1?'':'s')+' saved in My Tickets');
+ b4dTicketNotice();
+}
+function b4dTicketRemove(id){if(!confirm('Delete this saved ticket number?'))return;
+  const rows=b4dTicketRead();if(!b4dTicketStore(rows.filter(t=>t.id!==id)))return;
+  renderTickets();toast('Ticket removed');}
+function b4dTicketDateChange(value){b4dTicketDateFilter=value;renderTickets();}
+function b4dTicketRefresh(){
+  b4dTicketRefreshAt=Date.now();
+  const el=document.getElementById('tkRefreshLabel');if(el)el.textContent='Checking published feed…';
+  return autoFetchResults(false).then(()=>{if(activeNav==='Tickets')renderTickets();b4dTicketNotice();});
+}
+function b4dTicketNotice(){
+ const rows=b4dTicketRead();if(!rows.length)return;
+ let observed={};try{observed=JSON.parse(localStorage.getItem(B4D_TICKET_ALERT_KEY)||'{}')||{};}catch(e){}
+ const activeIds=new Set(rows.map(t=>t.id));let newCount=0;
+ for(const ticket of rows){const r=b4dTicketMatches(ticket);
+   if(!r.matched.length)continue;
+   const key=r.matched.map(m=>[m.operator,m.actual,m.prize,m.kind].join(':')).sort().join('|');
+   if(observed[ticket.id]!==key){newCount++;observed[ticket.id]=key;}
+ }
+ for(const id of Object.keys(observed))if(!activeIds.has(id))delete observed[id];
+ try{localStorage.setItem(B4D_TICKET_ALERT_KEY,JSON.stringify(observed));}catch(e){}
+ if(newCount){toast('🎉 '+newCount+' saved number'+(newCount===1?'':'s')+' matched a draw result! Open My Tickets.');}
+}
+function renderTickets(){
+ const pg=document.getElementById('pgTickets');if(!pg)return;
+ const today=malaysiaDateISO();const all=b4dTicketRead();
+ const savedFilter=b4dTicketDateFilter;
+ const filtered=all.filter(t=>savedFilter==='all'||t.date===(savedFilter==='today'?today:savedFilter))
+    .sort((a,b)=>b.date.localeCompare(a.date)||b.createdAt.localeCompare(a.createdAt));
+ const details=filtered.map(t=>({ticket:t,check:b4dTicketMatches(t)}));
+ const count=status=>details.filter(x=>x.check.status===status).length;
+ const optionDates=[...new Set(all.map(t=>t.date))].sort().reverse();
+ const filters=`<select id="tkFilter" aria-label="Filter tickets by draw date" onchange="b4dTicketDateChange(this.value)">
+    <option value="today" ${savedFilter==='today'?'selected':''}>Today (${today})</option>
+    <option value="all" ${savedFilter==='all'?'selected':''}>All saved dates</option>
+    ${optionDates.map(d=>`<option value="${d}" ${savedFilter===d?'selected':''}>${d}</option>`).join('')}</select>`;
+ const cards=details.length?details.map(({ticket:t,check:r})=>{
+   const matched=r.status==='MATCH';const state=r.status==='MATCH'?'✅ Number found':r.status==='NO_MATCH'?'— No match':'⏳ Awaiting results';
+   const statusClass=matched?'tk-pill-hit':r.status==='PENDING'?'tk-pill-pending':'tk-pill-miss';
+   const playLabel=t.playedAt==='ANY'?'Not specified':B4D_TICKET_NAMES[t.playedAt];
+   const ticketLabel={unspecified:'Type not specified',straight:'Straight',ibox:'Permutation / iBox'}[t.ticketType];
+   const found=r.matched.map(m=>{
+     const relation=t.playedAt==='ANY'?'Ticket operator not specified':(m.sameOperator?'Same operator as ticket':'Other operator — cross-operator only');
+     return `<div class="tk-match"><strong>${b4dTicketEscape(B4D_TICKET_NAMES[m.operator])}</strong> · ${b4dTicketEscape(m.prize)}<br>
+       <span style="font-family:monospace;font-weight:900">${m.actual}</span> — <strong>${m.kind==='EXACT'?'Exact order':'Permutation'}</strong><br>
+       <span style="font-size:10px;color:var(--dim2)">${relation}</span></div>`;
+   }).join('');
+   const ready=r.ready.map(x=>B4D_TICKET_NAMES[x]).join(', ');
+   const waiting=r.waiting.map(x=>B4D_TICKET_NAMES[x]).join(', ');
+   const foot=r.waiting.length?`<div class="tk-waiting">⏳ Not fully checked: ${b4dTicketEscape(waiting)}. A miss is only final here once all three complete result boards are saved.</div>`
+      :`<div class="tk-waiting">✓ Complete boards checked for all three operators on this date.</div>`;
+   return `<article class="tk-card ${matched?'tk-card-match':''}"><div class="tk-card-head"><div><div class="tk-digits">${t.number}</div>
+     <div class="tk-meta">📅 ${t.date} · Purchased at: ${b4dTicketEscape(playLabel)} · ${b4dTicketEscape(ticketLabel)}</div></div>
+     <div style="text-align:right"><span class="tk-pill ${statusClass}">${state}</span><div><button class="tk-delete" type="button" data-ticket-delete="${b4dTicketEscape(t.id)}" onclick="b4dTicketRemove(this.dataset.ticketDelete)">Delete</button></div></div></div>
+     ${found}${matched?'':r.status==='NO_MATCH'?'<div class="tk-waiting">No identical digits or permutations in the full results for this date.</div>':''}
+     ${foot}</article>`;
+ }).join(''):'<div class="tk-empty">🎟️ No numbers saved for this date.<br>Enter your purchased 4-digit numbers above to start tracking.</div>';
+ pg.innerHTML=`<section class="tk-hero"><div class="tk-title">🎟️ My Tickets · v4.31</div>
+   <div class="tk-sub">Save the numbers you bought. BEAST checks exact matches and all digit permutations against Magnum, Sports Toto and Da Ma Cai for the <strong>same draw date</strong>.</div></section>
+   <section class="tk-panel"><div style="font-size:14px;font-weight:850;margin-bottom:12px">➕ Add purchased numbers</div>
+     <div class="tk-grid"><div><label for="tkDate">Draw date (Malaysia)</label><input id="tkDate" type="date" value="${(savedFilter!=='all'&&savedFilter!=='today')?savedFilter:today}" required></div>
+     <div><label for="tkOperator">Operator where you bought</label><select id="tkOperator"><option value="ANY">Not specified / check all</option>
+       <option value="MAGNUM">Magnum</option><option value="TOTO">Sports Toto</option><option value="DAMACAI">Da Ma Cai</option></select></div></div>
+     <div style="margin-top:9px"><label for="tkType">Ticket type (for your reference)</label><select id="tkType">
+       <option value="unspecified">Not specified</option><option value="straight">Straight</option><option value="ibox">Permutation / iBox</option></select></div>
+     <div style="margin-top:9px"><label for="tkNumbers">Purchased 4D numbers (multiple allowed)</label>
+       <textarea id="tkNumbers" spellcheck="false" inputmode="numeric" placeholder="1234, 0123, 5588&#10;One number per line or separated by commas"></textarea></div>
+     <div class="tk-actions"><button class="tk-btn tk-btn-primary" type="button" onclick="b4dTicketAdd()">💾 Save & check numbers</button>
+       <button class="tk-btn" type="button" onclick="b4dTicketRefresh()">🔄 Check latest results</button></div>
+     <div id="tkRefreshLabel" class="tk-note">New results are checked on app opening and when this page is visible. While the app stays open, pending tickets are rechecked periodically.</div></section>
+   <section class="tk-panel"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px">
+     <div style="font-size:14px;font-weight:850">📋 My saved numbers</div><div style="width:50%;min-width:135px">${filters}</div></div>
+     <div class="tk-summary"><div><div class="tk-stat">${details.length}</div><div class="tk-stat-label">Saved</div></div>
+       <div><div class="tk-stat" style="color:#39cf85">${count('MATCH')}</div><div class="tk-stat-label">Matched</div></div>
+       <div><div class="tk-stat" style="color:#efb452">${count('PENDING')}</div><div class="tk-stat-label">Pending</div></div>
+       <div><div class="tk-stat">${count('NO_MATCH')}</div><div class="tk-stat-label">No match</div></div></div>
+     ${cards}</section>
+   <div class="tk-panel tk-note"><strong>Important:</strong> A digit match is not proof of a payable win. A number appearing at a different operator does not win a ticket bought elsewhere. Exact/box payouts depend on your actual ticket type and official rules. A pending record means the app lacks a full result board; results rely on the published feed, or draws you import manually. Keep your physical receipt.</div>`;
+}
+function b4dTicketAutoPoll(){
+ if(document.hidden)return;
+ const today=malaysiaDateISO();
+ const pendingToday=b4dTicketRead().some(t=>t.date===today&&b4dTicketMatches(t).status==='PENDING');
+ if(!pendingToday)return;
+ if(Date.now()-b4dTicketRefreshAt<14*60*1000)return;
+ b4dTicketRefreshAt=Date.now();
+ autoFetchResults(true).then(()=>{if(activeNav==='Tickets')renderTickets();b4dTicketNotice();});
+}
+window.addEventListener('pageshow',()=>{b4dTicketAutoPoll();b4dTicketNotice();});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)b4dTicketAutoPoll();});
+setInterval(b4dTicketAutoPoll,15*60*1000);
+// Preserve the app's startup sync, while displaying any newly available matches.
+setTimeout(()=>{if(activeNav==='Tickets')renderTickets();b4dTicketNotice();},1800);
+</script>
 </body>
 </html>
