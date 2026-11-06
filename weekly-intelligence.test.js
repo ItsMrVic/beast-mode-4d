@@ -1,0 +1,25 @@
+/* Run: node weekly-intelligence.test.js */
+const assert=require("node:assert/strict");
+const w=require("./weekly-intelligence.js");
+const m=w.createMonitor();
+assert.equal(w.number4("70"),"0070");
+assert.throws(()=>w.number4("12x4"));
+assert.equal(m.ingest({operator:"Magnum",date:"2026-11-04",type:"regular",numbers:["0070"],source:"test"}).added,true);
+assert.equal(m.ingest({operator:"Magnum",date:"2026-11-04",type:"regular",numbers:["0070"],source:"test"}).added,false);
+assert.throws(()=>m.ingest({operator:"Magnum",date:"2026-11-04",type:"regular",numbers:["9999"],source:"test"}));
+m.ingest({operator:"Magnum",date:"2026-11-05",type:"special",numbers:["1234"],source:"test"});
+m.ingest({operator:"Toto",date:"2026-11-05",type:"special",numbers:["9999"],source:"test"});
+const before=m.snapshot("Magnum","2026-11-04","2026-11-04T15:00:00+08:00");
+assert.equal(before.profile.numberCount,1);
+assert.equal(before.profile.positions[0][0],1);
+assert.equal(before.profile.status,"insufficient-data");
+const after=m.snapshot("Magnum","2026-11-05","2026-11-05T15:00:00+08:00");
+assert.equal(after.profile.numberCount,2);
+assert.equal(after.includedDrawIds.length,2);
+assert.equal(before.profile.numberCount,1);
+const prediction=m.lockPrediction({snapshotId:after.id,targetDate:"2026-11-07",createdAt:"2026-11-05T16:00:00+08:00",candidates:["0070","1234"],strategy:"adaptive"});
+assert.equal(prediction.candidates[0],"0070");
+assert.throws(()=>m.lockPrediction({snapshotId:after.id,targetDate:"2026-11-05",createdAt:"2026-11-05T16:00:00+08:00",candidates:["0070"]}));
+assert.throws(()=>m.lockPrediction({snapshotId:after.id,targetDate:"2026-11-07",createdAt:"2026-11-05T16:00:00+08:00",candidates:["0070","0070"]}));
+assert.throws(()=>m.snapshot("Magnum","2026-02-31","2026-03-01T00:00:00Z"),/Invalid date/);
+console.log("Weekly intelligence tests passed");

@@ -1,3 +1,54 @@
+# BEAST MODE 4D v4.30 — Weekly Pattern Intelligence (design and implementation checklist)
+
+**Status: DEVELOPMENT BRANCH ONLY — read-only Weekly UI integrated; not yet released.** The v4.30 tab is connected to the existing local operator records. It does **not** alter the prediction engine, imply a secret lottery algorithm, or increase winning odds.
+
+### Implemented in this branch (2026-11-06)
+- `index.html` displays v4.30 and adds the Weekly research tab with read-only analysis across three operators.
+- `weekly-bridge.js` converts the existing stored draw format without changing `b4d_ops`, `b4d_hist`, statistics or settings. Regular-draw *Special prize tier* remains distinct from a **Special Draw event**; Tuesday-inferred events are labeled unverified.
+- `weekly-ui.js` shows cutoff-limited descriptive digit counts, latest observed Wednesday, later recorded draws, short-window shifts and tentative Special Draw dates. Its cutoff defaults to Malaysia calendar time.
+- Malaysia-time fixes also apply to the next draw countdown, P&L default date, backup filenames and prediction-history creation date, independent of the device timezone.
+- `sw.js` rotates the shell cache to `beast-4d-v430-shell` and pre-caches all three research scripts. The PWA manifest now reflects v4.30.
+- `node weekly-intelligence.test.js` and `node weekly-bridge.test.js` passed locally. An isolated headless Chromium test loaded 2,000 archived draws per operator, navigated Weekly/History/Predict, ran all three Weekly analyses, and verified that analysis did not mutate existing storage. Both Malaysia and US-West-Coast timezone simulations passed. HTTP browser navigation was blocked in the test environment, so **end-to-end service-worker updates and real Android PWA usage remain unverified**.
+
+### Not yet delivered
+- No adaptive predictions or method weight changes are enabled; these still require walk-forward evaluation against fixed and random baselines.
+- True publication-time cutoffs need timestamped verified draw provenance before rigorous same-day historical replay.
+- The GitHub pull request remains **draft**. No merge, live deployment or automatic installed-app update has occurred. Keep v4.29 in production until validation and approval.
+
+ This feature is experimental and must not be described as identifying an operator's secret algorithm or increasing lottery winning odds.
+
+## Event-driven draw workflow
+
+1. Ingest each verified draw with operator, draw date, draw type (`regular` or `special`), complete prize board, and provenance. Preserve leading zeroes and avoid duplicate imports.
+2. At each Wednesday draw, snapshot a separate baseline for each operator using only information available at that timestamp.
+3. If a Special Draw occurs, update the profile immediately after its verified results are recorded, and retain the prior snapshot and recommendations.
+4. After Saturday's verified draw, update Sunday's profile. Never retroactively change predictions for completed draws.
+5. Maintain both an adaptive strategy and an unchanged fixed baseline for comparison.
+
+## Pattern families
+
+Position frequencies; overall digit frequencies; odd/even balance; low/high digits; digit sums; repeated digits; digit-pair frequencies; permutation families; sequential digits; recurrence gaps; cross-operator overlap. These are *descriptive statistical features*, not evidence of a lottery algorithm switch.
+
+## Guardrails and acceptance tests
+
+- Each prediction has an immutable creation timestamp, target operator, target draw date, draw type, ranked candidates, strategy version, input-data cutoff, and snapshot identifier.
+- Never use target-draw or later results to compute an earlier prediction (prevent look-ahead leakage).
+- Distinguish exact matches, permutations, cross-operator observations, and paid-ticket wins.
+- When data are insufficient or statistical evidence is weak, display `No reliable pattern detected`.
+- Test proposed regime-change signals against simulated independent fair draws, adjusting for multiple testing and selection bias.
+- Report out-of-sample results, random-control comparisons, confidence intervals, and number of evaluated draws; do not present historical-fit scores as win probabilities.
+- Verify Special Draw chronology, missed draws, repeated imports, device-local persistence, and offline behavior.
+- Preserve all v4.29 UI themes and existing prediction history.
+
+## Implementation order
+
+1. Audit current database and prediction-history interfaces.
+2. Add a non-destructive draw-event and prediction-snapshot schema.
+3. Implement statistical feature extraction and an event-driven regime monitor.
+4. Add locked baseline-versus-adaptive backtesting.
+5. Integrate the weekly monitor and Special Draw status into the UI, then test before merging.
+
+---
 # BEAST MODE 4D v4.20 — History Digit Match Tracker
 
 - History now includes **Deep Learn** and **Random Control** mode filters alongside Oracle, Hot Hand, Cross-Operator Migration, Sniper, Fusion, Dodge and the existing Repeat modes.

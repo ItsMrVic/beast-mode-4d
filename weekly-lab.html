@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>BEAST MODE 4D — Weekly Intelligence Lab</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#140f15;color:#f6e8ce}
+body{max-width:760px;margin:auto;padding:18px}h1{color:#f3c873;font-size:1.6rem}h2{font-size:1.15rem}
+section{background:#251b24;border:1px solid #745536;border-radius:14px;padding:16px;margin:16px 0}
+label{display:block;margin:12px 0 5px}input,select,button,textarea{box-sizing:border-box;width:100%;background:#17121a;border:1px solid #866b4d;border-radius:8px;color:inherit;padding:11px;font:inherit}
+button{background:#76511c;color:white;font-weight:700;cursor:pointer;margin-top:10px}button:focus-visible,input:focus-visible{outline:2px solid #ffd789}
+small,.muted{color:#c8b8a3}pre{white-space:pre-wrap;overflow-wrap:anywhere} .status{padding:10px;border-left:3px solid #d7a74e}
+</style></head><body><h1>🐉 BEAST MODE 4D — Weekly Intelligence Lab</h1>
+<p class="muted">v4.30 experimental research panel. Separate from the existing app. This tool does not identify secret lottery algorithms or improve fair-draw odds.</p>
+<section><h2>Import verified draw events</h2>
+<p>Upload JSON containing an array of draw records. Format: <code>[{"operator":"Magnum","date":"2026-11-04","type":"regular","numbers":["0070","1234"],"source":"verified archive"}]</code></p>
+<label for="file">JSON draw archive</label><input id="file" type="file" accept=".json,application/json"><p id="importStatus" class="status" role="status">No data imported. Files are processed locally and not uploaded.</p>
+</section>
+<section><h2>Operator weekly profile</h2><label for="operator">Operator</label><select id="operator"><option>Magnum</option><option>Toto</option><option>Da Ma Cai</option></select>
+<label for="cutoff">Results available through</label><input id="cutoff" type="date">
+<button id="analyze">Analyze historical patterns</button><pre id="result" aria-live="polite">Import results to begin.</pre>
+</section>
+<section><h2>Special Draw timeline</h2><p class="muted">Special Draws are shown separately. A change in statistics is not evidence of manipulation.</p><pre id="timeline">No draw events yet.</pre></section>
+<p><a href="./index.html" style="color:#f3c873">Return to BEAST MODE 4D</a></p>
+<script src="./weekly-intelligence.js"></script><script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id),engine=window.BeastWeeklyIntelligence,monitor=engine.createMonitor();
+$('cutoff').value=new Date(Date.now()+8*3600000).toISOString().slice(0,10);
+function timeline(){const op=$('operator').value;const rows=monitor.draws().filter(d=>d.operator===op).sort((a,b)=>a.date.localeCompare(b.date));$('timeline').textContent=rows.length?rows.slice(-30).map(d=>d.date+' · '+d.type.toUpperCase()+' · '+d.numbers.length+' results').join('\n'):'No events for this operator.';}
+$('operator').addEventListener('change',timeline);
+$('file').addEventListener('change',async()=>{try{const f=$('file').files[0];if(!f)return;if(f.size>5e6)throw Error('File exceeds 5 MB');
+const data=JSON.parse(await f.text());if(!Array.isArray(data))throw Error('Expected a JSON array');
+let added=0;for(const row of data){if(monitor.ingest(row).added)added++;}
+$('importStatus').textContent='Imported '+added+' new draw events. Total '+monitor.draws().length+'. Data remains in this browser tab.';timeline();
+}catch(e){$('importStatus').textContent='Import error: '+e.message;}});
+$('analyze').addEventListener('click',()=>{try{const p=monitor.snapshot($('operator').value,$('cutoff').value,new Date().toISOString()).profile;
+$('result').textContent='Status: '+(p.status==='insufficient-data'?'Insufficient data — no reliable pattern detected':'Descriptive statistics only — no proven predictive signal')+'\nDraws: '+p.drawCount+'\nNumbers: '+p.numberCount+'\nDigit frequencies (0–9): '+p.digits.join(', ')+'\nMean digit sum: '+(p.meanDigitSum===null?'N/A':p.meanDigitSum.toFixed(2))+'\nRepeated digit groups: '+JSON.stringify(p.repeatedDigitGroups);
+}catch(e){$('result').textContent='Analysis error: '+e.message;}});
+})();
+</script></body></html>
