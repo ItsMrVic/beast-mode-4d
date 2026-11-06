@@ -69,6 +69,10 @@ sarawakgovernor:['Hari Jadi Yang di-Pertua Negeri Sarawak','🪶','royal',65,'Sa
 perakbirthday:['Hari Keputeraan Sultan Perak','👑','royal',68,'Perak state holiday',0,0],
 selangorbirthday:['Hari Keputeraan Sultan Selangor','👑','royal',68,'Selangor state holiday',0,0]
 };
+// Distinct visual identities; a Raya ketupat or Deepavali lamp must not represent unrelated festivals.
+C.thaipusam[2]='thaipusam';
+['israk','ramadan','nuzul','awalmuharram','maulidur'].forEach(function(x){C[x][2]='islamic';});
+['arafah','haji'].forEach(function(x){C[x][2]='haji';});
 var FIXED={
 newyear:'01-01',wilayah:'02-01',independencemelaka:'02-20',
 trginstallation:'03-04',johorbirthday:'03-23',trgbirthday:'04-26',
@@ -78,7 +82,7 @@ kaamatan:'05-30',gawai:'06-01',sanpedro:'06-29',
 heritagepenang:'07-07',sarawakday:'07-22',stanne:'07-26',
 merdeka:'08-31',sabahday:'08-31',malaysia:'09-16',
 kelantanbirthday:'09-29',selangorbirthday:'12-11',christmaseve:'12-24',
-christmas:'12-25',newyearseve:'12-31',children:'11-20',
+christmas:'12-25',newyearseve:'12-31',children:'11-20',dongzhi:'12-22',
 nsnbirthday:'01-14'
 };
 // Officially listed 2026/27 movable dates and state ruler dates. Not extrapolated.
@@ -120,6 +124,7 @@ holpahang:['PHG'],kedahbirthday:['KDH'],penanggovernor:['PNG'],
 johorhol:['JHR'],pahangbirthday:['PHG'],melakagovernor:['MLK'],
 kelantanbirthday:['KTN'],sarawakgovernor:['SWK'],perakbirthday:['PRK'],selangorbirthday:['SGR']
 };
+var REGIONAL_CULTURAL=['thaipusam','goodfriday','israk','nuzul','ramadan','arafah','kaamatan','gawai','sarawakday','sabahday','heritagepenang','heritagemelaka','stanne','sanpedro'];
 var OBSERVANCE=new Set(['pongal','chapgohmei','qingming','easter','vaisakhi','teachers','children','stanne','sanpedro','dongzhi','midautumn','dragonboat','christmaseve','newyearseve']);
 var COLORS={
 chinese:['#3a0e1b','#8e242c','#ffd06e'],
@@ -134,7 +139,7 @@ moon:['#172541','#5c518d','#ffdf9a'],
 christmas:['#0a3830','#18704d','#ffdb9b'],
 christian:['#243149','#556f9d','#f6e6bc'],
 celebration:['#281b3f','#8558a5','#f5dfab'],
-royal:['#262245','#665299','#edd58c']
+royal:['#262245','#665299','#edd58c'],islamic:['#092b37','#246573','#d8ddad'],haji:['#102d2b','#35786a','#f3da99'],thaipusam:['#3b1739','#a45f66','#f7d398']
 };
 var ICONS={
 deepavali:'<svg viewBox="0 0 180 150" aria-hidden="true"><g fill="none" stroke="#f8c671" stroke-width="2.5"><circle cx="90" cy="70" r="52" opacity=".6"/><circle cx="90" cy="70" r="37" opacity=".5"/><path d="M90 8v23M90 109v22M27 70h24m78 0h24M45 26l16 16m58 58 16 16m0-90-16 16m-58 58-16 16"/></g><g fill="#e8a2d5" opacity=".86"><ellipse cx="90" cy="26" rx="7" ry="14"/><ellipse cx="90" cy="114" rx="7" ry="14"/><ellipse cx="46" cy="70" rx="14" ry="7"/><ellipse cx="134" cy="70" rx="14" ry="7"/></g><path d="M45 99q45 34 90 0l-12 24q-33 18-66 0z" fill="#e49342" stroke="#ffe49d" stroke-width="3"/><path d="M90 99q-24-23 0-54 23 32 0 54z" fill="#ffe36f"/><path d="M90 75q-9 12 0 22 8-12 0-22z" fill="#fff9c0"/></svg>',
@@ -145,10 +150,13 @@ harvest:'<svg viewBox="0 0 180 150" aria-hidden="true"><g fill="none" stroke="#f
 gawai:'<svg viewBox="0 0 180 150" aria-hidden="true"><g stroke="#f0d08b" stroke-width="3" fill="none"><path d="M40 116 90 21 140 116 90 136Z"/><path d="M59 112 90 49 121 112 90 126Z"/><path d="m40 116 100 0m-50-95v115"/></g><path d="M90 21q-23-17-36 0 23-4 36 0m0 0q23-17 36 0-23-4-36 0" fill="#ecce83"/><path d="M60 95q30-40 60 0" stroke="#f7e9bc" stroke-width="5" fill="none"/></svg>',
 christmas:'<svg viewBox="0 0 180 150" aria-hidden="true"><path d="M92 20 48 84h25l-33 34h103l-33-34h25z" fill="#3d8a63" stroke="#d6dda5" stroke-width="3"/><path d="M92 12l6 10 12 1-9 8 2 12-11-6-10 6 2-12-9-8 12-1z" fill="#ffe3a2"/><g fill="#f2b56f"><circle cx="77" cy="80" r="6"/><circle cx="111" cy="88" r="6"/><circle cx="91" cy="110" r="6"/></g></svg>'
 };
-ICONS.moon=ICONS.raya;
-ICONS.christian=ICONS.lotus;
-ICONS.royal=ICONS.patriotic;
-ICONS.celebration=ICONS.christmas;
+ICONS.moon='<svg viewBox="0 0 180 150" aria-hidden="true"><circle cx="93" cy="62" r="44" fill="#ffe1a0"/><circle cx="77" cy="45" r="7" fill="#c8b58c" opacity=".45"/><path d="M53 100Q96 91 140 109" stroke="#ffdfac" stroke-width="3" fill="none"/><path d="M108 93v14M91 107h34" stroke="#f8d1a5" stroke-width="3"/><ellipse cx="108" cy="118" rx="19" ry="19" fill="#cd474d" stroke="#f5ca83" stroke-width="3"/><path d="M108 102v34m-14-19h28" stroke="#ffe2a0" stroke-width="2"/></svg>';
+ICONS.islamic='<svg viewBox="0 0 180 150" aria-hidden="true"><path d="M96 17a48 48 0 1 0 39 77 43 43 0 0 1-39-77z" fill="#f6dc9f"/><path d="m145 30 5 12 13 1-10 9 3 13-11-7-11 7 3-13-10-9 13-1z" fill="#fff0bb"/><path d="M38 130V98l20-14 20 14v32M96 130V88l22-18 22 18v42" fill="none" stroke="#cde7d3" stroke-width="4"/><path d="M113 70q5-19 11 0" stroke="#fff0b9" stroke-width="3" fill="none"/></svg>';
+ICONS.haji='<svg viewBox="0 0 180 150" aria-hidden="true"><path d="M101 20a40 40 0 1 0 31 62 35 35 0 0 1-31-62z" fill="#f5daa1"/><path d="M53 81l39-16 39 16v50l-39 13-39-13z" fill="#171f24" stroke="#e9c379" stroke-width="3"/><path d="M53 94l39 13 39-13m-39 13v37" stroke="#f1d393" stroke-width="5" fill="none"/></svg>';
+ICONS.thaipusam='<svg viewBox="0 0 180 150" aria-hidden="true"><path d="M90 20v106" stroke="#f5d58f" stroke-width="5"/><path d="M90 10l-10 22 10-4 10 4z" fill="#ffe5ac"/><path d="M34 118q56-109 112 0" stroke="#d3a1d8" stroke-width="7" fill="none"/><path d="M46 115q44-78 88 0" stroke="#e8c18d" stroke-width="5" fill="none"/><path d="M62 75q26-34 55 0" stroke="#e9d8ae" stroke-width="3" fill="none"/><g fill="#5ac8ac"><circle cx="50" cy="86" r="7"/><circle cx="131" cy="86" r="7"/></g></svg>';
+ICONS.christian='<svg viewBox="0 0 180 150" aria-hidden="true"><path d="M90 27v105M59 67h62" stroke="#f3dfa4" stroke-width="11" stroke-linecap="round"/><path d="M47 113q43-31 87 0" stroke="#f2c9d5" stroke-width="5" fill="none"/><path d="M27 105q19-26 33 0m60 0q19-26 33 0" stroke="#e0b4ca" stroke-width="3" fill="none"/></svg>';
+ICONS.royal='<svg viewBox="0 0 180 150" aria-hidden="true"><path d="M35 49 52 93 92 112 130 93 148 49 115 74 92 32 67 74Z" fill="#e7bb6d" stroke="#ffdea1" stroke-width="5"/><path d="M46 111h92v17H46Z" fill="#b77c3e" stroke="#f6d68f" stroke-width="4"/><g fill="#e86b76"><circle cx="69" cy="87" r="6"/><circle cx="114" cy="87" r="6"/></g></svg>';
+ICONS.celebration='<svg viewBox="0 0 180 150" aria-hidden="true"><g stroke="#f4d596" fill="none" stroke-width="4"><path d="M90 28v28m0 26v28M49 69h28m26 0h28m-71-30 19 19m22 22 19 19m0-60-19 19m-22 22-19 19"/></g><g fill="#ffca84"><circle cx="90" cy="69" r="8"/><circle cx="35" cy="29" r="4"/><circle cx="143" cy="120" r="5"/></g></svg>';
 function safeGet(k,d){try{return localStorage.getItem(k)||d;}catch(e){return d;}}
 function safeSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
 function malaysiaDate(){var p=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());var m={};p.forEach(function(x){m[x.type]=x.value;});return m.year+'-'+m.month+'-'+m.day;}
@@ -165,14 +173,14 @@ var preview=null,dialog=null;
 function resolve(date,selectedRegion){
  var d=ordinal(date),y=Number(date.slice(0,4)),s=selectedRegion||region,matching=[];
  [y-1,y,y+1].forEach(function(year){eventsForYear(year).forEach(function(e){
- if(e.states&&s!=='MY'&&e.states.indexOf(s)<0)return;
- // State-specific civic events are available in the calendar, but do not replace the
- // national artwork in Malaysia-wide mode. Regional harvest CULTURAL themes do.
- if(e.states&&s==='MY'&&['kaamatan','gawai','sarawakday','sabahday','heritagepenang','heritagemelaka','stanne','sanpedro'].indexOf(e.id)<0)return;
+ if(e.states&&s!=='MY'&&e.states.indexOf(s)<0&&REGIONAL_CULTURAL.indexOf(e.id)<0)return;
+ // Public-holiday status is state-specific, but Malaysian cultural festivals can be
+ // celebrated and illustrated throughout the country.
+ if(e.states&&s==='MY'&&REGIONAL_CULTURAL.indexOf(e.id)<0)return;
  var delta=d-ordinal(e.date);
  if(delta>=-e.before&&delta<=e.after)matching.push(Object.assign({delta:delta},e));
  });});
- matching.sort(function(a,b){return b.priority-a.priority||Math.abs(a.delta)-Math.abs(b.delta)||a.id.localeCompare(b.id);});
+ matching.sort(function(a,b){var as=a.priority-Math.abs(a.delta)*6,bs=b.priority-Math.abs(b.delta)*6;return bs-as||Math.abs(a.delta)-Math.abs(b.delta)||a.id.localeCompare(b.id);});
  return matching[0]||null;
 }
 function activeTheme(){var t=preview&&C[preview]?{id:preview,title:C[preview][0],emoji:C[preview][1],visual:C[preview][2],desc:C[preview][4]}:(auto?resolve(malaysiaDate()):null);return t||{id:'chinese',title:'Fortune & Prosperity',emoji:'🐉',visual:'chinese',desc:'Chinese-inspired fortune art • dragon, lanterns and God of Wealth'};}
