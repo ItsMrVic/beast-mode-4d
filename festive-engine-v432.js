@@ -141,11 +141,34 @@ christian:['#243149','#556f9d','#f6e6bc'],
 celebration:['#281b3f','#8558a5','#f5dfab'],
 royal:['#262245','#665299','#edd58c'],islamic:['#092b37','#246573','#d8ddad'],haji:['#102d2b','#35786a','#f3da99'],thaipusam:['#3b1739','#a45f66','#f7d398']
 };
+// Draw the Jalur Gemilang from fixed 2:1 geometry rather than an approximate waving outline.
+// 14 equal stripes (red first, white last), half-width blue canton eight stripes high,
+// yellow crescent and 14-point federal star. Shared by Merdeka and Malaysia Day.
+function jalurGemilangSVG(){
+ var bars='';
+ for(var i=0;i<14;i+=2)bars+='<rect x="22" y="'+(30+i*5)+'" width="140" height="5" fill="#cc0001"/>';
+ var points=[];
+ for(var j=0;j<28;j++){
+  var a=-Math.PI/2+j*Math.PI/14,r=j%2===0?11.5:4.8;
+  points.push((75+Math.cos(a)*r).toFixed(2)+','+(50+Math.sin(a)*r).toFixed(2));
+ }
+ return '<svg viewBox="0 0 180 150" aria-hidden="true">'+
+  '<path d="M17 22v103" stroke="#e8c66f" stroke-width="4" stroke-linecap="round"/>'+
+  '<circle cx="17" cy="22" r="4" fill="#f5db91"/>'+
+  '<g class="fest-jalur-gemilang" data-stripes="14" data-star-points="14">'+
+  '<rect x="22" y="30" width="140" height="70" fill="#fff"/>'+bars+
+  '<rect x="22" y="30" width="70" height="40" fill="#010066"/>'+
+  '<circle cx="46" cy="50" r="14" fill="#ffcc00"/>'+
+  '<circle cx="52" cy="50" r="11.5" fill="#010066"/>'+
+  '<polygon points="'+points.join(' ')+'" fill="#ffcc00"/>'+
+  '<rect x="22" y="30" width="140" height="70" fill="none" stroke="#d5c7aa" stroke-width=".45"/>'+
+  '</g></svg>';
+}
 var ICONS={
 deepavali:'<svg viewBox="0 0 180 150" aria-hidden="true"><g fill="none" stroke="#f8c671" stroke-width="2.5"><circle cx="90" cy="70" r="52" opacity=".6"/><circle cx="90" cy="70" r="37" opacity=".5"/><path d="M90 8v23M90 109v22M27 70h24m78 0h24M45 26l16 16m58 58 16 16m0-90-16 16m-58 58-16 16"/></g><g fill="#e8a2d5" opacity=".86"><ellipse cx="90" cy="26" rx="7" ry="14"/><ellipse cx="90" cy="114" rx="7" ry="14"/><ellipse cx="46" cy="70" rx="14" ry="7"/><ellipse cx="134" cy="70" rx="14" ry="7"/></g><path d="M45 99q45 34 90 0l-12 24q-33 18-66 0z" fill="#e49342" stroke="#ffe49d" stroke-width="3"/><path d="M90 99q-24-23 0-54 23 32 0 54z" fill="#ffe36f"/><path d="M90 75q-9 12 0 22 8-12 0-22z" fill="#fff9c0"/></svg>',
 raya:'<svg viewBox="0 0 180 150" aria-hidden="true"><path d="M104 18a48 48 0 1 0 40 77 43 43 0 0 1-40-77z" fill="#ffe49e"/><path d="m141 22 6 13 14 2-11 10 2 14-11-7-13 7 3-14-10-10 14-2z" fill="#fff0b8"/><path d="M62 95 99 60 136 95 99 130Z" fill="#5fc795" stroke="#f2dc98" stroke-width="3"/><path d="M62 95h74M99 60v70M80 78l37 35m0-35-37 35" stroke="#eaf5c5" stroke-width="4"/></svg>',
 lotus:'<svg viewBox="0 0 180 150" aria-hidden="true"><g fill="#eeb9de" stroke="#ffe6f5" stroke-width="2"><ellipse cx="90" cy="70" rx="18" ry="49"/><ellipse cx="90" cy="79" rx="17" ry="43" transform="rotate(38 90 100)"/><ellipse cx="90" cy="79" rx="17" ry="43" transform="rotate(-38 90 100)"/><ellipse cx="90" cy="90" rx="16" ry="37" transform="rotate(65 90 106)"/><ellipse cx="90" cy="90" rx="16" ry="37" transform="rotate(-65 90 106)"/></g><path d="M33 124q57 18 114 0" fill="none" stroke="#f9d89d" stroke-width="5"/></svg>',
-patriotic:'<svg viewBox="0 0 180 150" aria-hidden="true"><path d="M40 18v113" stroke="#ffe7a2" stroke-width="5"/><path d="M44 22q47-18 103 4v72q-49-17-103-1Z" fill="#f5f1e7"/><path d="M44 32q52-13 103 5m-103 14q52-13 103 5m-103 14q52-13 103 5m-103 14q52-13 103 5" stroke="#d73b4d" stroke-width="8"/><path d="M44 23q37-12 67-3v46q-30-7-67 3z" fill="#173c86"/><path d="M87 30a17 17 0 1 0 0 27 15 15 0 1 1 0-27" fill="#ffe477"/></svg>',
+patriotic:jalurGemilangSVG(),
 harvest:'<svg viewBox="0 0 180 150" aria-hidden="true"><g fill="none" stroke="#ffd98c" stroke-width="4"><path d="M92 133Q75 62 37 26M92 133q21-75 54-112M92 133V18"/></g><g fill="#e9c46f"><ellipse cx="57" cy="45" rx="8" ry="15" transform="rotate(-30 57 45)"/><ellipse cx="67" cy="66" rx="8" ry="15" transform="rotate(-30 67 66)"/><ellipse cx="124" cy="48" rx="8" ry="15" transform="rotate(30 124 48)"/><ellipse cx="113" cy="73" rx="8" ry="15" transform="rotate(30 113 73)"/><ellipse cx="93" cy="35" rx="8" ry="15"/><ellipse cx="93" cy="62" rx="8" ry="15"/></g></svg>',
 gawai:'<svg viewBox="0 0 180 150" aria-hidden="true"><g stroke="#f0d08b" stroke-width="3" fill="none"><path d="M40 116 90 21 140 116 90 136Z"/><path d="M59 112 90 49 121 112 90 126Z"/><path d="m40 116 100 0m-50-95v115"/></g><path d="M90 21q-23-17-36 0 23-4 36 0m0 0q23-17 36 0-23-4-36 0" fill="#ecce83"/><path d="M60 95q30-40 60 0" stroke="#f7e9bc" stroke-width="5" fill="none"/></svg>',
 christmas:'<svg viewBox="0 0 180 150" aria-hidden="true"><path d="M92 20 48 84h25l-33 34h103l-33-34h25z" fill="#3d8a63" stroke="#d6dda5" stroke-width="3"/><path d="M92 12l6 10 12 1-9 8 2 12-11-6-10 6 2-12-9-8 12-1z" fill="#ffe3a2"/><g fill="#f2b56f"><circle cx="77" cy="80" r="6"/><circle cx="111" cy="88" r="6"/><circle cx="91" cy="110" r="6"/></g></svg>'
