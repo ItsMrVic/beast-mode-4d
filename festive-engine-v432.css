@@ -49,3 +49,45 @@
 .fest-v432-item small{font-size:10px;color:#bdb4aa;line-height:1.4}
 #fest-v432-close{background:#eec97d;color:#261622;border:0;font-weight:800;border-radius:10px;padding:10px 23px;margin-top:12px;cursor:pointer}
 .fest-v432-foot{font-size:10px!important}
+
+
+/* v4.33: The visual preview lives INSIDE the modal, not behind the dark overlay. */
+.fest-v433-panel {max-height:92dvh;padding:16px;overscroll-behavior:contain}
+.fest-v433-preview {
+ --gallery-dark:#261239;--gallery-mid:#75548e;--gallery-gold:#ffd58f;
+ position:relative;display:flex;align-items:center;min-height:162px;overflow:hidden;
+ border:1px solid color-mix(in srgb,var(--gallery-gold) 72%,transparent);
+ border-radius:14px;margin:15px 0 10px;
+ background:radial-gradient(circle at 24% 50%,color-mix(in srgb,var(--gallery-gold) 18%,transparent),transparent 49%),linear-gradient(120deg,var(--gallery-mid),var(--gallery-dark));
+ box-shadow:inset 0 0 24px #0004,0 5px 22px #0003;
+}
+.fest-v433-preview-visual {width:46%;max-width:185px;min-width:110px;height:145px;display:flex;align-items:center;justify-content:center;flex:none;z-index:1;animation:fest-v432-hover 5s ease-in-out infinite}
+.fest-v433-preview-visual svg {width:100%;max-width:170px;height:140px;filter:drop-shadow(0 0 12px #ffdf9466)}
+.fest-v433-preview-copy {position:relative;z-index:2;display:flex;flex-direction:column;justify-content:center;gap:9px;padding:10px 12px 10px 0;min-width:0;flex:1;text-shadow:0 2px 8px #0009}
+.fest-v433-preview-copy strong {font-size:17px;font-weight:850;color:#fff5cf;line-height:1.2;overflow-wrap:anywhere}
+.fest-v433-preview-copy span {font-size:12px;line-height:1.5;color:#ffeccf}
+.fest-v433-preview-star {position:absolute;font-size:26px;color:var(--gallery-gold);text-shadow:0 0 10px var(--gallery-gold);pointer-events:none;animation:fest-v432-twinkle 2.8s ease-in-out infinite alternate}
+.fest-v433-preview-star-one {left:10px;top:9px}
+.fest-v433-preview-star-two {right:11px;bottom:7px;animation-delay:-1s}
+.fest-v433-status {margin:7px 0 12px!important;color:#f7dba6!important;font-weight:700}
+.fest-v433-actions {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:13px 0 8px}
+.fest-v433-actions button {background:#2e314d;color:#ffeccc;border:1px solid #806b55;border-radius:10px;min-height:43px;padding:9px 8px;font:inherit;font-size:12px;font-weight:800;line-height:1.3;cursor:pointer;touch-action:manipulation}
+.fest-v433-actions button:active {transform:scale(.98)}
+.fest-v433-actions #fest-v433-use {background:linear-gradient(125deg,#f1d18c,#c88c44);border-color:#ffe3a7;color:#2a1e24;box-shadow:0 3px 14px #e3b96d45}
+.fest-v433-actions #fest-v433-use:disabled {opacity:.5;cursor:not-allowed}
+.fest-v433-actions #fest-v432-close {background:#3f2f3b;color:#f5d6da;margin:0}
+.fest-v433-calendar-details {margin-top:15px;padding:11px;border:1px solid #534654;background:#17172b;border-radius:10px}
+.fest-v433-calendar-details summary {cursor:pointer;color:#f6d48f;font-size:12px;font-weight:850}
+.fest-v433-calendar-details .fest-v432-list {max-height:26dvh}
+.fest-v433-panel label {font-size:12px}
+.fest-v433-panel select {font-size:13px;min-height:43px}
+@media(max-width:390px){
+ .fest-v433-panel{padding:12px;max-height:94dvh}
+ .fest-v433-preview{min-height:142px}
+ .fest-v433-preview-visual{min-width:95px;width:42%;height:126px}
+ .fest-v433-preview-visual svg{height:125px}
+ .fest-v433-preview-copy strong{font-size:14px}
+ .fest-v433-preview-copy span{font-size:11px}
+ .fest-v433-actions button{font-size:11px;padding:9px 6px}
+}
+@media(prefers-reduced-motion:reduce){.fest-v433-preview-visual,.fest-v433-preview-star{animation:none!important}}
