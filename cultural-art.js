@@ -59,6 +59,24 @@ function lantern(){return svg('0 0 80 128',goldDefs+'<path d="M40 0v14M22 15h36"
 function clouds(){
  return svg('0 0 620 210','<g fill="none" stroke="#e9c276" stroke-opacity=".31" stroke-width="2.5"><path d="M-10 86q32-23 58 0 19 12 43-7t50 9q31 17 55-5M235 156q39-37 74-2 23 11 47-5 35-23 60 8 22 16 52-7M439 58q27-24 57-3 25 18 55 0 20-13 61 8"/><path d="M10 163q29-15 48 6 22 20 54-9M490 167q19-25 41-9 18 13 43-4"/></g><g fill="#f1c66b" opacity=".16"><circle cx="150" cy="23" r="2"/><circle cx="310" cy="38" r="3"/><circle cx="554" cy="110" r="2"/></g>');
 }
+// Reusable, proportionally correct Jalur Gemilang for older cultural artwork.
+function malaysiaFlagMotif(){
+ let stripes='';
+ for(let i=0;i<14;i+=2)stripes+='<rect x="32" y="'+(42+6*i)+'" width="168" height="6" fill="#cc0001"/>';
+ const pts=[];
+ for(let i=0;i<28;i++){const angle=-Math.PI/2+i*Math.PI/14,r=i%2===0?14:5.8;pts.push((95+Math.cos(angle)*r).toFixed(2)+','+(66+Math.sin(angle)*r).toFixed(2));}
+ return '<path d="M27 35v142" stroke="#f2db9a" stroke-width="5"/>'+
+ '<circle cx="27" cy="34" r="4" fill="#ffde95"/>'+
+ '<g class="cult-jalur-gemilang" data-stripes="14" data-star-points="14">'+
+ '<rect x="32" y="42" width="168" height="84" fill="#fff"/>'+stripes+
+ '<rect x="32" y="42" width="84" height="48" fill="#010066"/>'+
+ '<circle cx="60" cy="66" r="17" fill="#ffcc00"/>'+
+ '<circle cx="67" cy="66" r="14" fill="#010066"/>'+
+ '<polygon points="'+pts.join(' ')+'" fill="#ffcc00"/>'+
+ '<rect x="32" y="42" width="168" height="84" fill="none" stroke="#d4c2a5" stroke-width=".5"/>'+
+ '</g>'+
+ '<g fill="#f5c78a" transform="translate(156 162)"><ellipse rx="11" ry="28"/><ellipse rx="11" ry="28" transform="rotate(72)"/><ellipse rx="11" ry="28" transform="rotate(144)"/><ellipse rx="11" ry="28" transform="rotate(216)"/><ellipse rx="11" ry="28" transform="rotate(288)"/><circle r="11" fill="#a94342"/></g>';
+}
 function motif(id){
  const d='<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff1aa"/><stop offset="1" stop-color="#cc8d36"/></linearGradient></defs>';
  const ring='<circle cx="115" cy="95" r="68" stroke="#f4ce7e" stroke-opacity=".38" stroke-width="2" fill="none"/><circle cx="115" cy="95" r="53" stroke="#f4ce7e" stroke-opacity=".22" stroke-width="2" fill="none"/>';
@@ -68,7 +86,7 @@ function motif(id){
  }else if(id==='deepavali'){
  art=ring+'<g fill="none" stroke="#fbd288" stroke-width="4"><circle cx="115" cy="103" r="32"/><path d="M115 18v27M115 161v27M30 102h30M171 102h30M52 39l20 21M159 148l20 20M178 39l-19 21M71 148l-20 20"/></g><path d="M52 136Q115 177 179 136L162 162Q111 190 68 161Z" fill="#c95765" stroke="#ffdc90" stroke-width="4"/><path d="M115 134q-26-23 0-53 26 31 0 53Z" fill="#ffdb69"/><path d="M115 104q-7 15 0 24 10-13 0-24Z" fill="#fff9b6"/><g fill="#ffcc79"><circle cx="52" cy="63" r="6"/><circle cx="178" cy="63" r="6"/><circle cx="115" cy="35" r="6"/></g>';
  }else if(id==='merdeka'||id==='malaysia'){
- art='<path d="M35 36v135" stroke="#f2db9a" stroke-width="5"/><path d="M40 40q55-20 145 5v83q-71-24-145-1Z" fill="#f9f9ef"/><path d="M40 48q56-20 145 4M40 67q56-20 145 4M40 86q56-20 145 4M40 105q56-20 145 4" stroke="#d52f47" stroke-width="10"/><path d="M40 41q38-14 86-2v51q-42-10-86 2Z" fill="#142e78"/><path d="M100 48a19 19 0 1 0 0 30 17 17 0 1 1 0-30" fill="#ffdf5e"/><path d="m102 42 3 8 8-1-5 7 5 7-8-2-3 8-2-8-8 2 5-7-5-7 8 1Z" fill="#ffe26c"/><g fill="#f5c78a" transform="translate(156 154)"><ellipse rx="11" ry="28" transform="rotate(0)"/><ellipse rx="11" ry="28" transform="rotate(72)"/><ellipse rx="11" ry="28" transform="rotate(144)"/><ellipse rx="11" ry="28" transform="rotate(216)"/><ellipse rx="11" ry="28" transform="rotate(288)"/><circle r="11" fill="#a94342"/></g>';
+  art=malaysiaFlagMotif();
  }else if(id==='christmas'){
  art='<path d="M117 23 58 94h34l-43 49h47l-22 32h86l-22-32h47l-43-49h34Z" fill="#327554" stroke="#f5d48c" stroke-width="4"/><path d="M115 24v145" stroke="#87bc85" stroke-opacity=".5" stroke-width="6"/><path d="M114 11l7 13 14 1-10 10 2 14-13-7-12 7 2-14-10-10 14-1Z" fill="#ffe4a0"/><g fill="#ed5862"><circle cx="83" cy="101" r="7"/><circle cx="146" cy="126" r="7"/><circle cx="105" cy="151" r="7"/></g><g fill="#ffe8b4"><circle cx="134" cy="92" r="5"/><circle cx="79" cy="139" r="5"/><circle cx="115" cy="66" r="5"/></g><path d="M107 175v21h20v-21" fill="#976231"/>';
  }else if(id==='midautumn'){
