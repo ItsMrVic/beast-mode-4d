@@ -460,6 +460,7 @@ body[data-festival="christmas"] .header{background:linear-gradient(180deg,rgba(2
 @media (prefers-reduced-motion:reduce){#b4d-festival-scene *,#b4d-festival-scene *:before{animation:none!important;transition:none!important}}
 </style>
 
+<link rel="stylesheet" href="./festive-engine-v432.css?v=432">
 </head>
 <body>
 
@@ -467,7 +468,7 @@ body[data-festival="christmas"] .header{background:linear-gradient(180deg,rgba(2
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v4.31</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v4.32</span>
       <div class="sub">Historical Analysis & Walk-Forward Research + DeepSeek</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
@@ -12458,60 +12459,7 @@ function runWeeklyIntelligence(){
 }
 </script>
 
-<script id="b4d-integrated-festival-script">
-(function(){'use strict';
-// Only new namespaced storage keys; never overwrite b4d_ops, b4d_hist, predictions or user theme.
-const el=document.getElementById('b4d-festival-scene');if(!el)return;
-const get=(key,def)=>{try{return localStorage.getItem(key)??def;}catch(e){return def;}};
-const put=(key,value)=>{try{localStorage.setItem(key,value);}catch(e){}};
-const dayMYT=()=>{const parts=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()).map(p=>[p.type,p.value]));return `${parts.year}-${parts.month}-${parts.day}`;};
-const daysBetween=(a,b)=>(Date.parse(a+'T00:00:00Z')-Date.parse(b+'T00:00:00Z'))/86400000;
-const events=[
-  ['2026-02-17','cny','Chinese New Year','🧧',5,8],['2026-03-21','raya','Selamat Hari Raya Aidilfitri','🌙',5,5],['2026-11-08','deepavali','Happy Deepavali','🪔',5,5],
-  ['2027-02-06','cny','Chinese New Year','🧧',5,8],['2027-03-10','raya','Selamat Hari Raya Aidilfitri','🌙',5,5],['2027-10-28','deepavali','Happy Deepavali','🪔',5,5],
-  ['2028-01-26','cny','Chinese New Year','🧧',5,8],['2028-02-27','raya','Selamat Hari Raya Aidilfitri','🌙',5,5],['2028-10-17','deepavali','Happy Deepavali','🪔',5,5],
-];
-for(const year of [2026,2027,2028,2029,2030]){
-  events.push([`${year}-08-31`,'merdeka','Selamat Hari Merdeka','🇲🇾',3,2]);
-  events.push([`${year}-09-16`,'malaysiaday','Selamat Hari Malaysia','🇲🇾',3,2]);
-  events.push([`${year}-12-25`,'christmas','Merry Christmas','🎄',5,5]);
-}
-const descriptions={chinese:'Chinese-inspired fortune art • Dragon, lanterns & God of Wealth',cny:'Red lanterns • Prosperity • Togetherness',raya:'Moonlit blessings • Family • Renewal',deepavali:'Festival of Lights • Joy, light & prosperity',merdeka:'Celebrating Malaysia’s independence',malaysiaday:'Celebrating our Malaysian unity',christmas:'Season of warmth, giving & celebration'};
-let auto=get('b4d_festival_mode','auto')==='auto';let motion=get('b4d_festival_motion','on')!=='off';
-const setText=(id,text)=>{const node=document.getElementById(id);if(node)node.textContent=text;};
-function sync(){
- const today=dayMYT();const matches=events.map(x=>({date:x[0],code:x[1],title:x[2],emoji:x[3],start:x[4],end:x[5],delta:daysBetween(today,x[0])})).filter(x=>x.delta>=-x.start&&x.delta<=x.end).sort((a,b)=>Math.abs(a.delta)-Math.abs(b.delta));
- const chosen=auto&&matches.length?matches[0]:null;const code=chosen?chosen.code:'chinese';document.body.dataset.festival=code;
- setText('b4d-fest-kicker',chosen?chosen.emoji+'  MALAYSIAN FESTIVE SEASON':'🐉  中華福運 • FORTUNE EDITION');
- setText('b4d-fest-title',chosen?chosen.title:'Fortune & Prosperity');
- setText('b4d-fest-desc',descriptions[code]);
- setText('b4d-fest-mode','🎊 Auto festivals: '+(auto?'On':'Off'));
- setText('b4d-fest-motion','✨ Motion: '+(motion?'On':'Off'));
- el.dataset.motion=motion?'on':'off';
-}
-document.getElementById('b4d-fest-mode').addEventListener('click',()=>{auto=!auto;put('b4d_festival_mode',auto?'auto':'chinese');sync();});
-document.getElementById('b4d-fest-motion').addEventListener('click',()=>{motion=!motion;put('b4d_festival_motion',motion?'on':'off');sync();});
-// Display miniature decorative scene on non-Predict pages so controls stay unobstructed.
-function layout(){const pg=document.querySelector('.page.active');const expand=pg&&(pg.id==='pgPredict'||pg.id==='pgWeekly');el.classList.toggle('b4d-fest-collapsed',!expand);}
-const obs=new MutationObserver(layout);document.querySelectorAll('.page').forEach(p=>obs.observe(p,{attributes:true,attributeFilter:['class']}));
-function burst(){if(!motion||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
- const glyphs=['✨','🪙','✦','🌟','💫','🧧'];const width=el.clientWidth;for(let i=0;i<15;i++){
- const a=document.createElement('span');a.className='b4d-fest-float';a.setAttribute('aria-hidden','true');a.textContent=glyphs[i%glyphs.length];
- const x=Math.round(width*(.2+.65*((i*19)%17)/17));a.style.left=x+'px';a.style.top=(65+(i%3)*15)+'px';a.style.setProperty('--dx',((i%2?1:-1)*(15+(i*23)%100))+'px');a.style.setProperty('--dy',(-50-(i*11)%90)+'px');a.style.animationDelay=(i%5*46)+'ms';el.appendChild(a);a.addEventListener('animationend',()=>a.remove(),{once:true});
- }
- // Clean even in unusual browsers with disabled animation
- if(el.querySelectorAll('.b4d-fest-float').length>35)el.querySelectorAll('.b4d-fest-float').forEach(a=>a.remove());
-}
-// Decoration only: never call generation or intercept prediction engine behavior.
-document.addEventListener('click',function(e){const button=e.target.closest('button');if(!button)return;
- const parent=button.closest('#pgPredict,#pgOracle,#pgWeekly');if(parent && /(generate|predict now|run oracle|analyze week|analyse|run prediction)/i.test((button.innerText||button.textContent||'').trim()))burst();
-},false);
-sync();layout();
-// Festival logic uses MYT, rechecked on page resume and periodically for long-running tabs.
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync();});
-setInterval(sync,60*60*1000);
-})();
-</script>
+<script id="b4d-festival-v432-script" src="./festive-engine-v432.js?v=432"></script>
 
 <style id="b4d-tickets-v431-style">
 #pgTickets .tk-hero{border-radius:16px;background:linear-gradient(125deg,rgba(189,40,48,.23),rgba(201,146,25,.15));border:1px solid rgba(233,182,69,.35);padding:17px;margin:9px 0 14px;position:relative;overflow:hidden}
