@@ -1,5 +1,20 @@
-// Beast Mode 4D v4.31 - cache local application shell only.
-const CACHE='beast-4d-v431-shell';
-self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(['./','./index.html','./manifest.json','./icon-192.png','./icon-512.png','./cultural-theme.css?v=428','./cultural-theme.js?v=428','./cultural-art.css?v=429','./cultural-art.js?v=429'])).then(()=>self.skipWaiting())));
-self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('beast-4d-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
-self.addEventListener('fetch',event=>{const url=new URL(event.request.url);if(url.origin!==self.location.origin||event.request.method!=='GET')return;event.respondWith(fetch(event.request).then(resp=>{if(resp.ok&&url.pathname.match(/\/(index\.html|manifest\.json|icon-192\.png|icon-512\.png)$/)){const cp=resp.clone();caches.open(CACHE).then(c=>c.put(event.request,cp));}return resp;}).catch(()=>caches.match(event.request)));});
+// BEAST MODE 4D v4.32 offline shell. Keep local data and prediction code untouched.
+const CACHE='beast-4d-v432-shell';
+const SHELL=['./','./index.html','./manifest.json','./icon-192.png','./icon-512.png',
+ './festive-engine-v432.css?v=432','./festive-engine-v432.js?v=432'];
+self.addEventListener('install',event=>{
+ event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));
+});
+self.addEventListener('activate',event=>{
+ event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('beast-4d-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));
+});
+self.addEventListener('fetch',event=>{
+ const request=event.request,url=new URL(request.url);
+ if(request.method!=='GET'||url.origin!==self.location.origin)return;
+ event.respondWith(fetch(request).then(resp=>{
+  if(resp.ok&&/\/(index\.html|manifest\.json|icon-192\.png|icon-512\.png|festive-engine-v432\.(js|css))$/.test(url.pathname)){
+   const copy=resp.clone();caches.open(CACHE).then(c=>c.put(request,copy)).catch(()=>{});
+  }
+  return resp;
+ }).catch(()=>caches.match(request)));
+});
