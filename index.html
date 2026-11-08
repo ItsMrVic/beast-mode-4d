@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 
 
-<title>Beast Mode 4D v4.34 — Integrated Cultural Edition</title>
+<title>Beast Mode 4D v4.35 — Integrated Cultural Edition</title>
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -460,7 +460,7 @@ body[data-festival="christmas"] .header{background:linear-gradient(180deg,rgba(2
 @media (prefers-reduced-motion:reduce){#b4d-festival-scene *,#b4d-festival-scene *:before{animation:none!important;transition:none!important}}
 </style>
 
-<link rel="stylesheet" href="./festive-engine-v432.css?v=434">
+<link rel="stylesheet" href="./festive-engine-v432.css?v=435">
 </head>
 <body>
 
@@ -468,7 +468,7 @@ body[data-festival="christmas"] .header{background:linear-gradient(180deg,rgba(2
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v4.34</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v4.35</span>
       <div class="sub">Historical Analysis & Walk-Forward Research + DeepSeek</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
@@ -8426,18 +8426,26 @@ function saveManualResults(){
   if(board.some(n=>!is4D(n))){
     alert('Enter all 23 winning numbers as exactly four digits, including leading zeros.');return;
   }
-  if(new Set(board).size!==23){
-    alert('Duplicate numbers found in this result board. Please check against the official results.');return;
+  // A published prize board can contain repeated 4-digit values.
+  // Warn for verification without discarding repeated entries or changing their order.
+  const repeated=[...new Set(board.filter((n,i)=>board.indexOf(n)!==i))];
+  if(repeated.length){
+    const detail=repeated.map(n=>n+' (appears '+board.filter(v=>v===n).length+' times)').join(', ');
+    if(!confirm('Repeated winning number(s) detected: '+detail+
+      '\n\nCompare the entries carefully with the official operator results. '+
+      'Repeated numbers will be preserved exactly as entered. Continue?'))return;
   }
   const existing=op.draws.find(d=>d.date===date);
   if(existing&&!confirm('A '+opName+' draw already exists for '+date+'. Replace its saved results?'))return;
   if(!confirm('Save '+opName+' results for '+date+'? Please confirm these 23 numbers match the official result board.'))return;
   const day=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(date+'T00:00:00Z').getUTCDay()];
   const record={date,day,top3,special,consolation,source:'manual-entry'};
-  op.draws=op.draws.filter(d=>d.date!==date);
-  op.draws.push(record);
-  op.draws.sort((a,b)=>b.date.localeCompare(a.date));
-  saveAll();
+  // Persist before replacing the in-memory list, so a full phone storage quota
+  // cannot silently report a successful manual import.
+  const updated=operators.map(o=>o.name!==opName?o:
+    {...o,draws:[record,...o.draws.filter(d=>d.date!==date)].sort((a,b)=>b.date.localeCompare(a.date))});
+  if(!save(KEYS.ops,updated))return;
+  operators=updated;
   liveDate=date;
   liveResults=null;
   render();
@@ -12459,7 +12467,7 @@ function runWeeklyIntelligence(){
 }
 </script>
 
-<script id="b4d-festival-v432-script" src="./festive-engine-v432.js?v=434"></script>
+<script id="b4d-festival-v432-script" src="./festive-engine-v432.js?v=435"></script>
 
 <style id="b4d-tickets-v431-style">
 #pgTickets .tk-hero{border-radius:16px;background:linear-gradient(125deg,rgba(189,40,48,.23),rgba(201,146,25,.15));border:1px solid rgba(233,182,69,.35);padding:17px;margin:9px 0 14px;position:relative;overflow:hidden}
