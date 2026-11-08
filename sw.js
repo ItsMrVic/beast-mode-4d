@@ -1,7 +1,7 @@
-// BEAST MODE 4D v4.34 offline shell. Keep local data and prediction code untouched.
-const CACHE='beast-4d-v434-shell';
+// BEAST MODE 4D v4.35 offline shell. Keep local data and prediction code untouched.
+const CACHE='beast-4d-v435-shell';
 const SHELL=['./','./index.html','./manifest.json','./icon-192.png','./icon-512.png',
- './festive-engine-v432.css?v=434','./festive-engine-v432.js?v=434'];
+ './festive-engine-v432.css?v=435','./festive-engine-v432.js?v=435'];
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));
 });
