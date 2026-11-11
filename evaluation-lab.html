@@ -213,7 +213,7 @@ function audit(raw,source){
   if(!picks.size){invalid++;continue;}
   groups.set(key,{mode,op,date,picks,provisional:generated>=start,winning:target});
  }
- let totalBoxes=0,totalObserved=0,totalExpected=0,strict=0,provisional=0,exactTotal=0,crossTotal=0;
+ let totalBoxes=0,totalObserved=0,totalExpected=0,strictObserved=0,strictExpected=0,strict=0,provisional=0,exactTotal=0,crossTotal=0;
  const byMode=new Map(),dayResults=new Map(),consensus=new Map();auditRows=[];
  for(const g of groups.values()){
   if(g.provisional)provisional++;else strict++;
@@ -226,11 +226,11 @@ function audit(raw,source){
    totalBoxes++;st.boxes++;
    const permN=permutationsCount(sig);
    const expectation=1-Math.pow(1-permN/10000,g.winning.length);
-   st.expected+=expectation;totalExpected+=expectation;day.expected+=expectation;
-   const own=g.winning.find(x=>signature(x.n)===sig);
+   st.expected+=expectation;totalExpected+=expectation;day.expected+=expectation;if(!g.provisional)strictExpected+=expectation;
+   const own=g.winning.find(x=>x.n===n)||g.winning.find(x=>signature(x.n)===sig);
    const cross=own?null:other.map(x=>({op:x.op,win:x.winning.find(w=>signature(w.n)===sig)})).find(x=>x.win);
    if(own){
-    totalObserved++;day.observed++;
+    totalObserved++;day.observed++;if(!g.provisional)strictObserved++;
     const type=g.winning.some(x=>x.n===n)?'EXACT':'PERM';
     st[type==='EXACT'?'exact':'perm']++;if(type==='EXACT')exactTotal++;
     auditRows.push({date:g.date,mode:g.mode,op:g.op,winningOp:g.op,pred:n,win:own.n,tier:own.tier,type,provisional:g.provisional});
@@ -250,7 +250,7 @@ function audit(raw,source){
  currentSource=source;
  $('auditSource').textContent='Source: '+source+' · '+history.length+' saved snapshots · '+boards.size+' complete draw boards · First snapshot per mode/operator/date scored.';
  $('summary').textContent='Target draw dates: '+dates.length+' · Pre-day groups: '+strict+' · Same-day provisional: '+provisional+' · Unscoped: '+unscoped+' · No completed board: '+missing+' · Invalid timestamps/picks: '+invalid+' · Repeat generations excluded: '+repeated+'.';
- $('headlineStats').innerHTML=[['Distinct boxes',totalBoxes],['Exact',exactTotal],['Box matches',totalObserved],['Random expectation*',totalExpected.toFixed(2)]].map(x=>'<div class="stat">'+html(x[0])+'<b>'+x[1]+'</b></div>').join('');
+ $('headlineStats').innerHTML=[['Distinct boxes',totalBoxes],['Pre-day matches',strictObserved],['Provisional matches',totalObserved-strictObserved],['Chance baseline*',totalExpected.toFixed(2)]].map(x=>'<div class="stat">'+html(x[0])+'<b>'+x[1]+'</b></div>').join('');
  $('modes').innerHTML=modes.map(s=>'<tr>'+tableCell(s.mode)+tableCell(s.entries)+tableCell(s.boxes)+tableCell(s.exact)+tableCell(s.perm)+tableCell(s.cross)+tableCell(s.expected.toFixed(2))+'</tr>').join('')||'<tr><td colspan="7">No eligible pre-draw or provisional snapshots.</td></tr>';
  $('modeCards').innerHTML=modes.map(s=>'<div class="mode-card"><b>'+html(s.mode)+'</b><small> · '+s.entries+' groups · '+s.boxes+' distinct boxes</small><div class="values">'+
  '<div>Exact<strong style="display:block">'+s.exact+'</strong></div>'+
@@ -262,16 +262,16 @@ function audit(raw,source){
  const overlaps=[...consensus.values()].filter(x=>x.modes.size>=2).sort((a,b)=>b.modes.size-a.modes.size).slice(0,30);
  $('consensus').innerHTML=overlaps.length?'<div class="scroll"><table><tr><th>Date</th><th>Operator</th><th>Combination</th><th>Modes</th><th>Outcome</th></tr>'+
  overlaps.map(x=>'<tr>'+tableCell(x.date)+tableCell(x.op)+tableCell(x.num)+tableCell([...x.modes].join(', '))+tableCell(x.hit?'Box match':'No match')+'</tr>').join('')+'</table></div>':'No multi-mode agreement among evaluated target draws.';
- $('uniqueScores').innerHTML='<p><b>'+totalObserved+'</b> observed same-operator distinct Box matches versus <b>'+totalExpected.toFixed(2)+'</b> expected by chance, across all methods. <b>'+crossTotal+'</b> other-operator observations are shown separately and are not counted as purchased-ticket wins.</p>'+
+ $('uniqueScores').innerHTML='<p><b>'+strictObserved+'</b> pre-day matches versus <b>'+strictExpected.toFixed(2)+'</b> expected by chance for pre-day groups; <b>'+(totalObserved-strictObserved)+'</b> additional provisional same-day matches. Across all groups: <b>'+totalObserved+'</b> versus <b>'+totalExpected.toFixed(2)+'</b> expected. <b>'+crossTotal+'</b> other-operator observations are shown separately and are not counted as purchased-ticket wins.</p>'+
  '<p class="warn">'+(evidence?'At least 50 pre-day dates recorded; compare calibrated outcomes and uncertainty before claiming an edge.':'Only '+preDayDates.length+' pre-day target date(s) available. At least 50 independent pre-day dates are needed before a trend is meaningful.')+'</p>';
  const recent=dates.slice(-10).map(d=>dayResults.get(d));
  const sample=recent.reduce((a,x)=>({observed:a.observed+x.observed,expected:a.expected+x.expected}),{observed:0,expected:0});
  $('auditTrend').innerHTML='<h3>Most recent '+recent.length+' evaluated draw date(s)</h3>'+
- '<p>Observed distinct same-operator Box matches: <strong>'+sample.observed+'</strong> · Chance expectation: <strong>'+sample.expected.toFixed(2)+'</strong>. '+(evidence?'Evaluate with walk-forward random controls.':'Research only — too few independent pre-day dates.')+'</p>'+
+ '<p>Observed Box matches (including provisional): <strong>'+sample.observed+'</strong> · Chance expectation: <strong>'+sample.expected.toFixed(2)+'</strong>. '+(evidence?'Evaluate with walk-forward random controls.':'Research only — too few independent pre-day dates.')+'</p>'+
  '<div class="scroll"><table><tr><th>Draw date</th><th>Groups</th><th>Matches</th><th>Chance expected</th><th>Pre-day groups</th></tr>'+
  recent.reverse().map(x=>'<tr>'+tableCell(x.date)+tableCell(x.groups)+tableCell(x.observed)+tableCell(x.expected.toFixed(2))+tableCell(x.pre)+'</tr>').join('')+'</table></div>';
  // Archive aggregate numbers only, never raw purchase or personal prediction records.
- const fingerprint=JSON.stringify({dates,modes:modes.map(x=>[x.mode,x.entries,x.boxes,x.exact,x.perm,x.cross,x.expected.toFixed(4)]),strict,provisional});
+ const fingerprint=JSON.stringify({dates,modes:modes.map(x=>[x.mode,x.entries,x.boxes,x.exact,x.perm,x.cross,x.expected.toFixed(4)]),strict,provisional,strictObserved,strictExpected:strictExpected.toFixed(4)});
  auditFingerprint=fingerprint;
  writeArchive({fingerprint,checkedAt:new Date().toISOString(),dates:dates.length,observed:totalObserved,expected:totalExpected});
 }
