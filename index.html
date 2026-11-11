@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Beast 4D">
 
 
-<title>Beast Mode 4D v4.35 — Integrated Cultural Edition</title>
+<title>Beast Mode 4D v4.36 — Integrated Cultural Edition</title>
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -468,7 +468,7 @@ body[data-festival="christmas"] .header{background:linear-gradient(180deg,rgba(2
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:22px">🔥</span>
     <div>
-      <h1>BEAST MODE 4D</h1><span class="ver">v4.35</span>
+      <h1>BEAST MODE 4D</h1><span class="ver">v4.36</span>
       <div class="sub">Historical Analysis & Walk-Forward Research + DeepSeek</div>
     </div>
     <div style="margin-left:auto" id="learningBadge"></div>
@@ -522,7 +522,7 @@ body[data-festival="christmas"] .header{background:linear-gradient(180deg,rgba(2
         <button class="fetch-btn" id="fetchBtn" onclick="autoFetchResults()">⚡ Fetch</button>
       </div>
       <div id="fetchStatus"></div>
-      <div style="font-size:8px;color:var(--dim3)">Auto-fills from 4D results websites. Select date & tap Fetch.</div>
+      <div style="font-size:8px;color:var(--dim3)">Refreshes the checked GitHub results archive. Live tab also syncs automatically.</div>
     </div>
     
     <div style="font-size:9px;color:var(--dim3);text-align:center;margin-bottom:10px">— or enter manually —</div>
@@ -8277,7 +8277,7 @@ function findStoredDraw(opName,date){
   if(!['MAGNUM','TOTO','DAMACAI'].includes(opName) || !/^\d{4}-\d{2}-\d{2}$/.test(date||''))return null;
   const local = operators.find(o=>o.name===opName)?.draws.find(d=>d.date===date);
   const bundled = BUNDLED_DRAW_MAPS[opName]?.get(date);
-  if(isCompletePrizeBoard(local)) return {draw:local,source:'Saved database',archived:false};
+  if(isCompletePrizeBoard(local)) return {draw:local,source:local.source==='4dlivetoday.com'?'4dlivetoday.com (saved)':'Saved database',archived:false};
   if(isCompletePrizeBoard(bundled)) return {draw:bundled,source:'Bundled archive (offline)',archived:true};
   if(local && validDraw(local))return {draw:local,source:'Saved database (partial result)',archived:false,partial:true};
   if(bundled && validDraw(bundled))return {draw:bundled,source:'Bundled archive (partial result)',archived:true,partial:true};
@@ -8379,6 +8379,18 @@ function malaysiaDateISO(input=new Date()){
 
 let liveResults=null;
 let liveDate=malaysiaDateISO();
+let liveAutoLatest=true;
+let liveProviderResults={};
+let liveAutoStatus='Connecting to verified 4D results…';
+let liveAutoOnline=false;
+let liveLastSynced=null;
+function newestStoredResult(opName){
+  const stored=operators.find(o=>o.name===opName)?.draws||[];
+  const archived=BUNDLED_DRAW_HISTORY[opName]||[];
+  const complete=[...stored,...archived].filter(d=>isCompletePrizeBoard(d)&&d.date<=malaysiaDateISO());
+  complete.sort((a,b)=>b.date.localeCompare(a.date));
+  return complete[0]||null;
+}
 
 
 // v4.29: Manual verified-board entry is a local user action, never a provider claim.
@@ -8447,6 +8459,7 @@ function saveManualResults(){
   if(!save(KEYS.ops,updated))return;
   operators=updated;
   liveDate=date;
+  liveAutoLatest=false;
   liveResults=null;
   render();
   fetchLiveResults();
@@ -8464,18 +8477,27 @@ function renderLive(){
   };
   const opC={MAGNUM:'#D4A017',TOTO:'#DC2626',DAMACAI:'#2563EB'};
   
-  let h=`<div class="section-title">📂 4D Results — Saved & Bundled Archive</div>`;
+  let h=`<div class="section-title">📡 Live 4D Results — Auto-sync</div>`;
   h+=`<div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
-    <input type="date" id="liveDate" value="${liveDate}" style="flex:1;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px;font-family:inherit;font-size:13px" onchange="liveDate=this.value;liveResults=null;renderLive()">
-    <button class="btn btn-red" onclick="fetchLiveResults()" id="liveBtn" style="padding:10px 20px;font-size:12px">🔎 Check DB</button>
+    <input type="date" id="liveDate" value="${liveDate}" max="${malaysiaDateISO()}" style="flex:1;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px;font-family:inherit;font-size:13px" onchange="liveAutoLatest=false;liveDate=this.value;liveResults=null;fetchLiveResults()">
+    <button class="btn btn-red" onclick="fetchLiveResults()" id="liveBtn" style="padding:10px 12px;font-size:12px">🔎 Browse Date</button>
   </div>`;
   
-  h+=`<div style="font-size:10px;color:var(--dim2);margin-bottom:9px">Offline historical snapshot through ${BUNDLED_ASOF}. New draws may require a feed sync or manual entry.</div>`;
+  h+=`<div class="card" style="padding:12px;margin:0 0 12px;border:1px solid #306c57;background:rgba(22,101,72,.10)">
+    <div style="font-size:12px;font-weight:800;color:#7ee8ae;margin-bottom:6px">📡 Auto-sync ${liveAutoOnline?'connected':'standby'} · 2-minute refresh</div>
+    <div style="font-size:11px;color:var(--text);margin-bottom:10px" aria-live="polite">${liveAutoStatus}</div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap">
+      <button class="btn btn-sm btn-red" onclick="showLatestLiveResults()" style="flex:1;min-width:110px">🏆 Latest Draws</button>
+      <button class="btn btn-sm btn-outline" onclick="refreshLiveFeed(true)" style="flex:1;min-width:110px">🔄 Refresh Now</button>
+    </div>
+    <div style="margin-top:9px;font-size:9px;color:var(--dim2)">Complete, checked results from <a href="https://4dlivetoday.com/en" target="_blank" rel="noopener noreferrer" style="color:#7ee8ae">4dlivetoday.com</a> (CC BY 4.0). Automatically saved on this device. Confirm prizes against official operators. Updates when the app is open or reopened.</div>
+  </div>`;
+  h+=`<div style="font-size:10px;color:var(--dim2);margin-bottom:9px">${liveAutoLatest?'Showing newest available draw for each operator.':'Browsing saved/online results for '+liveDate} · Offline historical snapshot through ${BUNDLED_ASOF}.</div>`;
   h+=`<button class="btn btn-sm btn-outline" onclick="mergeBundledHistory()" style="width:100%;margin-bottom:14px">📥 Merge archive again (optional)</button>`;
   h+=manualResultsPanelHTML();
   h+='<a href="./evaluation-lab.html" style="display:block;text-align:center;padding:12px;margin:8px 0 14px;border:1px solid #8b6a38;border-radius:9px;color:#ffce73;text-decoration:none;font-weight:700">📊 v4.29 Evaluation Lab · Backtest & Ticket Ledger</a>';
 
-  if(!liveResults){
+  if(!liveResults&&!liveAutoLatest){
     h+=`<div style="text-align:center;padding:40px 0;color:var(--dim3)">
       <div style="font-size:44px;margin-bottom:10px">📡</div>
       <div style="font-size:12px;color:var(--dim2)">Select a date and tap Check DB</div>
@@ -8484,7 +8506,10 @@ function renderLive(){
   }else{
     h+=`<div id="liveStatus"></div>`;
     ['MAGNUM','TOTO','DAMACAI'].forEach(opName=>{
-      const r=liveResults[opName];
+      const fromAPI=liveProviderResults[opName];
+      const fromDB=newestStoredResult(opName);
+      const r=liveAutoLatest?(fromDB&&(!fromAPI||fromDB.date>fromAPI.date)?fromDB:fromAPI):liveResults?.[opName];
+      const drawDate=r?.date||liveDate;
       const logo=opLogosSmall[opName]||'';
       const color=opC[opName];
       
@@ -8492,11 +8517,12 @@ function renderLive(){
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
           ${logo}
           <span style="font-size:13px;font-weight:800;color:${color};letter-spacing:1px">${opName}</span>
-          <span style="font-size:9px;color:var(--dim3);margin-left:auto">${liveDate}</span>
+          <span style="font-size:9px;color:var(--dim3);margin-left:auto">${drawDate}</span>
         </div>`;
       
       if(r&&r.top3&&r.top3.length>=3){
-        h+=`<div style="font-size:9px;color:var(--dim2);margin-bottom:8px">📂 ${liveResultSources[opName]||'Saved history'} · Not live-verified</div>`;
+        const sourceIsChecked=r.status==='checked'||r.source==='4dlivetoday.com';
+         h+=`<div style="font-size:9px;color:var(--dim2);margin-bottom:8px">${sourceIsChecked?'✅ Checked':'📂 Archive'} · ${liveAutoLatest?(sourceIsChecked?'4dlivetoday.com':'Saved historical result'):liveResultSources[opName]||'Saved history'}${sourceIsChecked?' · Confirm with official operator':' · Not live-verified'}</div>`;
         // Top 3 prizes
         h+=`<div style="display:flex;gap:6px;margin-bottom:10px">`;
         ['1st','2nd','3rd'].forEach((label,idx)=>{
@@ -8529,14 +8555,14 @@ function renderLive(){
         
         // Quick add button
         const opIdx=operators.findIndex(o=>o.name===opName);
-        const exists=opIdx>=0&&operators[opIdx].draws.find(d=>d.date===liveDate);
+        const exists=opIdx>=0&&operators[opIdx].draws.find(d=>d.date===drawDate);
         if((!exists||!isCompletePrizeBoard(exists))&&opIdx>=0){
           h+=`<button class="btn btn-sm btn-outline" style="width:100%;margin-top:8px;font-size:9px;border-color:${color}44;color:${color}" onclick="addLiveToDatabase('${opName}')">+ Add to ${opName} Database</button>`;
         }else if(exists){
           h+=`<div style="font-size:8px;color:var(--dim3);margin-top:6px;text-align:center">✅ Already in database</div>`;
         }
       }else{
-        h+=`<div style="text-align:center;padding:16px;color:var(--dim3);font-size:11px">Not in saved / bundled history for this date. Import new results to update.</div>`;
+        h+=`<div style="text-align:center;padding:16px;color:var(--dim3);font-size:11px">No verified results available for this operator/date yet. The app will retry automatically.</div>`;
       }
       h+=`</div>`;
     });
@@ -8549,20 +8575,22 @@ async function fetchLiveResults(){
   const date=document.getElementById('liveDate')?.value||liveDate;
   if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){toast('Please select a valid draw date.');return;}
   liveDate=date;
+  liveAutoLatest=false;
   liveResults={MAGNUM:null,TOTO:null,DAMACAI:null};
   liveResultSources={MAGNUM:'',TOTO:'',DAMACAI:''};
   for(const name of ['MAGNUM','TOTO','DAMACAI']){
     const found=findStoredDraw(name,date);
     if(found){
       const d=found.draw;
-      liveResults[name]={top3:[...d.top3],special:[...(d.special||[])],consolation:[...(d.consolation||[])]};
+      liveResults[name]={date,top3:[...d.top3],special:[...(d.special||[])],consolation:[...(d.consolation||[])],source:d.source,status:d.status};
       liveResultSources[name]=found.source;
     }
   }
   renderLive();
   const found=Object.entries(liveResults).filter(([,v])=>v).map(([name])=>name);
   if(found.length)toast('✅ Found stored results for: '+found.join(', '));
-  else toast('No saved or bundled results for '+date+'. Import updated results to extend the archive.');
+  else toast('Checking saved results and verified internet archive for '+date+'.');
+  if(typeof window.loadLiveDateFromAPI==='function')window.loadLiveDateFromAPI(date);
 }
 
 function addLiveToDatabase(opName){
@@ -8570,19 +8598,21 @@ function addLiveToDatabase(opName){
   if(!r || !r.top3 || r.top3.length!==3){toast('No complete result selected.');return;}
   const opIdx=operators.findIndex(o=>o.name===opName);
   if(opIdx<0)return;
-  const current=operators[opIdx].draws.find(d=>d.date===liveDate);
+  const drawDate=r.date||liveDate;
+  if(!isCompletePrizeBoard(r)){toast('Only complete checked boards can be imported.');return;}
+  const current=operators[opIdx].draws.find(d=>d.date===drawDate);
   if(current && isCompletePrizeBoard(current)){
-    toast(`${opName} ${liveDate} is already saved.`);return;
+    toast(`${opName} ${drawDate} is already saved.`);return;
   }
-  if(current && !confirm(`Replace INCOMPLETE saved ${opName} result for ${liveDate} with the full bundled result?`))return;
-  const weekday=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(liveDate+'T00:00:00Z').getUTCDay()];
-  const next={date:liveDate,day:weekday,top3:r.top3,special:r.special||[],consolation:r.consolation||[]};
+  if(current && !confirm(`Replace INCOMPLETE saved ${opName} result for ${drawDate} with the checked result?`))return;
+  const weekday=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(drawDate+'T00:00:00Z').getUTCDay()];
+  const next={date:drawDate,day:weekday,top3:r.top3,special:r.special||[],consolation:r.consolation||[],source:r.source||'verified-feed',status:r.status};
   if(!validDraw(next)){toast('Result failed validation; not saved.');return;}
-  const updated=operators.map((op,i)=>i!==opIdx?op:{...op,draws:[next,...op.draws.filter(d=>d.date!==liveDate)].sort((a,b)=>b.date.localeCompare(a.date))});
+  const updated=operators.map((op,i)=>i!==opIdx?op:{...op,draws:[next,...op.draws.filter(d=>d.date!==drawDate)].sort((a,b)=>b.date.localeCompare(a.date))});
   if(!save(KEYS.ops,updated))return;
   operators=updated;
   renderLive();
-  toast(`✅ ${opName} ${liveDate} saved to your database.`);
+  toast(`✅ ${opName} ${drawDate} saved to your database.`);
 }
 
 // ============================================================
@@ -11058,7 +11088,7 @@ function vettedVerifiedBoard(row){
      !/^\d{4}-\d{2}-\d{2}$/.test(row.date||'')||row.date>malaysiaDateISO())return null;
   const draw={date:row.date,day:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(row.date+'T00:00:00Z').getUTCDay()],
     top3:row.top3,special:row.special,consolation:row.consolation};
-  return validDraw(draw)&&isCompletePrizeBoard(draw)?{operator:row.operator,...draw}:null;
+  return validDraw(draw)&&isCompletePrizeBoard(draw)?{operator:row.operator,...draw,source:row.source==='4dlivetoday.com'?'4dlivetoday.com':'verified-feed',status:'checked'}:null;
 }
 function applyVerifiedBoards(rows){
   const proposed=operators.map(o=>({...o,draws:[...o.draws]}));
@@ -12276,9 +12306,10 @@ applyThemeOnLoad();
 // A one-time non-destructive migration from the full offline archive.
 autoSyncBundledHistory();
 render();
-// Refresh on launch; scheduled GitHub Actions refreshes the published feed.
+// Refresh offline fallback on launch; live API extension runs after this script.
 autoFetchResults(true);
 </script>
+<script src="./live-api-v436.js?v=436" defer></script>
 
 <style id="b4d-weekly-v430-style">
 /* Self-contained, accessible visual improvements; no missing remote assets */
