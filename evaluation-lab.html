@@ -1,11 +1,11 @@
 <!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>BEAST MODE 4D — Evaluation Lab v4.27</title>
+<title>BEAST MODE 4D — Evaluation Lab v4.37</title>
 <style>:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#0c101a;color:#e9eef7}body{max-width:980px;margin:auto;padding:18px}h1{color:#f6b84b}h2{font-size:1.2rem}section{background:#171e2b;border:1px solid #394154;border-radius:14px;padding:16px;margin:15px 0}input,select,button{background:#202c3f;color:white;border:1px solid #53647b;border-radius:8px;padding:10px;margin:4px;max-width:100%}button{background:#b44431;cursor:pointer}table{border-collapse:collapse;width:100%;font-size:12px}td,th{border-bottom:1px solid #394154;padding:7px;text-align:left}small,.muted{color:#b3c0d1}.scroll{overflow:auto}label{display:inline-block;margin:4px}strong{color:#ffce73}@media(max-width:650px){body{padding:12px}h1{font-size:1.55rem}section{padding:12px}.mobile-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.stat{background:#202b3d;border-radius:9px;padding:10px}.stat b{display:block;font-size:1.3rem;color:#ffce73}.mode-card{border:1px solid #3e5069;border-radius:10px;padding:12px;margin:10px 0}.mode-card .values{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:8px}.mode-card .values div{background:#202b3d;padding:8px;border-radius:7px;font-size:.8rem}.mode-card strong{font-size:1.15rem}#modesTable{display:none}}@media(min-width:651px){#modeCards{display:none}}.match-card{border:1px solid #41536d;border-radius:9px;padding:12px;margin:9px 0}.match-card summary{cursor:pointer;font-weight:650}.warn{color:#f6c86b}select{max-width:100%}#archive table{font-size:13px}.note{border-left:3px solid #ffce73;padding-left:10px;color:#cbd4e2}.pill{display:inline-block;border:1px solid #576984;border-radius:9px;padding:5px 8px;margin:3px}</style>
-<h1>🐉 BEAST MODE 4D — Evaluation Lab v4.27</h1><p><a href="./" style="color:#f6b84b">← Return to BEAST MODE</a></p>
+<h1>🐉 BEAST MODE 4D — Evaluation Lab v4.37</h1><p><a href="./" style="color:#f6b84b">← Return to BEAST MODE</a></p>
 <section><h2>1 · Import your BEAST MODE backup</h2><p class="muted">Use the JSON backup exported from the Data tab. This lab reads it locally in your browser; it does not upload your data.</p><input id="file" type="file" accept=".json,application/json"><div id="status" role="status"></div></section>
-<section><h2>2 · Historical prediction evaluation</h2><p class="muted">Predictions recorded before the target calendar day are pre-day verifiable. Same-day entries are evaluated provisionally because the backup does not establish a draw cutoff. Permutations are observations, not confirmed ticket wins. Cross-operator results are shown separately. The random expectation assumes independent uniformly random four-digit outcomes; real draw rules may differ.</p>
-<div id="summary">Import a backup to calculate the results.</div><div id="headlineStats" class="mobile-stats" style="margin:12px 0"></div><div id="modeCards"></div><h2>Detailed mode table</h2><div class="scroll" id="modesTable"><table><thead><tr><th>Mode</th><th>Eligible entries</th><th>Picks</th><th>Exact</th><th>Permutations</th><th>Cross-op permutations</th><th>Expected exact*</th></tr></thead><tbody id="modes"></tbody></table></div>
-<small>*Approximate expected exact matches = picks × 23 / 10,000 for a complete 23-number draw, assuming no duplicate winning numbers. Modes with different candidate counts cannot be fairly compared using raw hit totals.</small></section>
+<section><h2>2 · Rolling prediction evaluation</h2><p class="muted">Predictions recorded before the target calendar day are pre-day verifiable. Same-day entries are evaluated provisionally because the backup does not establish a draw cutoff. Permutations are observations, not confirmed ticket wins. Cross-operator results are shown separately. The random expectation assumes independent uniformly random four-digit outcomes; real draw rules may differ.</p>
+<div id="summary">Import a backup to calculate the results.</div><div id="headlineStats" class="mobile-stats" style="margin:12px 0"></div><div id="modeCards"></div><h2>Detailed mode table</h2><div class="scroll" id="modesTable"><table><thead><tr><th>Mode</th><th>Scored groups</th><th>Unique boxes</th><th>Exact</th><th>Box perms</th><th>Cross-op*</th><th>Chance box expectation</th></tr></thead><tbody id="modes"></tbody></table></div>
+<small>*The chance estimate adjusts each digit combination for its number of unique permutations across a complete 23-prize board. Other-operator observations are not ticket wins. This is a screening comparison, not a proof of predictive skill.</small></section>
 <section><h2>3 · Match explorer</h2><p class="muted">Inspect the actual predicted and drawn numbers. Matches are categorized by operator and prize tier. A prediction matching more than one operator is counted once in each relevant category, never as a confirmed paid ticket.</p><label>Mode <select id="modeFilter"><option value="ALL">All modes</option></select></label><label>Match type <select id="typeFilter"><option value="ALL">All matches</option><option value="EXACT">Exact</option><option value="PERM">Same-operator permutation</option><option value="CROSS">Cross-operator permutation</option></select></label><div id="matches">Import a backup first.</div></section>
 <section><h2>4 · Consensus study</h2><p class="muted">Counts how often different modes independently proposed the same four-digit number for the same operator and target date. Consensus does not imply increased probability.</p><div id="consensus">Import a backup first.</div></section>
 <section><h2>5 · Learning memory & unique combinations</h2><p class="muted">Evaluation snapshots are stored locally on this device after each successful import. Reimporting the same backup updates its snapshot rather than counting it again. This is an evaluation archive, not an AI retraining system.</p><div id="uniqueScores">Import a backup to see unique-combination scoring.</div><h3>Saved evaluation snapshots</h3><div id="archive">No saved snapshots yet.</div><button id="exportArchive">Export evaluation memory JSON</button><button id="clearArchive">Clear evaluation memory</button><p class="note">Mode weights and next-draw predictions are deliberately unchanged. Walk-forward evaluation requires multiple independent, timestamp-verified target draws; the current single-day sample is insufficient to establish an advantage.</p></section>
@@ -93,4 +93,220 @@ function persist(){localStorage.setItem(ledgerKey,JSON.stringify(ledger));render
 $('add').onclick=()=>{const date=$('tdate').value,num=$('tnum').value.trim(),stake=Number($('tstake').value),payout=Number($('tpayout').value);if(!date||!is4(num)||!Number.isFinite(stake)||!Number.isFinite(payout)||stake<0||payout<0||!$('tstake').value||!$('tpayout').value){alert('Enter date, four-digit number, stake and payout.');return;}ledger.push({date,operator:$('top').value,num,type:$('ttype').value.trim(),stake,payout});persist();};
 $('export').onclick=()=>{const blob=new Blob([JSON.stringify({version:'4.25',tickets:ledger},null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='beast-ticket-ledger.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
 $('tdate').value=new Date().toISOString().slice(0,10);renderLedger();
+
+// BEAST MODE v4.37: observational, non-destructive, rolling audit.
+// Reads local user data only; never uploads it or changes predictions/results.
+(function b4dAuditV437(){
+'use strict';
+const valid=/^\d{4}$/;
+const opsNames=new Set(['MAGNUM','TOTO','DAMACAI']);
+const signature=n=>n.split('').sort().join('');
+const html=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const archiveKey='beast-v437-audit-archive';
+let auditRows=[],currentSource='',auditFingerprint='';
+const panel=document.createElement('section');
+panel.id='audit437';
+panel.innerHTML='<h2>📈 Rolling Performance Monitor v4.37</h2>'+
+ '<p class="muted">Reads this phone’s saved predictions and completed draw boards when available. Otherwise import your Data-tab JSON backup above. No account, network upload, or changes to your prediction algorithms.</p>'+
+ '<button id="auditLoadLocal">🔄 Read phone data</button> <button id="auditExport">⬇ Export audit JSON</button>'+
+ '<p id="auditSource" class="muted" role="status">Checking this phone’s saved records…</p>'+
+ '<div id="auditTrend"></div><div id="auditArchive"></div>'+
+ '<p class="note">Only predictions recorded before the target calendar day are eligible as pre-day evidence. Same-day records have unverified draw cutoffs and are shown separately. Even pre-day timestamps from a local backup are not independently authenticated. One successful draw does not establish predictive power.</p>';
+document.querySelector('section')?.insertAdjacentElement('afterend',panel);
+function tableCell(s){return '<td>'+html(s)+'</td>';}
+function fullBoard(d){
+ return d && Array.isArray(d.top3)&&d.top3.length===3 &&
+ Array.isArray(d.special)&&d.special.length===10 &&
+ Array.isArray(d.consolation)&&d.consolation.length===10 &&
+ [...d.top3,...d.special,...d.consolation].every(n=>typeof n==='string'&&valid.test(n));
+}
+function prizes(d){
+ return d.top3.map((n,i)=>({n,tier:['1st','2nd','3rd'][i]}))
+ .concat(d.special.map(n=>({n,tier:'Special'})),d.consolation.map(n=>({n,tier:'Consolation'})));
+}
+function permutationsCount(s){
+ const counts={}; for(const c of s)counts[c]=(counts[c]||0)+1;
+ const factorial=n=>n<=1?1:n*factorial(n-1);
+ return 24/Object.values(counts).reduce((a,n)=>a*factorial(n),1);
+}
+function readPhoneData(){
+ let bestO=[],bestH=[],originO='',originH='';
+ for(let i=0;i<localStorage.length;i++){
+  const key=localStorage.key(i);
+  if(!key||key.startsWith('beast-v437-')||key.includes('evaluation-memory'))continue;
+  let obj;
+  try{const raw=localStorage.getItem(key);if(!raw||raw.length>30000000)continue;obj=JSON.parse(raw);}catch(e){continue;}
+  const candidates=[obj,obj&&obj.data].filter(Boolean);
+  for(const x of candidates){
+   const lists=Array.isArray(x)?[x]:[x.operators,x.history].filter(Array.isArray);
+   for(const list of lists){
+    if(list.length && list.some(v=>v&&opsNames.has(v.name)&&Array.isArray(v.draws)) && list.length>bestO.length){bestO=list;originO=key;}
+    if(list.length && list.some(v=>v&&Array.isArray(v.predictions)&&v.generatedAt) && list.length>bestH.length){bestH=list;originH=key;}
+   }
+  }
+ }
+ return bestO.length&&bestH.length ? {operators:bestO,history:bestH,originO,originH}:null;
+}
+function readArchive(){
+ try{const x=JSON.parse(localStorage.getItem(archiveKey)||'[]');return Array.isArray(x)?x:[];}catch(e){return [];}
+}
+function writeArchive(report){
+ const history=readArchive();const i=history.findIndex(x=>x.fingerprint===report.fingerprint);
+ if(i<0)history.push(report);else history[i]=report;
+ try{localStorage.setItem(archiveKey,JSON.stringify(history.slice(-100)));}catch(e){$('auditSource').textContent+=' · Report archive storage unavailable.';}
+ renderArchive();
+}
+function renderArchive(){
+ const rows=readArchive().slice(-5).reverse();
+ $('auditArchive').innerHTML='<h3>Saved performance snapshots</h3>'+
+ (rows.length?'<div class="scroll"><table><tr><th>Checked</th><th>Draw dates</th><th>Box matches</th><th>Chance baseline</th></tr>'+
+ rows.map(r=>'<tr>'+tableCell(r.checkedAt.slice(0,10))+tableCell(r.dates)+tableCell(r.observed)+tableCell(r.expected.toFixed(2))+'</tr>').join('')+'</table></div>'
+ :'<p class="muted">No snapshots stored yet.</p>');
+}
+function renderAuditMatches(){
+ const m=$('modeFilter').value,kind=$('typeFilter').value;
+ const rows=auditRows.filter(x=>(m==='ALL'||x.mode===m)&&(kind==='ALL'||x.type===kind));
+ $('matches').innerHTML='<p>'+rows.length+' distinct Box-combination matches or cross-operator observations. A result here is not proof of a winning ticket.</p>'+
+ rows.slice(0,150).map(x=>'<details class="match-card"><summary>'+html(x.pred)+' → '+html(x.win)+' · '+html(x.mode)+' · '+html(x.tier)+'</summary>'+
+ '<p>Target: '+html(x.op)+' · Draw: '+html(x.date)+' · Result: '+html(x.winningOp)+'</p>'+
+ '<p>'+html(x.type==='CROSS'?'Other-operator observation':x.type==='EXACT'?'Exact match':'Permutation match')+'</p>'+
+ '<p class="warn">'+(x.provisional?'Same-day record: draw cutoff not independently verified':'Recorded before target calendar day: local timestamp not authenticated')+'</p></details>').join('')+
+ (rows.length>150?'<p>First 150 shown. Narrow the filters for more.</p>':'');
+}
+function audit(raw,source){
+ const packed=unpack(raw),history=packed.history,operators=packed.ops;
+ if(!history.length||!operators.length)throw Error('Missing operators or saved predictions');
+ const boards=new Map(),byDay=new Map();
+ for(const o of operators){
+  if(!opsNames.has(o.name)||!Array.isArray(o.draws))continue;
+  for(const d of o.draws)if(fullBoard(d)&&/^\d{4}-\d\d-\d\d$/.test(d.date||'')){
+   const key=o.name+'|'+d.date;
+   if(boards.has(key))continue;
+   const winning=prizes(d);boards.set(key,winning);
+   if(!byDay.has(d.date))byDay.set(d.date,[]);
+   byDay.get(d.date).push({op:o.name,winning});
+  }
+ }
+ const groups=new Map();let invalid=0,repeated=0,unscoped=0,missing=0;
+ const sorted=history.slice().sort((a,b)=>String(a.generatedAt||'').localeCompare(String(b.generatedAt||'')));
+ for(const e of sorted){
+  if(!e||!Array.isArray(e.predictions)){invalid++;continue;}
+  const op=opsNames.has(e.subOperator)?e.subOperator:opsNames.has(e.operator)?e.operator:null;
+  const date=e.targetDate||e.date;
+  if(!op||!date){unscoped++;continue;}
+  const target=boards.get(op+'|'+date);
+  if(!target){missing++;continue;}
+  const generated=Date.parse(e.generatedAt||'');
+  const start=Date.parse(date+'T00:00:00+08:00');
+  const end=Date.parse(date+'T23:59:59.999+08:00');
+  if(!Number.isFinite(generated)||!Number.isFinite(start)||generated>=end){invalid++;continue;}
+  const mode=opsNames.has(e.operator)?'CORE TOP 10':String(e.operator||'UNKNOWN');
+  const key=mode+'|'+op+'|'+date;
+  if(groups.has(key)){repeated++;continue;} // First committed snapshot prevents re-roll inflation.
+  const picks=new Map();
+  for(const n of e.predictions){
+   if(typeof n==='string'&&valid.test(n)){
+    const sig=signature(n);
+    if(!picks.has(sig))picks.set(sig,n);
+   }
+  }
+  if(!picks.size){invalid++;continue;}
+  groups.set(key,{mode,op,date,picks,provisional:generated>=start,winning:target});
+ }
+ let totalBoxes=0,totalObserved=0,totalExpected=0,strict=0,provisional=0,exactTotal=0,crossTotal=0;
+ const byMode=new Map(),dayResults=new Map(),consensus=new Map();auditRows=[];
+ for(const g of groups.values()){
+  if(g.provisional)provisional++;else strict++;
+  if(!byMode.has(g.mode))byMode.set(g.mode,{mode:g.mode,entries:0,boxes:0,exact:0,perm:0,cross:0,expected:0,dates:new Set()});
+  const st=byMode.get(g.mode);st.entries++;st.dates.add(g.date);
+  if(!dayResults.has(g.date))dayResults.set(g.date,{date:g.date,groups:0,observed:0,expected:0,pre:0});
+  const day=dayResults.get(g.date);day.groups++;if(!g.provisional)day.pre++;
+  const other=(byDay.get(g.date)||[]).filter(d=>d.op!==g.op);
+  for(const [sig,n] of g.picks){
+   totalBoxes++;st.boxes++;
+   const permN=permutationsCount(sig);
+   const expectation=1-Math.pow(1-permN/10000,g.winning.length);
+   st.expected+=expectation;totalExpected+=expectation;day.expected+=expectation;
+   const own=g.winning.find(x=>signature(x.n)===sig);
+   const cross=own?null:other.map(x=>({op:x.op,win:x.winning.find(w=>signature(w.n)===sig)})).find(x=>x.win);
+   if(own){
+    totalObserved++;day.observed++;
+    const type=g.winning.some(x=>x.n===n)?'EXACT':'PERM';
+    st[type==='EXACT'?'exact':'perm']++;if(type==='EXACT')exactTotal++;
+    auditRows.push({date:g.date,mode:g.mode,op:g.op,winningOp:g.op,pred:n,win:own.n,tier:own.tier,type,provisional:g.provisional});
+   }else if(cross){
+    st.cross++;crossTotal++;
+    auditRows.push({date:g.date,mode:g.mode,op:g.op,winningOp:cross.op,pred:n,win:cross.win.n,tier:cross.win.tier,type:'CROSS',provisional:g.provisional});
+   }
+   const ck=g.date+'|'+g.op+'|'+sig;
+   if(!consensus.has(ck))consensus.set(ck,{date:g.date,op:g.op,num:n,modes:new Set(),hit:!!own});
+   consensus.get(ck).modes.add(g.mode);
+  }
+ }
+ const modes=[...byMode.values()].sort((a,b)=>b.boxes-a.boxes);
+ const dates=[...dayResults.keys()].sort();
+ const preDayDates=[...new Set([...groups.values()].filter(x=>!x.provisional).map(x=>x.date))];
+ const evidence=preDayDates.length>=50;
+ currentSource=source;
+ $('auditSource').textContent='Source: '+source+' · '+history.length+' saved snapshots · '+boards.size+' complete draw boards · First snapshot per mode/operator/date scored.';
+ $('summary').textContent='Target draw dates: '+dates.length+' · Pre-day groups: '+strict+' · Same-day provisional: '+provisional+' · Unscoped: '+unscoped+' · No completed board: '+missing+' · Invalid timestamps/picks: '+invalid+' · Repeat generations excluded: '+repeated+'.';
+ $('headlineStats').innerHTML=[['Distinct boxes',totalBoxes],['Exact',exactTotal],['Box matches',totalObserved],['Random expectation*',totalExpected.toFixed(2)]].map(x=>'<div class="stat">'+html(x[0])+'<b>'+x[1]+'</b></div>').join('');
+ $('modes').innerHTML=modes.map(s=>'<tr>'+tableCell(s.mode)+tableCell(s.entries)+tableCell(s.boxes)+tableCell(s.exact)+tableCell(s.perm)+tableCell(s.cross)+tableCell(s.expected.toFixed(2))+'</tr>').join('')||'<tr><td colspan="7">No eligible pre-draw or provisional snapshots.</td></tr>';
+ $('modeCards').innerHTML=modes.map(s=>'<div class="mode-card"><b>'+html(s.mode)+'</b><small> · '+s.entries+' groups · '+s.boxes+' distinct boxes</small><div class="values">'+
+ '<div>Exact<strong style="display:block">'+s.exact+'</strong></div>'+
+ '<div>Box match<strong style="display:block">'+s.perm+'</strong></div>'+
+ '<div>Cross-op<strong style="display:block">'+s.cross+'</strong></div></div><small>Chance expectation: '+s.expected.toFixed(2)+'</small></div>').join('');
+ $('modeFilter').innerHTML='<option value="ALL">All modes</option>'+modes.map(s=>'<option value="'+html(s.mode)+'">'+html(s.mode)+'</option>').join('');
+ auditRows.sort((a,b)=>b.date.localeCompare(a.date));renderAuditMatches();
+ $('modeFilter').onchange=renderAuditMatches;$('typeFilter').onchange=renderAuditMatches;
+ const overlaps=[...consensus.values()].filter(x=>x.modes.size>=2).sort((a,b)=>b.modes.size-a.modes.size).slice(0,30);
+ $('consensus').innerHTML=overlaps.length?'<div class="scroll"><table><tr><th>Date</th><th>Operator</th><th>Combination</th><th>Modes</th><th>Outcome</th></tr>'+
+ overlaps.map(x=>'<tr>'+tableCell(x.date)+tableCell(x.op)+tableCell(x.num)+tableCell([...x.modes].join(', '))+tableCell(x.hit?'Box match':'No match')+'</tr>').join('')+'</table></div>':'No multi-mode agreement among evaluated target draws.';
+ $('uniqueScores').innerHTML='<p><b>'+totalObserved+'</b> observed same-operator distinct Box matches versus <b>'+totalExpected.toFixed(2)+'</b> expected by chance, across all methods. <b>'+crossTotal+'</b> other-operator observations are shown separately and are not counted as purchased-ticket wins.</p>'+
+ '<p class="warn">'+(evidence?'At least 50 pre-day dates recorded; compare calibrated outcomes and uncertainty before claiming an edge.':'Only '+preDayDates.length+' pre-day target date(s) available. At least 50 independent pre-day dates are needed before a trend is meaningful.')+'</p>';
+ const recent=dates.slice(-10).map(d=>dayResults.get(d));
+ const sample=recent.reduce((a,x)=>({observed:a.observed+x.observed,expected:a.expected+x.expected}),{observed:0,expected:0});
+ $('auditTrend').innerHTML='<h3>Most recent '+recent.length+' evaluated draw date(s)</h3>'+
+ '<p>Observed distinct same-operator Box matches: <strong>'+sample.observed+'</strong> · Chance expectation: <strong>'+sample.expected.toFixed(2)+'</strong>. '+(evidence?'Evaluate with walk-forward random controls.':'Research only — too few independent pre-day dates.')+'</p>'+
+ '<div class="scroll"><table><tr><th>Draw date</th><th>Groups</th><th>Matches</th><th>Chance expected</th><th>Pre-day groups</th></tr>'+
+ recent.reverse().map(x=>'<tr>'+tableCell(x.date)+tableCell(x.groups)+tableCell(x.observed)+tableCell(x.expected.toFixed(2))+tableCell(x.pre)+'</tr>').join('')+'</table></div>';
+ // Archive aggregate numbers only, never raw purchase or personal prediction records.
+ const fingerprint=JSON.stringify({dates,modes:modes.map(x=>[x.mode,x.entries,x.boxes,x.exact,x.perm,x.cross,x.expected.toFixed(4)]),strict,provisional});
+ auditFingerprint=fingerprint;
+ writeArchive({fingerprint,checkedAt:new Date().toISOString(),dates:dates.length,observed:totalObserved,expected:totalExpected});
+}
+$('auditLoadLocal').onclick=()=>{
+ const live=readPhoneData();
+ if(!live){$('auditSource').textContent='No complete local app data found in this browser. Export a backup from the Data tab and import it above; do not clear phone storage.';return;}
+ data={operators:live.operators,history:live.history};
+ try{audit(data,'Phone browser storage ('+live.originO+', '+live.originH+')');}
+ catch(e){$('auditSource').textContent='Could not audit local data: '+e.message;}
+};
+$('auditExport').onclick=()=>{
+ const report={auditVersion:'4.37',createdAt:new Date().toISOString(),source:currentSource,metric:'distinct Box combinations',fingerprint:auditFingerprint,snapshots:readArchive()};
+ const blob=new Blob([JSON.stringify(report,null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download='beast4d-rolling-audit.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
+$('file').onchange=async e=>{
+ try{
+  const file=e.target.files&&e.target.files[0];if(!file)return;
+  if(file.size>30000000)throw Error('Backup exceeds 30 MB');
+  const parsed=JSON.parse(await file.text()),x=unpack(parsed);
+  if(!x.ops.length||!x.history.length)throw Error('Missing operators or prediction history');
+  data=parsed;audit(data,'Imported backup: '+file.name);
+  $('status').textContent='Backup evaluated locally; your main app data has not been changed.';
+ }catch(err){$('status').textContent='Audit failed: '+err.message;}
+};
+renderArchive();
+const initial=readPhoneData();
+if(initial){data={operators:initial.operators,history:initial.history};try{audit(data,'Phone browser storage ('+initial.originO+', '+initial.originH+')');}catch(e){$('auditSource').textContent='Local data found but audit failed: '+e.message;}}
+else $('auditSource').textContent='No prediction history accessible on this browser origin. Use the Data-tab backup import above.';
+window.addEventListener('storage',e=>{
+ if(currentSource.startsWith('Phone browser storage')&&e.key!==archiveKey){
+  const fresh=readPhoneData();if(fresh){data={operators:fresh.operators,history:fresh.history};try{audit(data,'Phone browser storage ('+fresh.originO+', '+fresh.originH+')');}catch(err){console.warn('Audit refresh skipped',err);}}
+ }
+});
+})();
+
 </script></html>
