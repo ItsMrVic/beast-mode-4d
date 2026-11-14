@@ -233,7 +233,10 @@ async function init(){
  $('operator').onchange=renderResults;
  $('refresh').onclick=()=>refresh(true);
  $('backup').onchange=importBackup;
- try{await decode();renderCards();renderNumbers();await refresh(true);}
+ try{await decode();renderCards();renderNumbers();await refresh(true);
+  // Results refresh while this mode is open; refresh again on return to the phone app.
+  setInterval(()=>{if(!document.hidden)refresh(true);},120000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh(true);});}
  catch(e){$('status').textContent='Coverage Lab tidak dapat dibuka: '+e.message;console.error(e);}
 }
 init();
