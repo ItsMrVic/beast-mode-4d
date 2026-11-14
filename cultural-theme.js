@@ -46,6 +46,11 @@ function save(){try{localStorage.setItem(KEY,JSON.stringify(settings));}catch(e)
 function init(){
  if(document.getElementById('culture-launch'))return;
  const btn=document.createElement('button');btn.id='culture-launch';btn.type='button';btn.setAttribute('aria-haspopup','dialog');document.body.appendChild(btn);
+ // Keep Coverage Lab a separate, read-only mode; do not touch the prediction engine.
+ const link=document.createElement('a');link.id='beast-coverage-launch';link.href='./coverage-mode.html';link.textContent='📊 Coverage Lab · 5K–9.5K';link.setAttribute('aria-label','Buka Coverage Lab untuk 5000, 6000, 8000 dan 9500 nombor');
+ Object.assign(link.style,{display:'inline-flex',alignItems:'center',gap:'6px',margin:'10px 12px',padding:'10px 14px',border:'1px solid #b99653',borderRadius:'12px',background:'#31241a',color:'#ffe0a0',fontWeight:'700',fontSize:'14px',textDecoration:'none',boxShadow:'0 2px 8px #0005'});
+ const appHeader=document.querySelector('.header');if(appHeader)appHeader.insertAdjacentElement('afterend',link);else document.body.insertBefore(link,document.body.firstChild);
+
  const modal=document.createElement('div');modal.id='culture-dialog';modal.setAttribute('aria-hidden','true');
  modal.innerHTML='<div class="culture-panel" role="dialog" aria-modal="true" aria-labelledby="culture-title"><h2 id="culture-title">🐉 Cultural Theme Engine</h2><p id="culture-active"></p><label for="culture-mode">Theme switching</label><select id="culture-mode"><option value="auto">Automatic · Malaysia calendar</option><option value="manual">Manual · choose a theme</option></select><label for="culture-choice">Theme preview / manual choice</label><select id="culture-choice"></select><p class="culture-note">Uses Malaysia time. Movable festival dates for 2026–2027 are provisional and should be checked against official Malaysian announcements. Outside the known calendar years, the Imperial Dragon theme is used except on fixed-date celebrations. This changes appearance only; predictions and saved data are untouched.</p><p id="culture-storage" role="status"></p><button class="culture-btn" id="culture-save" type="button">Save theme settings</button><button class="culture-btn" id="culture-close" type="button">Close</button></div>';
  document.body.appendChild(modal);
