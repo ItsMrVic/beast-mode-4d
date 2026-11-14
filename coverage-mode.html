@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="ms"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#120e0d"><title>BEAST MODE 4D — Coverage Lab</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#eee7db;background:#0c0e16}
+*{box-sizing:border-box}body{max-width:1080px;margin:0 auto;padding:16px 12px 60px;background:radial-gradient(ellipse at top,#302015,#0c0e16 46%)}
+h1{color:#f7cf76;font-size:clamp(1.5rem,4vw,2.2rem);margin:16px 0 6px}h2{font-size:1.16rem;color:#f4d59a;margin-top:0}p{line-height:1.5}
+a{color:#f4cd77}.muted{color:#b7b4c1}.warn{color:#f6bf7f}.success{color:#a5e6c9}
+.panel{background:#171a28;border:1px solid #45404a;border-radius:15px;margin:16px 0;padding:15px;box-shadow:0 4px 14px #0003}
+.layout{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px}
+.tile{padding:12px;border-radius:11px;border:1px solid #69573b;background:#262335;color:inherit;text-align:left;cursor:pointer}
+.tile strong{font-size:1.35rem;display:block;color:#f7ce73}.tile small{color:#ccc6c2}.tile.active{background:#51401e;border-color:#ffd371;box-shadow:inset 0 0 0 1px #ffd371}
+label{display:inline-flex;flex-direction:column;font-size:.85rem;color:#d4cbd0;gap:6px;margin:5px 8px 6px 0}
+input,select,button{border:1px solid #71654c;background:#252839;color:#f9f2e8;border-radius:10px;padding:10px;max-width:100%;font:inherit}
+button{background:#654b26;cursor:pointer}button:disabled{opacity:.45;cursor:default}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}
+.actions button{font-size:.9rem}.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:9px;margin:14px 0}
+.metric{background:#232938;border:1px solid #444654;border-radius:12px;padding:10px}
+.metric small{display:block;color:#b6b5c5}.metric b{color:#ffd47e;font-size:1.35rem}
+.scroll{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:.88rem;min-width:620px}
+th,td{padding:10px 7px;text-align:left;border-bottom:1px solid #3b3e4c}th{color:#e9c77c}td.num{font-variant-numeric:tabular-nums;font-family:ui-monospace,monospace;font-weight:700;letter-spacing:1px}
+.match{color:#a0eed0;font-weight:700}.miss{color:#bcb3ba}.extra{color:#ffcf81}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.tag{background:#282c3d;border:1px solid #666;padding:4px 8px;border-radius:9px;font-size:.8rem}
+.number-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(61px,1fr));gap:6px;margin:12px 0}.num-chip{padding:7px 3px;background:#212738;border:1px solid #515568;border-radius:7px;text-align:center;font-family:ui-monospace,monospace;font-size:.92rem}
+footer{font-size:.8rem;color:#aca7b2;line-height:1.5}.pill{background:#3d2d19;color:#ffdb9b;padding:4px 8px;border-radius:20px;font-size:.76rem}
+#status{min-height:1.5em}#numberStatus{font-size:.87rem}
+</style>
+</head><body>
+<nav><a href="./index.html">← Kembali ke BEAST MODE 4D</a></nav>
+<h1>🐉 Coverage Lab <span class="pill">v4.38</span></h1>
+<p class="muted">Eksperimen senarai tetap bertarikh 14 November 2026. Satu set nombor untuk Magnum, Sports Toto dan Da Ma Cai. Ini bukan mode ramalan baharu.</p>
+<section class="panel"><h2>1 · Pilih set nombor</h2><div class="layout" id="setCards"></div>
+<p class="muted">Set besar merangkumi semua nombor daripada set yang lebih kecil. Nombor dengan tiga/empat digit sama telah ditapis mengikut pilihan pengguna. Dalam loteri adil, nombor ditapis tidak semestinya kurang berkemungkinan keluar.</p>
+<div class="actions"><label>Cari nombor <input id="searchNumber" inputmode="numeric" maxlength="4" placeholder="cth. 2378"></label>
+<label>Paparkan <select id="numberFilter"><option value="selected">Dalam set dipilih</option><option value="excluded">370 nombor diasingkan</option><option value="missed">Tidak termasuk set</option></select></label></div>
+<div id="numberStatus" role="status"></div><div class="number-grid" id="numberList"></div>
+<div class="actions"><button id="prevNumbers">← Sebelum</button><button id="nextNumbers">Seterusnya →</button></div>
+</section>
+<section class="panel"><h2>2 · Semak keputusan cabutan</h2>
+<div class="actions"><label>Tarikh cabutan <input type="date" id="drawDate"></label>
+<label>Operator <select id="operator"><option value="ALL">Ketiga-tiga operator</option><option value="MAGNUM">Magnum</option><option value="TOTO">Sports Toto</option><option value="DAMACAI">Da Ma Cai</option></select></label></div>
+<div class="actions"><button id="refresh">🔄 Semak keputusan terkini</button><label>Atau import backup JSON app <input id="backup" type="file" accept=".json,application/json"></label></div>
+<p id="status" class="muted" role="status">Memuatkan data…</p>
+<div id="summary"></div><div id="results"></div></section>
+<section class="panel"><h2>3 · Cara skor dikira</h2>
+<p><b>Padanan tepat (straight)</b> bermaksud semua 4 digit sama dan dalam urutan yang sama. <b>Permutation / box</b> bermaksud hanya digit sama tetapi urutan berbeza; ini <b>bukan</b> kemenangan tiket Big straight. Keputusan operator lain juga bukan tiket menang bagi operator yang tidak dibeli.</p>
+<p>Simulasi BK8 Big RM1 setiap nombor: 1st RM3,500; 2nd RM1,200; 3rd RM600; 10 Special RM250 setiap satu; 10 Consolation RM80 setiap satu. Kos dikira berasingan bagi setiap operator, bukan bukti tiket benar-benar dibeli.</p>
+<p class="warn">Perbelanjaan besar tidak disyorkan: ujian sejarah BEAST MODE belum menunjukkan kelebihan ramalan yang boleh dipercayai berbanding pilihan rawak. Set 9,500 pasti rugi sekurang-kurangnya RM900 setiap operator walaupun semua 23 hadiah tepat.</p></section>
+<footer>Senarai bertarikh 2026-11-14 dibekukan untuk penilaian jujur. Mode ini tidak mengubah ramalan, sejarah, tiket atau keputusan yang disimpan dalam BEAST MODE utama. Apabila internet tidak tersedia, semakan hanya menggunakan data yang ada pada telefon atau backup yang diimport.</footer>
+<script src="./coverage-sets-v438.js"></script>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const sizes=[5000,6000,8000,9500],chars=['A','B','C','D'],prizes=[3500,1200,600,250,80];
+let dataset='',setSize=5000,page=0,loadedBoards=[],backupBoards=[],status='';
+const four=n=>typeof n==='string' && /^\d{4}$/.test(n);
+const number=n=>String(n).padStart(4,'0');
+const sig=n=>n.split('').sort().join('');
+const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
+const money=n=>'RM '+(n<0?'−':'')+Math.abs(n).toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:2});
+const selected=(n,s)=>dataset[n] && dataset[n]!=='E' && chars.indexOf(dataset[n])<=sizes.indexOf(s);
+const excluded=n=>{const x=number(n),m=Math.max(...[...new Set(x)].map(c=>x.split(c).length-1));return m>=3;};
+function assertData(){
+ if(dataset.length!==10000)throw Error('Panjang data senarai bukan 10,000');
+ for(const [idx,s] of sizes.entries()){let c=0;for(let n=0;n<10000;n++)if(selected(n,s))c++;if(c!==s)throw Error('Jumlah set '+s+' tidak tepat: '+c);}
+ let x=0;for(let n=0;n<10000;n++)if(excluded(n))x++;if(x!==370)throw Error('Bilangan pengecualian tidak tepat');
+}
+async function decode(){
+ const raw=atob(window.B4D_COVERAGE_PACKED||'');
+ const bytes=Uint8Array.from(raw,c=>c.charCodeAt(0));
+ if(!('DecompressionStream' in window))throw Error('Pelayar terlalu lama untuk membuka set termampat. Sila kemas kini Chrome/Safari.');
+ const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate'));
+ dataset=await new Response(stream).text();
+ assertData();
+}
+function renderCards(){
+ $('setCards').innerHTML=sizes.map(s=>'<button class="tile '+(setSize===s?'active':'')+'" data-set="'+s+'"><small>TOP</small><strong>'+s.toLocaleString('en-MY')+'</strong><small>RM1 Big: '+money(s)+'/operator</small></button>').join('');
+ $('setCards').querySelectorAll('[data-set]').forEach(el=>el.onclick=()=>{setSize=Number(el.dataset.set);page=0;renderCards();renderNumbers();renderResults();});
+}
+function renderNumbers(){
+ if(!dataset)return;
+ const q=$('searchNumber').value.replace(/\D/g,'').slice(0,4),filter=$('numberFilter').value;
+ const matches=[];for(let n=0;n<10000;n++){
+  const val=number(n);if(q&&!val.includes(q))continue;
+  if(filter==='selected'&&!selected(n,setSize))continue;
+  if(filter==='excluded'&&!excluded(n))continue;
+  if(filter==='missed'&&selected(n,setSize))continue;
+  matches.push(val);
+ }
+ const limit=200,maxPage=Math.max(0,Math.ceil(matches.length/limit)-1);page=Math.min(page,maxPage);
+ $('numberStatus').textContent=matches.length.toLocaleString('en-MY')+' nombor · '+(matches.length?'Paparan '+(page*limit+1)+'–'+Math.min((page+1)*limit,matches.length):'Tiada padanan');
+ $('numberList').innerHTML=matches.slice(page*limit,(page+1)*limit).map(n=>'<span class="num-chip">'+n+'</span>').join('');
+ $('prevNumbers').disabled=page===0;$('nextNumbers').disabled=page===maxPage;
+}
+function normalOperator(s){
+ const a=String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+ if(a.includes('MAGNUM'))return 'MAGNUM';
+ if(a.includes('TOTO'))return 'TOTO';
+ if(a.includes('DAMACAI')||a==='DMC')return 'DAMACAI';
+ return null;
+}
+function normalizeBoard(op,date,top3,special,consolation,source){
+ if(!['MAGNUM','TOTO','DAMACAI'].includes(op)||!/^\d{4}-\d{2}-\d{2}$/.test(date))return null;
+ const items=[top3,special,consolation];if(items.some((x,i)=>!Array.isArray(x)||x.length!==[3,10,10][i]))return null;
+ const all=items.flat();if(!all.every(four))return null;
+ return {op,date,top3,special,consolation,source};
+}
+function collect(source,origin){
+ const results=[];if(!source||typeof source!=='object')return results;
+ const data=source.data&&typeof source.data==='object'?source.data:source;
+ const operators=Array.isArray(data.operators)?data.operators:Array.isArray(data)?data:[];
+ for(const o of operators){
+  const op=normalOperator(o.name||o.operator||o.operator_name);
+  if(!op)continue;
+  const draws=Array.isArray(o.draws)?o.draws:[];for(const d of draws){
+   const v=normalizeBoard(op,d.date,d.top3,d.special,d.consolation,origin);if(v)results.push(v);
+  }
+ }
+ if(Array.isArray(data.results))for(const d of data.results){
+  const op=normalOperator(d.operator||d.operator_name||d.name);
+  const v=normalizeBoard(op,d.date,d.top3||[d.first,d.second,d.third],d.special,d.consolation,origin);if(v)results.push(v);
+ }
+ return results;
+}
+function scanPhone(){
+ const found=[];try{
+  for(let i=0;i<localStorage.length;i++){
+   const key=localStorage.key(i);if(key==='b4d-coverage-cache-v438')continue;
+   const val=localStorage.getItem(key);
+   if(!val||val.length>18000000||(!val.includes('"draws"')&&!val.includes('"results"')))continue;
+   try{found.push(...collect(JSON.parse(val),'Data app · '+key));}catch{}
+  }
+  const cached=JSON.parse(localStorage.getItem('b4d-coverage-cache-v438')||'[]');
+  if(Array.isArray(cached))for(const v of cached){const b=normalizeBoard(v.op,v.date,v.top3,v.special,v.consolation,v.source||'Cache Coverage Lab');if(b)found.push(b);}
+ }catch(e){console.warn('Phone storage unavailable',e);}
+ return found;
+}
+function integrate(rows){
+ const map=new Map();
+ for(const b of [...loadedBoards,...backupBoards,...rows]){
+  const key=b.op+'|'+b.date;
+  const old=map.get(key);
+  if(!old||b.source.startsWith('API')||(!old.source.startsWith('API')&&b.source.startsWith('Data')))map.set(key,b);
+ }
+ loadedBoards=[...map.values()];
+ try{
+  const keep=loadedBoards.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,70);
+  localStorage.setItem('b4d-coverage-cache-v438',JSON.stringify(keep));
+ }catch{}
+}
+async function fetchLive(date){
+ const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),12000);
+ try{
+  const r=await fetch('https://4dlivetoday.com/api/v1/results/'+encodeURIComponent(date),{cache:'no-store',signal:controller.signal});
+  if(!r.ok)throw Error('HTTP '+r.status);
+  const x=await r.json();
+  if(x.source!=='4dlivetoday.com'||!Array.isArray(x.data?.results))throw Error('Sumber atau format API tidak sah');
+  const verified=x.data.results.filter(z=>String(z.status||'').toLowerCase()==='checked');
+  return collect({results:verified},'API checked: 4dlivetoday.com').filter(z=>z.date===date);
+ }finally{clearTimeout(timer);}
+}
+async function refresh(force=false){
+ const date=$('drawDate').value;
+ $('status').textContent='Menyemak data telefon…';
+ integrate(scanPhone());
+ let online='';
+ if(force||!loadedBoards.some(b=>b.date===date)){
+  try{const x=await fetchLive(date);if(x.length){integrate(x);online=' · '+x.length+' keputusan lengkap diperoleh melalui API';}
+      else online=' · API belum memaparkan keputusan lengkap';}
+  catch(e){online=' · sambungan API tidak tersedia';}
+ }
+ const count=loadedBoards.filter(b=>b.date===date).length;
+ $('status').textContent=count+' daripada 3 operator mempunyai keputusan lengkap untuk '+date+online+'. Lihat label sumber pada jadual.';
+ renderResults();
+}
+function prizeLines(b){
+ const rows=[];b.top3.forEach((n,i)=>rows.push({n,tier:['1st','2nd','3rd'][i],price:prizes[i]}));
+ b.special.forEach(n=>rows.push({n,tier:'Special',price:250}));
+ b.consolation.forEach(n=>rows.push({n,tier:'Consolation',price:80}));
+ return rows;
+}
+function check(b,s){
+ const rows=prizeLines(b),signatureSet=new Set();
+ for(let n=0;n<10000;n++)if(selected(n,s))signatureSet.add(sig(number(n)));
+ const hits=rows.map(p=>({...p,hit:selected(Number(p.n),s),box:signatureSet.has(sig(p.n)),excluded:excluded(p.n)}));
+ return {hits,count:hits.filter(x=>x.hit).length,boxOnly:hits.filter(x=>!x.hit&&x.box).length,excluded:hits.filter(x=>x.excluded).length,payout:hits.reduce((v,x)=>v+(x.hit?x.price:0),0)};
+}
+function renderResults(){
+ if(!dataset)return;
+ const date=$('drawDate').value,operator=$('operator').value,ops=operator==='ALL'?['MAGNUM','TOTO','DAMACAI']:[operator];
+ const boards=ops.map(op=>loadedBoards.find(b=>b.op===op&&b.date===date)||null);
+ if(!boards.some(Boolean)){$('summary').innerHTML='<p class="warn">Keputusan penuh belum tersedia untuk tarikh dan operator ini. Tekan Semak atau import backup JSON selepas cabutan.</p>';$('results').innerHTML='';return;}
+ let summary='<div class="scroll"><table><thead><tr><th>Operator</th><th>Set</th><th>Exact hits/23</th><th>Box-only*</th><th>Nombor diasingkan</th><th>Payout simulasi</th><th>Net</th></tr></thead><tbody>';
+ let details='';
+ for(let i=0;i<ops.length;i++){
+  const b=boards[i],op=ops[i];if(!b){
+   summary+='<tr><td>'+op+'</td><td colspan="6">Menunggu keputusan lengkap</td></tr>';continue;
+  }
+  for(const s of sizes){
+   const stat=check(b,s),net=stat.payout-s;
+   summary+='<tr'+(s===setSize?' style="background:#2d2a24"':'')+'><td>'+op+'</td><td>'+s.toLocaleString('en-MY')+'</td><td class="match">'+stat.count+'/23</td><td>'+stat.boxOnly+'</td><td>'+stat.excluded+'</td><td>'+money(stat.payout)+'</td><td style="color:'+(net>=0?'#a7e4c5':'#f4a9a9')+'">'+money(net)+'</td></tr>';
+  }
+  const state=check(b,setSize);
+  details+='<h2>'+op+' · '+b.date+'</h2><p class="muted">Sumber: '+escape(b.source)+' · Set '+setSize.toLocaleString('en-MY')+' · Straight '+state.count+'/23 · Permutation sahaja '+state.boxOnly+'/23</p>';
+  details+='<div class="scroll"><table><thead><tr><th>Hadiah</th><th>Nombor</th><th>Padanan tepat</th><th>Permutation sahaja*</th><th>Asingkan</th><th>RM jika tepat</th></tr></thead><tbody>';
+  details+=state.hits.map(row=>'<tr><td>'+row.tier+'</td><td class="num">'+row.n+'</td><td class="'+(row.hit?'match':'miss')+'">'+(row.hit?'✓ HIT':'—')+'</td><td class="'+(!row.hit&&row.box?'extra':'miss')+'">'+(!row.hit&&row.box?'Digit sama':'—')+'</td><td>'+(row.excluded?'Dikecualikan':'—')+'</td><td>'+money(row.hit?row.price:0)+'</td></tr>').join('');
+  details+='</tbody></table></div>';
+ }
+ summary+='</tbody></table></div><p class="muted">*Permutation sahaja tidak dibayar untuk taruhan Big straight. Kos setiap set dikira per operator; keputusan belum lengkap tidak diberi skor.</p>';
+ $('summary').innerHTML=summary;$('results').innerHTML=details;
+}
+async function importBackup(e){
+ const file=e.target.files&&e.target.files[0];if(!file)return;
+ try{
+  if(file.size>30000000)throw Error('Fail melebihi 30 MB');
+  const obj=JSON.parse(await file.text());const rows=collect(obj,'Data diimport daripada backup JSON');
+  if(!rows.length)throw Error('Tiada rekod cabutan lengkap ditemui');
+  backupBoards=rows;integrate(rows);$('status').textContent=rows.length+' rekod lengkap diimport pada peranti ini. Semakan hanya untuk tarikh dipilih.';renderResults();
+ }catch(err){$('status').textContent='Import gagal: '+err.message;}
+}
+function malaysiaToday(){
+ const p=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kuala_Lumpur',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+ const v=Object.fromEntries(p.map(x=>[x.type,x.value]));return v.year+'-'+v.month+'-'+v.day;
+}
+async function init(){
+ $('drawDate').value=malaysiaToday();
+ $('searchNumber').oninput=()=>{page=0;renderNumbers();};
+ $('numberFilter').onchange=()=>{page=0;renderNumbers();};
+ $('prevNumbers').onclick=()=>{page=Math.max(0,page-1);renderNumbers();};
+ $('nextNumbers').onclick=()=>{page++;renderNumbers();};
+ $('drawDate').onchange=()=>refresh(true);
+ $('operator').onchange=renderResults;
+ $('refresh').onclick=()=>refresh(true);
+ $('backup').onchange=importBackup;
+ try{await decode();renderCards();renderNumbers();await refresh(true);}
+ catch(e){$('status').textContent='Coverage Lab tidak dapat dibuka: '+e.message;console.error(e);}
+}
+init();
+})();
+</script>
+</body></html>
