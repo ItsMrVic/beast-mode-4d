@@ -1,3 +1,15 @@
+# BEAST MODE 4D v4.38 — Coverage Lab (15 Nov 2026)
+
+- New **Coverage Lab** button on the app home screen opens `coverage-mode.html` as a separate phone-friendly read-only mode; original prediction algorithms, history and ticket ledger remain unchanged.
+- Frozen filtered number selections from **14 Nov 2026**: **Top 5,000**, **Top 6,000**, **Top 8,000** and **Top 9,500**. One shared list across Magnum, Sports Toto and Da Ma Cai; each larger set contains the smaller sets. Four-digit numbers retain leading zeros. The 370 triple-/quadruple-digit patterns intentionally excluded by the user are available in a separate browsing filter.
+- Browse selected numbers in ascending order (200 per page), search by digits, and check exact prize-tier hits and same-digits permutations separately.
+- Choose draw date/operator (or all three). The screen reads compatible complete draw boards saved in same-origin browser storage and the local Coverage Lab cache; it can import the main app's JSON backup without uploading it. It also tries the existing `4dlivetoday.com` checked-results API when online and refreshes while open/when resumed. An unavailable/unpublished draw remains visibly pending instead of being fabricated.
+- Separate **hypothetical BK8 RM1 Big** payout and net result per operator and set (1st 3500, 2nd 1200, 3rd 600, Special 250, Consolation 80). These figures simulate straight bets, not purchased tickets. Permutations and cross-operator results are not counted as straight wins.
+- Updated offline PWA shell and manifest; when hosted, close and re-open/refresh the existing site and relaunch the installed PWA to receive the new cached files.
+- **Limitations:** Prior historical backtests did not establish an advantage over random selection. Excluding repeated-digit combinations is a user preference, not a validated forecast. A 9,500-number RM1 Big set cannot profit at the stated rates, even with all 23 prizes hit. Online API access and real-device display depend on deployment, browser support and source availability.
+
+---
+
 # BEAST MODE 4D v4.20 — History Digit Match Tracker
 
 - History now includes **Deep Learn** and **Random Control** mode filters alongside Oracle, Hot Hand, Cross-Operator Migration, Sniper, Fusion, Dodge and the existing Repeat modes.
