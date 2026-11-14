@@ -1,7 +1,7 @@
-// BEAST MODE 4D v4.36 offline shell. Keep local data and prediction code untouched.
-const CACHE='beast-4d-v436-shell';
+// BEAST MODE 4D v4.38 offline shell. Keep local data and prediction code untouched.
+const CACHE='beast-4d-v438-shell';
 const SHELL=['./','./index.html','./manifest.json','./icon-192.png','./icon-512.png',
- './festive-engine-v432.css?v=436','./festive-engine-v432.js?v=436','./live-api-v436.js?v=436'];
+ './festive-engine-v432.css?v=436','./festive-engine-v432.js?v=436','./live-api-v436.js?v=436','./cultural-theme.js','./coverage-mode.html','./coverage-sets-v438.js'];
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));
 });
@@ -12,7 +12,7 @@ self.addEventListener('fetch',event=>{
  const request=event.request,url=new URL(request.url);
  if(request.method!=='GET'||url.origin!==self.location.origin)return;
  event.respondWith(fetch(request).then(resp=>{
-  if(resp.ok&&/\/(index\.html|manifest\.json|icon-192\.png|icon-512\.png|festive-engine-v432\.(js|css)|live-api-v436\.js)$/.test(url.pathname)){
+  if(resp.ok&&/\/(index\.html|manifest\.json|icon-192\.png|icon-512\.png|festive-engine-v432\.(js|css)|live-api-v436\.js|coverage-mode\.html|coverage-sets-v438\.js|cultural-theme\.js)$/.test(url.pathname)){
    const copy=resp.clone();caches.open(CACHE).then(c=>c.put(request,copy)).catch(()=>{});
   }
   return resp;
