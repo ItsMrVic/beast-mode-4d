@@ -27,7 +27,7 @@ footer{font-size:.8rem;color:#aca7b2;line-height:1.5}.pill{background:#3d2d19;co
 </style>
 </head><body>
 <nav><a href="./index.html">← Back to BEAST MODE 4D</a></nav>
-<h1>🐉 Coverage Lab <span class="pill">v4.38 · all 500 restored</span></h1>
+<h1>🐉 Coverage Lab <span class="pill">v4.38 · Big + Small</span></h1>
 <p class="muted">Updated 15 November 2026: all 500 numbers previously outside the original coverage lists are now included in every set (370 repeated-digit combinations and the final 130). The 9,500 base now covers all 10,000 possible four-digit combinations. This is a coverage simulation, not a prediction mode.</p>
 <section class="panel"><h2>1 · Select a Number Set</h2><div class="layout" id="setCards">
 <button type="button" class="tile active" data-set="5000" aria-pressed="true"><small>TOP</small><strong>5,000</strong><small>5,500 total · RM1 Big: RM 5,500/operator</small></button>
@@ -46,12 +46,19 @@ footer{font-size:.8rem;color:#aca7b2;line-height:1.5}.pill{background:#3d2d19;co
 <div class="actions"><label>Draw date <input type="date" id="drawDate"></label>
 <label>Operator <select id="operator"><option value="ALL">All three operators</option><option value="MAGNUM">Magnum</option><option value="TOTO">Sports Toto</option><option value="DAMACAI">Da Ma Cai</option></select></label></div>
 <div class="actions"><button id="refresh">🔄 Check latest results</button><label>Or import app JSON backup <input id="backup" type="file" accept=".json,application/json"></label></div>
+<p class="muted"><b>Small bet payout rates (editable, RM paid per RM1 straight stake)</b> — illustrative defaults only; check the payout screen in the BK8 lottery game you use.</p>
+<div class="actions" id="smallRateInputs">
+<label>Small 1st <input type="number" id="smallFirst" min="0" max="1000000" step="0.01" inputmode="decimal" value="5000"></label>
+<label>Small 2nd <input type="number" id="smallSecond" min="0" max="1000000" step="0.01" inputmode="decimal" value="2400"></label>
+<label>Small 3rd <input type="number" id="smallThird" min="0" max="1000000" step="0.01" inputmode="decimal" value="1200"></label>
+</div>
+<p id="smallRateError" class="warn" role="status"></p>
 <p id="status" class="muted" role="status">Loading data…</p>
 <div id="summary"></div><div id="results"></div></section>
 <section class="panel"><h2>3 · How the Scores Are Calculated</h2>
 <p><b>Exact match (straight)</b> means all four digits match in exactly the same order. <b>Permutation / box</b> means the same digits appear in a different order; this is <b>not</b> a winning Big straight ticket. A result from another operator does not count as a win on an operator where no ticket was purchased.</p>
-<p>BK8 Big stake simulation at RM1 per number: 1st prize RM3,500; 2nd RM1,200; 3rd RM600; 10 Special prizes at RM250 each; and 10 Consolation prizes at RM80 each. Costs are calculated separately for each operator. This does not mean any tickets were actually purchased.</p>
-<p class="warn">Large spending is not recommended: historical BEAST MODE tests have not demonstrated a reliable advantage over random selection. At RM1 per number, the complete 10,000-number set costs RM10,000 per operator; even if all 23 prize numbers matched exactly at the listed BK8 rates, the simulation would lose RM1,400 per operator.</p></section>
+<p>Big (RM1 per number) uses reference payouts of RM3,500 / RM1,200 / RM600 for 1st / 2nd / 3rd, RM250 for each Special and RM80 for each Consolation. Small (RM1 per number) pays only the top 3 exact matches; the editable default rates are RM5,000 / RM2,400 / RM1,200. Special and Consolation pay RM0 on Small. The table compares separate Big-only, Small-only, and Big + Small scenarios per operator. Big + Small costs RM2 per selected number. The displayed gross payouts and nets are simulated, not actual purchased tickets or confirmed BK8 payout rates.</p>
+<p class="warn">Large spending is not recommended: historical BEAST MODE tests have not demonstrated a reliable advantage over random selection. At RM1 per number per bet type, the complete 10,000-number set costs RM10,000 for Big alone, RM10,000 for Small alone, or RM20,000 for both per operator. With the current illustrative payout rates, the maximum gross payout is RM8,600 for either Big or Small, leaving a simulated RM1,400 loss for each bet type.</p></section>
 <footer>Original base sets date from 2026-11-14; the 370 repeated-digit combinations and the last 130 omitted combinations were added to all five sets on 2026-11-15. Revised-set historical simulations are not proof of pre-draw predictions. This mode does not alter predictions, history, tickets, or stored results in the main app. Offline checks use data already on your device or imported from a backup.</footer>
 <script>
 // Embedded, fixed 14 November 2026 selection data: eliminates external-script and browser-decompression dependencies.
@@ -223,34 +230,55 @@ function prizeLines(b){
  b.consolation.forEach(n=>rows.push({n,tier:'Consolation',price:80}));
  return rows;
 }
-function check(b,s){
+function getSmallRates(){
+ const fields=['smallFirst','smallSecond','smallThird'];
+ const values=fields.map(id=>$(id).value.trim()).map(v=>v===''?NaN:Number(v));
+ return values.every(v=>Number.isFinite(v)&&v>=0&&v<=1000000)?values:null;
+}
+function check(b,s,smallRates){
  const rows=prizeLines(b),signatureSet=new Set();
  for(let n=0;n<10000;n++)if(selected(n,s))signatureSet.add(sig(number(n)));
- const hits=rows.map(p=>({...p,hit:selected(Number(p.n),s),box:signatureSet.has(sig(p.n)),restored:excluded(p.n),last130:last130(Number(p.n))}));
- return {hits,count:hits.filter(x=>x.hit).length,boxOnly:hits.filter(x=>!x.hit&&x.box).length,restored:hits.filter(x=>x.restored).length,last130:hits.filter(x=>x.last130).length,payout:hits.reduce((v,x)=>v+(x.hit?x.price:0),0)};
+ const hits=rows.map((p,i)=>({...p,hit:selected(Number(p.n),s),box:signatureSet.has(sig(p.n)),restored:excluded(p.n),last130:last130(Number(p.n)),smallPrice:i<3?smallRates[i]:0}));
+ return {
+  hits,
+  count:hits.filter(x=>x.hit).length,
+  smallHits:hits.slice(0,3).filter(x=>x.hit).length,
+  boxOnly:hits.filter(x=>!x.hit&&x.box).length,
+  restored:hits.filter(x=>x.restored).length,
+  last130:hits.filter(x=>x.last130).length,
+  payout:hits.reduce((v,x)=>v+(x.hit?x.price:0),0),
+  smallPayout:hits.reduce((v,x)=>v+(x.hit?x.smallPrice:0),0)
+ };
 }
 function renderResults(){
  if(!dataset)return;
+ const smallRates=getSmallRates();
+ if(!smallRates){
+  $('smallRateError').textContent='Enter valid Small payout amounts from RM0 to RM1,000,000 for each top-three prize.';
+  $('summary').innerHTML='';$('results').innerHTML='';
+  return;
+ }
+ $('smallRateError').textContent='';
  const date=$('drawDate').value,operator=$('operator').value,ops=operator==='ALL'?['MAGNUM','TOTO','DAMACAI']:[operator];
  const boards=ops.map(op=>loadedBoards.find(b=>b.op===op&&b.date===date)||null);
  if(!boards.some(Boolean)){$('summary').innerHTML='<p class="warn">Full results are not yet available for the selected date and operator. Select Check latest results or import a JSON backup after the draw.</p>';$('results').innerHTML='';return;}
- let summary='<div class="scroll"><table><thead><tr><th>Operator</th><th>Base set</th><th>Numbers / RM1 cost</th><th>Exact hits/23</th><th>Permutation-only*</th><th>First 370 hits</th><th>Final 130 hits</th><th>Simulated payout</th><th>Net</th></tr></thead><tbody>';
+ let summary='<div class="scroll"><table><thead><tr><th>Operator</th><th>Base set</th><th>Numbers / cost per type</th><th>Big hits/23</th><th>Permutation-only*</th><th>First 370 hits</th><th>Final 130 hits</th><th>Big payout</th><th>Big net</th><th>Small hits/3</th><th>Small payout</th><th>Small net</th><th>Big + Small net</th></tr></thead><tbody>';
  let details='';
  for(let i=0;i<ops.length;i++){
   const b=boards[i],op=ops[i];if(!b){
-   summary+='<tr><td>'+op+'</td><td colspan="8">Awaiting complete results</td></tr>';continue;
+   summary+='<tr><td>'+op+'</td><td colspan="12">Awaiting complete results</td></tr>';continue;
   }
   for(const s of sizes){
-   const stat=check(b,s),net=stat.payout-totalSize(s);
-   summary+='<tr'+(s===setSize?' style="background:#2d2a24"':'')+'><td>'+op+'</td><td>'+s.toLocaleString('en-MY')+'</td><td>'+money(totalSize(s))+'</td><td class="match">'+stat.count+'/23</td><td>'+stat.boxOnly+'</td><td>'+stat.restored+'</td><td>'+stat.last130+'</td><td>'+money(stat.payout)+'</td><td style="color:'+(net>=0?'#a7e4c5':'#f4a9a9')+'">'+money(net)+'</td></tr>';
+   const stat=check(b,s,smallRates),cost=totalSize(s),net=stat.payout-cost,smallNet=stat.smallPayout-cost,bothNet=stat.payout+stat.smallPayout-2*cost;
+   summary+='<tr'+(s===setSize?' style="background:#2d2a24"':'')+'><td>'+op+'</td><td>'+s.toLocaleString('en-MY')+'</td><td>'+money(cost)+'</td><td class="match">'+stat.count+'/23</td><td>'+stat.boxOnly+'</td><td>'+stat.restored+'</td><td>'+stat.last130+'</td><td>'+money(stat.payout)+'</td><td style="color:'+(net>=0?'#a7e4c5':'#f4a9a9')+'">'+money(net)+'</td><td class="match">'+stat.smallHits+'/3</td><td>'+money(stat.smallPayout)+'</td><td style="color:'+(smallNet>=0?'#a7e4c5':'#f4a9a9')+'">'+money(smallNet)+'</td><td style="color:'+(bothNet>=0?'#a7e4c5':'#f4a9a9')+'">'+money(bothNet)+'</td></tr>';
   }
-  const state=check(b,setSize);
-  details+='<h2>'+op+' · '+b.date+'</h2><p class="muted">Source: '+escape(b.source)+' · Base '+setSize.toLocaleString('en-MY')+' + 370 + 130 = '+totalSize(setSize).toLocaleString('en-MY')+' included · Straight '+state.count+'/23 · Permutation-only '+state.boxOnly+'/23</p>';
-  details+='<div class="scroll"><table><thead><tr><th>Prize</th><th>Number</th><th>Exact match</th><th>Permutation-only*</th><th>Added group</th><th>RM for exact hit</th></tr></thead><tbody>';
-  details+=state.hits.map(row=>'<tr><td>'+row.tier+'</td><td class="num">'+row.n+'</td><td class="'+(row.hit?'match':'miss')+'">'+(row.hit?'✓ HIT':'—')+'</td><td class="'+(!row.hit&&row.box?'extra':'miss')+'">'+(!row.hit&&row.box?'Same digits':'—')+'</td><td>'+(row.restored?'First 370':row.last130?'Final 130':'—')+'</td><td>'+money(row.hit?row.price:0)+'</td></tr>').join('');
+  const state=check(b,setSize,smallRates);
+  details+='<h2>'+op+' · '+b.date+'</h2><p class="muted">Source: '+escape(b.source)+' · Base '+setSize.toLocaleString('en-MY')+' + 370 + 130 = '+totalSize(setSize).toLocaleString('en-MY')+' included · Big hits '+state.count+'/23 · Small hits '+state.smallHits+'/3 · Permutation-only '+state.boxOnly+'/23</p>';
+  details+='<div class="scroll"><table><thead><tr><th>Prize</th><th>Number</th><th>Exact match</th><th>Permutation-only*</th><th>Added group</th><th>Big payout</th><th>Small payout</th></tr></thead><tbody>';
+  details+=state.hits.map((row,i)=>'<tr><td>'+row.tier+'</td><td class="num">'+row.n+'</td><td class="'+(row.hit?'match':'miss')+'">'+(row.hit?'✓ HIT':'—')+'</td><td class="'+(!row.hit&&row.box?'extra':'miss')+'">'+(!row.hit&&row.box?'Same digits':'—')+'</td><td>'+(row.restored?'First 370':row.last130?'Final 130':'—')+'</td><td>'+money(row.hit?row.price:0)+'</td><td>'+(i<3?money(row.hit?row.smallPrice:0):'Not eligible')+'</td></tr>').join('');
   details+='</tbody></table></div>';
  }
- summary+='</tbody></table></div><p class="muted">*Permutation-only matches do not pay on Big straight bets. The total included count equals the RM1-per-number cost per operator. All 500 former omissions (370 + 130) are included in each set; incomplete results are not scored.</p>';
+ summary+='</tbody></table></div><p class="muted">*Permutation-only matches do not pay on either straight bet. The number count equals the RM1-per-number cost for Big only or Small only; both together cost twice as much. Small pays only on exact 1st, 2nd and 3rd matches. All 500 former omissions (370 + 130) are included in each set; incomplete results are not scored.</p>';
  $('summary').innerHTML=summary;$('results').innerHTML=details;
 }
 async function importBackup(e){
@@ -276,6 +304,7 @@ async function init(){
  $('operator').onchange=renderResults;
  $('refresh').onclick=()=>refresh(true);
  $('backup').onchange=importBackup;
+ for(const id of ['smallFirst','smallSecond','smallThird'])$(id).oninput=renderResults;
  try{renderCards();loadData();renderNumbers();await refresh(true);
   // Results refresh while this mode is open; refresh again on return to the phone app.
   setInterval(()=>{if(!document.hidden)refresh(true);},120000);
