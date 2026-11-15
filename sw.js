@@ -1,7 +1,7 @@
 // BEAST MODE 4D v4.38 English Coverage Lab offline shell. Keep local data and prediction code untouched.
-const CACHE='beast-4d-v438-en-7k-shell';
+const CACHE='beast-4d-v438-five-selectors-fixed';
 const SHELL=['./','./index.html','./manifest.json','./icon-192.png','./icon-512.png',
- './festive-engine-v432.css?v=436','./festive-engine-v432.js?v=436','./live-api-v436.js?v=436','./cultural-theme.js','./coverage-mode.html','./coverage-sets-v438.js'];
+ './festive-engine-v432.css?v=436','./festive-engine-v432.js?v=436','./live-api-v436.js?v=436','./cultural-theme.js','./coverage-mode.html'];
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));
 });
