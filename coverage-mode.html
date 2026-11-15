@@ -51,7 +51,7 @@ footer{font-size:.8rem;color:#aca7b2;line-height:1.5}.pill{background:#3d2d19;co
 </section>
 <section class="panel"><h2>2 · Check Draw Results</h2>
 <div class="actions"><label>Draw date <input type="date" id="drawDate"></label>
-<label>Operator <select id="operator"><option value="ALL">All three operators</option><option value="MAGNUM">Magnum</option><option value="TOTO">Sports Toto</option><option value="DAMACAI">Da Ma Cai</option></select></label></div>
+<label>Operator selection <select id="operator"><option value="ALL">All three operators</option><option value="MAGNUM+TOTO">Magnum + Sports Toto</option><option value="TOTO+DAMACAI">Sports Toto + Da Ma Cai</option><option value="MAGNUM+DAMACAI">Magnum + Da Ma Cai</option><option value="MAGNUM">Magnum only</option><option value="TOTO">Sports Toto only</option><option value="DAMACAI">Da Ma Cai only</option></select></label></div>
 <div class="actions"><button id="refresh">🔄 Check latest results</button><label>Or import app JSON backup <input id="backup" type="file" accept=".json,application/json"></label></div>
 <p class="muted"><b>Small bet payout rates (editable, RM paid per RM1 straight stake)</b> — illustrative defaults only; check the payout screen in the BK8 lottery game you use.</p>
 <div class="actions" id="smallRateInputs">
@@ -71,7 +71,7 @@ footer{font-size:.8rem;color:#aca7b2;line-height:1.5}.pill{background:#3d2d19;co
 <button type="button" data-bet-view="allFour" aria-pressed="false">All four combined</button>
 </div>
 <p class="muted">From your BK8 screenshot, each RM1 4A, 4B or 4C exact winner pays RM8,000 at its own prize position; 4E pays RM800 for each exact Consolation winner. These are different bet choices, not the same RM1 wager. <b>All four</b> costs RM4 per number.</p>
-<div id="summary"></div><div id="results"></div></section>
+<div id="combinedSummary" aria-live="polite"></div><div id="summary"></div><div id="results"></div></section>
 <section class="panel"><h2>3 · How the Scores Are Calculated</h2>
 <p><b>Exact match (straight)</b> means all four digits match in exactly the same order. <b>Permutation / box</b> means the same digits appear in a different order; this is <b>not</b> a winning Big straight ticket. A result from another operator does not count as a win on an operator where no ticket was purchased.</p>
 <p>Big (RM1 per number) uses RM3,500 / RM1,200 / RM600 for 1st / 2nd / 3rd, RM250 for Special and RM80 for Consolation. Small (RM1 per number) uses editable top-three payouts of RM5,000 / RM2,400 / RM1,200; it pays nothing on Special or Consolation. The new 4A / 4B / 4C / 4E tabs use your BK8 screenshot at RM1 per number per chosen bet type: <b>4A</b> pays RM8,000 on 1st only, <b>4B</b> RM8,000 on 2nd only, <b>4C</b> RM8,000 on 3rd only, and <b>4E</b> RM800 for each exact Consolation win (10 prize positions). 4E does not cover Special. Each bet type has its own independent stake. All four combined costs RM4 per number. Figures are gross before stakes are deducted; this is a simulation, not a verified bet receipt.</p>
@@ -89,6 +89,15 @@ const sizes=[5000,6000,7000,8000,9500],chars=['A','B','C','D'],prizes=[3500,1200
 let dataset='',setSize=5000,page=0,loadedBoards=[],backupBoards=[],status='',betView='standard';
 const extraBetRates={'4A':8000,'4B':8000,'4C':8000,'4E':800};
 const extraBetKeys=['4A','4B','4C','4E'];
+const operatorGroups={
+ ALL:['MAGNUM','TOTO','DAMACAI'],
+ MAGNUM:['MAGNUM'],TOTO:['TOTO'],DAMACAI:['DAMACAI'],
+ 'MAGNUM+TOTO':['MAGNUM','TOTO'],
+ 'TOTO+DAMACAI':['TOTO','DAMACAI'],
+ 'MAGNUM+DAMACAI':['MAGNUM','DAMACAI']
+};
+const displayOperator={MAGNUM:'Magnum',TOTO:'Sports Toto',DAMACAI:'Da Ma Cai'};
+const selectedOperators=()=>operatorGroups[$('operator').value]||operatorGroups.ALL;
 // Fixed, reproducible midpoint: include every second candidate from the original 6,000-to-8,000 expansion.
 const midSeven=new Uint8Array(10000);
 function prepareSevenSet(){
@@ -292,6 +301,44 @@ function check(b,s,smallRates){
   smallPayout:hits.reduce((v,x)=>v+(x.hit?x.smallPrice:0),0)
  };
 }
+function renderCombinedTotals(ops,boards,smallRates){
+ const target=$('combinedSummary');
+ if(ops.length<2){target.innerHTML='';return;}
+ const title=ops.map(op=>displayOperator[op]).join(' + ');
+ const missing=ops.filter((op,i)=>!boards[i]);
+ if(missing.length){
+  target.innerHTML='<div class="panel"><h3 style="color:#f4d59a">Combined operators: '+title+'</h3><p class="warn">Waiting for complete results from '+missing.map(op=>displayOperator[op]).join(', ')+'. Combined payouts and net results are not calculated until every selected operator has a complete result. Costs below are for simulation only.</p><p class="muted">Current selected set: '+totalSize(setSize).toLocaleString('en-MY')+' numbers per operator × '+ops.length+' operators = '+money(totalSize(setSize)*ops.length)+' for a single RM1 bet type.</p></div>';
+  return;
+ }
+ const stats=sizes.map(base=>({
+  base,perOperator:totalSize(base),
+  boards:boards.map(board=>check(board,base,smallRates))
+ }));
+ let html='<div class="panel"><h3 style="color:#f4d59a">Combined results · '+title+'</h3><p class="muted">All '+ops.length+' selected operators are included. Stakes are placed separately with each operator; gross payouts and costs are summed only after each individual operator is scored.</p>';
+ if(betView==='standard'){
+  html+='<div class="scroll"><table class="mode-ledger"><thead><tr><th>Base set</th><th>Numbers / operator</th><th>Big stake</th><th>Big payout</th><th>Big net</th><th>Small stake</th><th>Small payout</th><th>Small net</th><th>Big + Small stake</th><th>Big + Small net</th></tr></thead><tbody>';
+  for(const entry of stats){
+   const stake=entry.perOperator*ops.length;
+   const big=entry.boards.reduce((sum,v)=>sum+v.payout,0);
+   const small=entry.boards.reduce((sum,v)=>sum+v.smallPayout,0);
+   const bigNet=big-stake,smallNet=small-stake,bothNet=big+small-2*stake;
+   html+='<tr'+(entry.base===setSize?' style="background:#2d2a24"':'')+'><td>'+entry.base.toLocaleString('en-MY')+'</td><td>'+entry.perOperator.toLocaleString('en-MY')+'</td><td>'+money(stake)+'</td><td>'+money(big)+'</td><td>'+signedMoney(bigNet)+'</td><td>'+money(stake)+'</td><td>'+money(small)+'</td><td>'+signedMoney(smallNet)+'</td><td>'+money(stake*2)+'</td><td>'+signedMoney(bothNet)+'</td></tr>';
+  }
+ }else{
+  const combined=betView==='allFour',types=combined?extraBetKeys:[betView];
+  html+='<p class="muted">Bet type: '+(combined?'4A + 4B + 4C + 4E':betView)+' · '+types.length+' RM1 bet type(s) per number per operator.</p>';
+  html+='<div class="scroll"><table class="mode-ledger"><thead><tr><th>Base set</th><th>Numbers / operator</th><th>Qualifying hits</th><th>Total stake</th><th>Gross payout</th><th>Combined net</th></tr></thead><tbody>';
+  for(const entry of stats){
+   const stake=entry.perOperator*ops.length*types.length;
+   const payout=entry.boards.reduce((sum,board)=>sum+types.reduce((v,key)=>v+board.extraPayout[key],0),0);
+   const hits=entry.boards.reduce((sum,board)=>sum+types.reduce((v,key)=>v+board.extraHits[key],0),0);
+   html+='<tr'+(entry.base===setSize?' style="background:#2d2a24"':'')+'><td>'+entry.base.toLocaleString('en-MY')+'</td><td>'+entry.perOperator.toLocaleString('en-MY')+'</td><td class="match">'+hits+'/'+(ops.length*(combined?13:betView==='4E'?10:1))+'</td><td>'+money(stake)+'</td><td>'+money(payout)+'</td><td>'+signedMoney(payout-stake)+'</td></tr>';
+  }
+ }
+ html+='</tbody></table></div><p class="muted">All figures are simulated for the selected draw date; combining operator results does not make a win on one operator count as a win on another.</p></div>';
+ target.innerHTML=html;
+}
+const signedMoney=n=>'<span style="color:'+(n>=0?'#a7e4c5':'#f4a9a9')+'">'+money(n)+'</span>';
 function renderExtraBetResults(ops,boards,smallRates){
  const combined=betView==='allFour';
  const label=combined?'4A + 4B + 4C + 4E':betView;
@@ -335,12 +382,13 @@ function renderResults(){
  const smallRates=getSmallRates();
  if(betView==='standard'&&!smallRates){
   $('smallRateError').textContent='Enter valid Small payout amounts from RM0 to RM1,000,000 for each top-three prize.';
-  $('summary').innerHTML='';$('results').innerHTML='';
+  $('summary').innerHTML='';$('results').innerHTML='';$('combinedSummary').innerHTML='';
   return;
  }
  $('smallRateError').textContent=smallRates?'':'Small payout rates are invalid; Big + Small results are unavailable until corrected.';
- const date=$('drawDate').value,operator=$('operator').value,ops=operator==='ALL'?['MAGNUM','TOTO','DAMACAI']:[operator];
+ const date=$('drawDate').value,ops=selectedOperators();
  const boards=ops.map(op=>loadedBoards.find(b=>b.op===op&&b.date===date)||null);
+ renderCombinedTotals(ops,boards,smallRates||[0,0,0]);
  if(!boards.some(Boolean)){$('summary').innerHTML='<p class="warn">Full results are not yet available for the selected date and operator. Select Check latest results or import a JSON backup after the draw.</p>';$('results').innerHTML='';return;}
  if(betView!=='standard'){renderExtraBetResults(ops,boards,smallRates||[0,0,0]);return;}
  let summary='<div class="scroll"><table><thead><tr><th>Operator</th><th>Base set</th><th>Numbers / cost per type</th><th>Big hits/23</th><th>Permutation-only*</th><th>First 370 hits</th><th>Final 130 hits</th><th>Big payout</th><th>Big net</th><th>Small hits/3</th><th>Small payout</th><th>Small net</th><th>Big + Small net</th></tr></thead><tbody>';
