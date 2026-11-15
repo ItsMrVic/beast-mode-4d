@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ms"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#120e0d"><title>BEAST MODE 4D — Coverage Lab</title>
 <style>
 :root{color-scheme:dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#eee7db;background:#0c0e16}
@@ -26,27 +26,27 @@ footer{font-size:.8rem;color:#aca7b2;line-height:1.5}.pill{background:#3d2d19;co
 #status{min-height:1.5em}#numberStatus{font-size:.87rem}
 </style>
 </head><body>
-<nav><a href="./index.html">← Kembali ke BEAST MODE 4D</a></nav>
+<nav><a href="./index.html">← Back to BEAST MODE 4D</a></nav>
 <h1>🐉 Coverage Lab <span class="pill">v4.38</span></h1>
-<p class="muted">Eksperimen senarai tetap bertarikh 14 November 2026. Satu set nombor untuk Magnum, Sports Toto dan Da Ma Cai. Ini bukan mode ramalan baharu.</p>
-<section class="panel"><h2>1 · Pilih set nombor</h2><div class="layout" id="setCards"></div>
-<p class="muted">Set besar merangkumi semua nombor daripada set yang lebih kecil. Nombor dengan tiga/empat digit sama telah ditapis mengikut pilihan pengguna. Dalam loteri adil, nombor ditapis tidak semestinya kurang berkemungkinan keluar.</p>
-<div class="actions"><label>Cari nombor <input id="searchNumber" inputmode="numeric" maxlength="4" placeholder="cth. 2378"></label>
-<label>Paparkan <select id="numberFilter"><option value="selected">Dalam set dipilih</option><option value="excluded">370 nombor diasingkan</option><option value="missed">Tidak termasuk set</option></select></label></div>
+<p class="muted">Fixed number-set experiment dated 14 November 2026. One shared number list for Magnum, Sports Toto and Da Ma Cai. This is not a new prediction mode.</p>
+<section class="panel"><h2>1 · Select a Number Set</h2><div class="layout" id="setCards"></div>
+<p class="muted">Larger sets include every number from the smaller sets. Numbers containing three or four identical digits were filtered out based on the selected criteria. In a fair lottery, excluded numbers are not inherently less likely to be drawn.</p>
+<div class="actions"><label>Search numbers <input id="searchNumber" inputmode="numeric" maxlength="4" placeholder="e.g. 2378"></label>
+<label>Show <select id="numberFilter"><option value="selected">In selected set</option><option value="excluded">370 excluded numbers</option><option value="missed">Not in selected set</option></select></label></div>
 <div id="numberStatus" role="status"></div><div class="number-grid" id="numberList"></div>
-<div class="actions"><button id="prevNumbers">← Sebelum</button><button id="nextNumbers">Seterusnya →</button></div>
+<div class="actions"><button id="prevNumbers">← Previous</button><button id="nextNumbers">Next →</button></div>
 </section>
-<section class="panel"><h2>2 · Semak keputusan cabutan</h2>
-<div class="actions"><label>Tarikh cabutan <input type="date" id="drawDate"></label>
-<label>Operator <select id="operator"><option value="ALL">Ketiga-tiga operator</option><option value="MAGNUM">Magnum</option><option value="TOTO">Sports Toto</option><option value="DAMACAI">Da Ma Cai</option></select></label></div>
-<div class="actions"><button id="refresh">🔄 Semak keputusan terkini</button><label>Atau import backup JSON app <input id="backup" type="file" accept=".json,application/json"></label></div>
-<p id="status" class="muted" role="status">Memuatkan data…</p>
+<section class="panel"><h2>2 · Check Draw Results</h2>
+<div class="actions"><label>Draw date <input type="date" id="drawDate"></label>
+<label>Operator <select id="operator"><option value="ALL">All three operators</option><option value="MAGNUM">Magnum</option><option value="TOTO">Sports Toto</option><option value="DAMACAI">Da Ma Cai</option></select></label></div>
+<div class="actions"><button id="refresh">🔄 Check latest results</button><label>Or import app JSON backup <input id="backup" type="file" accept=".json,application/json"></label></div>
+<p id="status" class="muted" role="status">Loading data…</p>
 <div id="summary"></div><div id="results"></div></section>
-<section class="panel"><h2>3 · Cara skor dikira</h2>
-<p><b>Padanan tepat (straight)</b> bermaksud semua 4 digit sama dan dalam urutan yang sama. <b>Permutation / box</b> bermaksud hanya digit sama tetapi urutan berbeza; ini <b>bukan</b> kemenangan tiket Big straight. Keputusan operator lain juga bukan tiket menang bagi operator yang tidak dibeli.</p>
-<p>Simulasi BK8 Big RM1 setiap nombor: 1st RM3,500; 2nd RM1,200; 3rd RM600; 10 Special RM250 setiap satu; 10 Consolation RM80 setiap satu. Kos dikira berasingan bagi setiap operator, bukan bukti tiket benar-benar dibeli.</p>
-<p class="warn">Perbelanjaan besar tidak disyorkan: ujian sejarah BEAST MODE belum menunjukkan kelebihan ramalan yang boleh dipercayai berbanding pilihan rawak. Set 9,500 pasti rugi sekurang-kurangnya RM900 setiap operator walaupun semua 23 hadiah tepat.</p></section>
-<footer>Senarai bertarikh 2026-11-14 dibekukan untuk penilaian jujur. Mode ini tidak mengubah ramalan, sejarah, tiket atau keputusan yang disimpan dalam BEAST MODE utama. Apabila internet tidak tersedia, semakan hanya menggunakan data yang ada pada telefon atau backup yang diimport.</footer>
+<section class="panel"><h2>3 · How the Scores Are Calculated</h2>
+<p><b>Exact match (straight)</b> means all four digits match in exactly the same order. <b>Permutation / box</b> means the same digits appear in a different order; this is <b>not</b> a winning Big straight ticket. A result from another operator does not count as a win on an operator where no ticket was purchased.</p>
+<p>BK8 Big stake simulation at RM1 per number: 1st prize RM3,500; 2nd RM1,200; 3rd RM600; 10 Special prizes at RM250 each; and 10 Consolation prizes at RM80 each. Costs are calculated separately for each operator. This does not mean any tickets were actually purchased.</p>
+<p class="warn">Large spending is not recommended: historical BEAST MODE tests have not demonstrated a reliable predictive advantage over random selection. The 9,500-number set would lose at least RM900 per operator, even if all 23 prize numbers matched exactly.</p></section>
+<footer>The number lists dated 2026-11-14 are frozen for fair evaluation. This mode does not change predictions, history, tickets, or results stored in the main BEAST MODE app. When offline, checks use only results already stored on your device or imported from a backup.</footer>
 <script src="./coverage-sets-v438.js"></script>
 <script>
 (function(){
@@ -62,14 +62,14 @@ const money=n=>'RM '+(n<0?'−':'')+Math.abs(n).toLocaleString('en-MY',{minimumF
 const selected=(n,s)=>dataset[n] && dataset[n]!=='E' && chars.indexOf(dataset[n])<=sizes.indexOf(s);
 const excluded=n=>{const x=number(n),m=Math.max(...[...new Set(x)].map(c=>x.split(c).length-1));return m>=3;};
 function assertData(){
- if(dataset.length!==10000)throw Error('Panjang data senarai bukan 10,000');
- for(const [idx,s] of sizes.entries()){let c=0;for(let n=0;n<10000;n++)if(selected(n,s))c++;if(c!==s)throw Error('Jumlah set '+s+' tidak tepat: '+c);}
- let x=0;for(let n=0;n<10000;n++)if(excluded(n))x++;if(x!==370)throw Error('Bilangan pengecualian tidak tepat');
+ if(dataset.length!==10000)throw Error('Number-set data length is not 10,000');
+ for(const [idx,s] of sizes.entries()){let c=0;for(let n=0;n<10000;n++)if(selected(n,s))c++;if(c!==s)throw Error('Incorrect number count for set '+s+'; found '+c);}
+ let x=0;for(let n=0;n<10000;n++)if(excluded(n))x++;if(x!==370)throw Error('Incorrect excluded-number count');
 }
 async function decode(){
  const raw=atob(window.B4D_COVERAGE_PACKED||'');
  const bytes=Uint8Array.from(raw,c=>c.charCodeAt(0));
- if(!('DecompressionStream' in window))throw Error('Pelayar terlalu lama untuk membuka set termampat. Sila kemas kini Chrome/Safari.');
+ if(!('DecompressionStream' in window))throw Error('Your browser cannot open compressed number sets. Please update Chrome or Safari.');
  const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate'));
  dataset=await new Response(stream).text();
  assertData();
@@ -87,9 +87,8 @@ function renderNumbers(){
   if(filter==='excluded'&&!excluded(n))continue;
   if(filter==='missed'&&selected(n,setSize))continue;
   matches.push(val);
- }
- const limit=200,maxPage=Math.max(0,Math.ceil(matches.length/limit)-1);page=Math.min(page,maxPage);
- $('numberStatus').textContent=matches.length.toLocaleString('en-MY')+' nombor · '+(matches.length?'Paparan '+(page*limit+1)+'–'+Math.min((page+1)*limit,matches.length):'Tiada padanan');
+ } const limit=200,maxPage=Math.max(0,Math.ceil(matches.length/limit)-1);page=Math.min(page,maxPage);
+ $('numberStatus').textContent=matches.length.toLocaleString('en-MY')+' numbers · '+(matches.length?'Showing '+(page*limit+1)+'–'+Math.min((page+1)*limit,matches.length):'No matches');
  $('numberList').innerHTML=matches.slice(page*limit,(page+1)*limit).map(n=>'<span class="num-chip">'+n+'</span>').join('');
  $('prevNumbers').disabled=page===0;$('nextNumbers').disabled=page===maxPage;
 }
@@ -155,23 +154,23 @@ async function fetchLive(date){
   const r=await fetch('https://4dlivetoday.com/api/v1/results/'+encodeURIComponent(date),{cache:'no-store',signal:controller.signal});
   if(!r.ok)throw Error('HTTP '+r.status);
   const x=await r.json();
-  if(x.source!=='4dlivetoday.com'||!Array.isArray(x.data?.results))throw Error('Sumber atau format API tidak sah');
+  if(x.source!=='4dlivetoday.com'||!Array.isArray(x.data?.results))throw Error('Invalid API source or response format');
   const verified=x.data.results.filter(z=>String(z.status||'').toLowerCase()==='checked');
   return collect({results:verified},'API checked: 4dlivetoday.com').filter(z=>z.date===date);
  }finally{clearTimeout(timer);}
 }
 async function refresh(force=false){
  const date=$('drawDate').value;
- $('status').textContent='Menyemak data telefon…';
+ $('status').textContent='Checking stored results on this device…';
  integrate(scanPhone());
  let online='';
  if(force||!loadedBoards.some(b=>b.date===date)){
-  try{const x=await fetchLive(date);if(x.length){integrate(x);online=' · '+x.length+' keputusan lengkap diperoleh melalui API';}
-      else online=' · API belum memaparkan keputusan lengkap';}
-  catch(e){online=' · sambungan API tidak tersedia';}
+  try{const x=await fetchLive(date);if(x.length){integrate(x);online=' · '+x.length+' complete results retrieved from API';}
+      else online=' · API does not yet provide complete results';}
+  catch(e){online=' · API connection unavailable';}
  }
  const count=loadedBoards.filter(b=>b.date===date).length;
- $('status').textContent=count+' daripada 3 operator mempunyai keputusan lengkap untuk '+date+online+'. Lihat label sumber pada jadual.';
+ $('status').textContent=count+' of 3 operators have complete results for '+date+online+'. Check the source labels in the tables.';
  renderResults();
 }
 function prizeLines(b){
@@ -190,34 +189,34 @@ function renderResults(){
  if(!dataset)return;
  const date=$('drawDate').value,operator=$('operator').value,ops=operator==='ALL'?['MAGNUM','TOTO','DAMACAI']:[operator];
  const boards=ops.map(op=>loadedBoards.find(b=>b.op===op&&b.date===date)||null);
- if(!boards.some(Boolean)){$('summary').innerHTML='<p class="warn">Keputusan penuh belum tersedia untuk tarikh dan operator ini. Tekan Semak atau import backup JSON selepas cabutan.</p>';$('results').innerHTML='';return;}
- let summary='<div class="scroll"><table><thead><tr><th>Operator</th><th>Set</th><th>Exact hits/23</th><th>Box-only*</th><th>Nombor diasingkan</th><th>Payout simulasi</th><th>Net</th></tr></thead><tbody>';
+ if(!boards.some(Boolean)){$('summary').innerHTML='<p class="warn">Full results are not yet available for the selected date and operator. Select Check latest results or import a JSON backup after the draw.</p>';$('results').innerHTML='';return;}
+ let summary='<div class="scroll"><table><thead><tr><th>Operator</th><th>Set</th><th>Exact hits/23</th><th>Permutation-only*</th><th>Excluded numbers</th><th>Simulated payout</th><th>Net</th></tr></thead><tbody>';
  let details='';
  for(let i=0;i<ops.length;i++){
   const b=boards[i],op=ops[i];if(!b){
-   summary+='<tr><td>'+op+'</td><td colspan="6">Menunggu keputusan lengkap</td></tr>';continue;
+   summary+='<tr><td>'+op+'</td><td colspan="6">Awaiting complete results</td></tr>';continue;
   }
   for(const s of sizes){
    const stat=check(b,s),net=stat.payout-s;
    summary+='<tr'+(s===setSize?' style="background:#2d2a24"':'')+'><td>'+op+'</td><td>'+s.toLocaleString('en-MY')+'</td><td class="match">'+stat.count+'/23</td><td>'+stat.boxOnly+'</td><td>'+stat.excluded+'</td><td>'+money(stat.payout)+'</td><td style="color:'+(net>=0?'#a7e4c5':'#f4a9a9')+'">'+money(net)+'</td></tr>';
   }
   const state=check(b,setSize);
-  details+='<h2>'+op+' · '+b.date+'</h2><p class="muted">Sumber: '+escape(b.source)+' · Set '+setSize.toLocaleString('en-MY')+' · Straight '+state.count+'/23 · Permutation sahaja '+state.boxOnly+'/23</p>';
-  details+='<div class="scroll"><table><thead><tr><th>Hadiah</th><th>Nombor</th><th>Padanan tepat</th><th>Permutation sahaja*</th><th>Asingkan</th><th>RM jika tepat</th></tr></thead><tbody>';
-  details+=state.hits.map(row=>'<tr><td>'+row.tier+'</td><td class="num">'+row.n+'</td><td class="'+(row.hit?'match':'miss')+'">'+(row.hit?'✓ HIT':'—')+'</td><td class="'+(!row.hit&&row.box?'extra':'miss')+'">'+(!row.hit&&row.box?'Digit sama':'—')+'</td><td>'+(row.excluded?'Dikecualikan':'—')+'</td><td>'+money(row.hit?row.price:0)+'</td></tr>').join('');
+  details+='<h2>'+op+' · '+b.date+'</h2><p class="muted">Source: '+escape(b.source)+' · Set '+setSize.toLocaleString('en-MY')+' · Straight '+state.count+'/23 · Permutation-only '+state.boxOnly+'/23</p>';
+  details+='<div class="scroll"><table><thead><tr><th>Prize</th><th>Number</th><th>Exact match</th><th>Permutation-only*</th><th>Excluded</th><th>RM for exact hit</th></tr></thead><tbody>';
+  details+=state.hits.map(row=>'<tr><td>'+row.tier+'</td><td class="num">'+row.n+'</td><td class="'+(row.hit?'match':'miss')+'">'+(row.hit?'✓ HIT':'—')+'</td><td class="'+(!row.hit&&row.box?'extra':'miss')+'">'+(!row.hit&&row.box?'Same digits':'—')+'</td><td>'+(row.excluded?'Excluded':'—')+'</td><td>'+money(row.hit?row.price:0)+'</td></tr>').join('');
   details+='</tbody></table></div>';
  }
- summary+='</tbody></table></div><p class="muted">*Permutation sahaja tidak dibayar untuk taruhan Big straight. Kos setiap set dikira per operator; keputusan belum lengkap tidak diberi skor.</p>';
+ summary+='</tbody></table></div><p class="muted">*Permutation-only matches do not pay on Big straight bets. Each set's cost is calculated per operator; incomplete results are not scored.</p>';
  $('summary').innerHTML=summary;$('results').innerHTML=details;
 }
 async function importBackup(e){
  const file=e.target.files&&e.target.files[0];if(!file)return;
  try{
-  if(file.size>30000000)throw Error('Fail melebihi 30 MB');
-  const obj=JSON.parse(await file.text());const rows=collect(obj,'Data diimport daripada backup JSON');
-  if(!rows.length)throw Error('Tiada rekod cabutan lengkap ditemui');
-  backupBoards=rows;integrate(rows);$('status').textContent=rows.length+' rekod lengkap diimport pada peranti ini. Semakan hanya untuk tarikh dipilih.';renderResults();
- }catch(err){$('status').textContent='Import gagal: '+err.message;}
+  if(file.size>30000000)throw Error('File exceeds 30 MB');
+  const obj=JSON.parse(await file.text());const rows=collect(obj,'Data imported from JSON backup');
+  if(!rows.length)throw Error('No complete draw records found');
+  backupBoards=rows;integrate(rows);$('status').textContent=rows.length+' complete draw records imported on this device. Checks apply only to the selected date.';renderResults();
+ }catch(err){$('status').textContent='Import failed: '+err.message;}
 }
 function malaysiaToday(){
  const p=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kuala_Lumpur',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
@@ -237,7 +236,7 @@ async function init(){
   // Results refresh while this mode is open; refresh again on return to the phone app.
   setInterval(()=>{if(!document.hidden)refresh(true);},120000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh(true);});}
- catch(e){$('status').textContent='Coverage Lab tidak dapat dibuka: '+e.message;console.error(e);}
+ catch(e){$('status').textContent='Unable to open Coverage Lab: '+e.message;console.error(e);}
 }
 init();
 })();
