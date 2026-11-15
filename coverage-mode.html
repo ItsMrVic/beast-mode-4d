@@ -231,7 +231,7 @@ function renderResults(){
   details+=state.hits.map(row=>'<tr><td>'+row.tier+'</td><td class="num">'+row.n+'</td><td class="'+(row.hit?'match':'miss')+'">'+(row.hit?'✓ HIT':'—')+'</td><td class="'+(!row.hit&&row.box?'extra':'miss')+'">'+(!row.hit&&row.box?'Same digits':'—')+'</td><td>'+(row.excluded?'Excluded':'—')+'</td><td>'+money(row.hit?row.price:0)+'</td></tr>').join('');
   details+='</tbody></table></div>';
  }
- summary+='</tbody></table></div><p class="muted">*Permutation-only matches do not pay on Big straight bets. Each set's cost is calculated per operator; incomplete results are not scored.</p>';
+ summary+='</tbody></table></div><p class="muted">*Permutation-only matches do not pay on Big straight bets. The cost of each set is calculated per operator; incomplete results are not scored.</p>';
  $('summary').innerHTML=summary;$('results').innerHTML=details;
 }
 async function importBackup(e){
