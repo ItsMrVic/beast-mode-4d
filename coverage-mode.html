@@ -30,7 +30,7 @@ footer{font-size:.8rem;color:#aca7b2;line-height:1.5}.pill{background:#3d2d19;co
 <h1>🐉 Coverage Lab <span class="pill">v4.38</span></h1>
 <p class="muted">Fixed number-set experiment dated 14 November 2026. One shared number list for Magnum, Sports Toto and Da Ma Cai. This is not a new prediction mode.</p>
 <section class="panel"><h2>1 · Select a Number Set</h2><div class="layout" id="setCards"></div>
-<p class="muted">Larger sets include every number from the smaller sets. Numbers containing three or four identical digits were filtered out based on the selected criteria. In a fair lottery, excluded numbers are not inherently less likely to be drawn.</p>
+<p class="muted">Larger sets include every number from the smaller sets. The 7,000-number set retains the entire 6,000 set and adds every second candidate from the 2,000-number expansion leading to the 8,000 set, in ascending number order. Numbers containing three or four identical digits were filtered out based on the selected criteria. In a fair lottery, excluded numbers are not inherently less likely to be drawn; this intermediate selection offers no proven prediction advantage.</p>
 <div class="actions"><label>Search numbers <input id="searchNumber" inputmode="numeric" maxlength="4" placeholder="e.g. 2378"></label>
 <label>Show <select id="numberFilter"><option value="selected">In selected set</option><option value="excluded">370 excluded numbers</option><option value="missed">Not in selected set</option></select></label></div>
 <div id="numberStatus" role="status"></div><div class="number-grid" id="numberList"></div>
@@ -52,14 +52,30 @@ footer{font-size:.8rem;color:#aca7b2;line-height:1.5}.pill{background:#3d2d19;co
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
-const sizes=[5000,6000,8000,9500],chars=['A','B','C','D'],prizes=[3500,1200,600,250,80];
+const sizes=[5000,6000,7000,8000,9500],chars=['A','B','C','D'],prizes=[3500,1200,600,250,80];
 let dataset='',setSize=5000,page=0,loadedBoards=[],backupBoards=[],status='';
+// Fixed, reproducible midpoint: include every second candidate from the original 6,000-to-8,000 expansion.
+const midSeven=new Uint8Array(10000);
+function prepareSevenSet(){
+ let tierCount=0;
+ for(let n=0;n<10000;n++)if(dataset[n]==='C'){
+  if(tierCount%2===0)midSeven[n]=1;
+  tierCount++;
+ }
+ if(tierCount!==2000)throw Error('Expected exactly 2,000 additional candidates between the 6,000 and 8,000 sets; found '+tierCount);
+}
 const four=n=>typeof n==='string' && /^\d{4}$/.test(n);
 const number=n=>String(n).padStart(4,'0');
 const sig=n=>n.split('').sort().join('');
 const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 const money=n=>'RM '+(n<0?'−':'')+Math.abs(n).toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:2});
-const selected=(n,s)=>dataset[n] && dataset[n]!=='E' && chars.indexOf(dataset[n])<=sizes.indexOf(s);
+const selected=(n,s)=>{
+ const tier=chars.indexOf(dataset[n]);
+ if(tier<0)return false;
+ if(s===7000)return tier<=1||(tier===2&&midSeven[n]===1);
+ const maxTier=s===5000?0:s===6000?1:s===8000?2:s===9500?3:-1;
+ return tier<=maxTier;
+};
 const excluded=n=>{const x=number(n),m=Math.max(...[...new Set(x)].map(c=>x.split(c).length-1));return m>=3;};
 function assertData(){
  if(dataset.length!==10000)throw Error('Number-set data length is not 10,000');
@@ -72,6 +88,7 @@ async function decode(){
  if(!('DecompressionStream' in window))throw Error('Your browser cannot open compressed number sets. Please update Chrome or Safari.');
  const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate'));
  dataset=await new Response(stream).text();
+ prepareSevenSet();
  assertData();
 }
 function renderCards(){
@@ -127,8 +144,7 @@ function scanPhone(){
   for(let i=0;i<localStorage.length;i++){
    const key=localStorage.key(i);if(key==='b4d-coverage-cache-v438')continue;
    const val=localStorage.getItem(key);
-   if(!val||val.length>18000000||(!val.includes('"draws"')&&!val.includes('"results"')))continue;
-   try{found.push(...collect(JSON.parse(val),'Data app · '+key));}catch{}
+   if(!val||val.length>18000000||(!val.includes('"draws"')&&!val.includes('"results"')))continue;   try{found.push(...collect(JSON.parse(val),'Data app · '+key));}catch{}
   }
   const cached=JSON.parse(localStorage.getItem('b4d-coverage-cache-v438')||'[]');
   if(Array.isArray(cached))for(const v of cached){const b=normalizeBoard(v.op,v.date,v.top3,v.special,v.consolation,v.source||'Cache Coverage Lab');if(b)found.push(b);}
