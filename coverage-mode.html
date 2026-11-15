@@ -10,6 +10,13 @@ a{color:#f4cd77}.muted{color:#b7b4c1}.warn{color:#f6bf7f}.success{color:#a5e6c9}
 .layout{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px}
 .tile{padding:12px;border-radius:11px;border:1px solid #69573b;background:#262335;color:inherit;text-align:left;cursor:pointer}
 .tile strong{font-size:1.35rem;display:block;color:#f7ce73}.tile small{color:#ccc6c2}.tile.active{background:#51401e;border-color:#ffd371;box-shadow:inset 0 0 0 1px #ffd371}
+.bet-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:14px 0}
+.bet-tabs button{min-height:44px;padding:9px 6px;font-size:.9rem;font-weight:600;background:#29283b;border-color:#635b64}
+.bet-tabs button.active{background:#59411d;border-color:#ffce72;color:#ffe9aa;box-shadow:inset 0 0 0 1px #ffce72}
+.mode-ledger{min-width:550px}
+.mode-ledger td small{display:block;color:#bab8c8;font-size:.75rem;margin-top:3px}
+.mode-ledger td b{font-size:.92rem}
+@media(max-width:420px){.bet-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.mode-ledger{min-width:520px}}
 label{display:inline-flex;flex-direction:column;font-size:.85rem;color:#d4cbd0;gap:6px;margin:5px 8px 6px 0}
 input,select,button{border:1px solid #71654c;background:#252839;color:#f9f2e8;border-radius:10px;padding:10px;max-width:100%;font:inherit}
 button{background:#654b26;cursor:pointer}button:disabled{opacity:.45;cursor:default}
@@ -27,7 +34,7 @@ footer{font-size:.8rem;color:#aca7b2;line-height:1.5}.pill{background:#3d2d19;co
 </style>
 </head><body>
 <nav><a href="./index.html">← Back to BEAST MODE 4D</a></nav>
-<h1>🐉 Coverage Lab <span class="pill">v4.38 · Big + Small</span></h1>
+<h1>🐉 Coverage Lab <span class="pill">v4.38 · Six bet views</span></h1>
 <p class="muted">Updated 15 November 2026: all 500 numbers previously outside the original coverage lists are now included in every set (370 repeated-digit combinations and the final 130). The 9,500 base now covers all 10,000 possible four-digit combinations. This is a coverage simulation, not a prediction mode.</p>
 <section class="panel"><h2>1 · Select a Number Set</h2><div class="layout" id="setCards">
 <button type="button" class="tile active" data-set="5000" aria-pressed="true"><small>TOP</small><strong>5,000</strong><small>5,500 total · RM1 Big: RM 5,500/operator</small></button>
@@ -54,10 +61,20 @@ footer{font-size:.8rem;color:#aca7b2;line-height:1.5}.pill{background:#3d2d19;co
 </div>
 <p id="smallRateError" class="warn" role="status"></p>
 <p id="status" class="muted" role="status">Loading data…</p>
+<h3 style="color:#ffcf81;margin:18px 0 6px">Simulation type</h3>
+<div id="betTabs" class="bet-tabs" role="group" aria-label="Choose the bet simulation">
+<button type="button" class="active" data-bet-view="standard" aria-pressed="true">Big + Small</button>
+<button type="button" data-bet-view="4A" aria-pressed="false">4A · 1st</button>
+<button type="button" data-bet-view="4B" aria-pressed="false">4B · 2nd</button>
+<button type="button" data-bet-view="4C" aria-pressed="false">4C · 3rd</button>
+<button type="button" data-bet-view="4E" aria-pressed="false">4E · Consolation</button>
+<button type="button" data-bet-view="allFour" aria-pressed="false">All four combined</button>
+</div>
+<p class="muted">From your BK8 screenshot, each RM1 4A, 4B or 4C exact winner pays RM8,000 at its own prize position; 4E pays RM800 for each exact Consolation winner. These are different bet choices, not the same RM1 wager. <b>All four</b> costs RM4 per number.</p>
 <div id="summary"></div><div id="results"></div></section>
 <section class="panel"><h2>3 · How the Scores Are Calculated</h2>
 <p><b>Exact match (straight)</b> means all four digits match in exactly the same order. <b>Permutation / box</b> means the same digits appear in a different order; this is <b>not</b> a winning Big straight ticket. A result from another operator does not count as a win on an operator where no ticket was purchased.</p>
-<p>Big (RM1 per number) uses reference payouts of RM3,500 / RM1,200 / RM600 for 1st / 2nd / 3rd, RM250 for each Special and RM80 for each Consolation. Small (RM1 per number) pays only the top 3 exact matches; the editable default rates are RM5,000 / RM2,400 / RM1,200. Special and Consolation pay RM0 on Small. The table compares separate Big-only, Small-only, and Big + Small scenarios per operator. Big + Small costs RM2 per selected number. The displayed gross payouts and nets are simulated, not actual purchased tickets or confirmed BK8 payout rates.</p>
+<p>Big (RM1 per number) uses RM3,500 / RM1,200 / RM600 for 1st / 2nd / 3rd, RM250 for Special and RM80 for Consolation. Small (RM1 per number) uses editable top-three payouts of RM5,000 / RM2,400 / RM1,200; it pays nothing on Special or Consolation. The new 4A / 4B / 4C / 4E tabs use your BK8 screenshot at RM1 per number per chosen bet type: <b>4A</b> pays RM8,000 on 1st only, <b>4B</b> RM8,000 on 2nd only, <b>4C</b> RM8,000 on 3rd only, and <b>4E</b> RM800 for each exact Consolation win (10 prize positions). 4E does not cover Special. Each bet type has its own independent stake. All four combined costs RM4 per number. Figures are gross before stakes are deducted; this is a simulation, not a verified bet receipt.</p>
 <p class="warn">Large spending is not recommended: historical BEAST MODE tests have not demonstrated a reliable advantage over random selection. At RM1 per number per bet type, the complete 10,000-number set costs RM10,000 for Big alone, RM10,000 for Small alone, or RM20,000 for both per operator. With the current illustrative payout rates, the maximum gross payout is RM8,600 for either Big or Small, leaving a simulated RM1,400 loss for each bet type.</p></section>
 <footer>Original base sets date from 2026-11-14; the 370 repeated-digit combinations and the last 130 omitted combinations were added to all five sets on 2026-11-15. Revised-set historical simulations are not proof of pre-draw predictions. This mode does not alter predictions, history, tickets, or stored results in the main app. Offline checks use data already on your device or imported from a backup.</footer>
 <script>
@@ -69,7 +86,9 @@ window.B4D_COVERAGE_DATA="EEEEEEEEEEEAAAAAAAABECCDACABCDECCDBCBCCDEAAAAAAAAAEAAA
 'use strict';
 const $=id=>document.getElementById(id);
 const sizes=[5000,6000,7000,8000,9500],chars=['A','B','C','D'],prizes=[3500,1200,600,250,80];
-let dataset='',setSize=5000,page=0,loadedBoards=[],backupBoards=[],status='';
+let dataset='',setSize=5000,page=0,loadedBoards=[],backupBoards=[],status='',betView='standard';
+const extraBetRates={'4A':8000,'4B':8000,'4C':8000,'4E':800};
+const extraBetKeys=['4A','4B','4C','4E'];
 // Fixed, reproducible midpoint: include every second candidate from the original 6,000-to-8,000 expansion.
 const midSeven=new Uint8Array(10000);
 function prepareSevenSet(){
@@ -128,6 +147,22 @@ function renderCards(){
   el.setAttribute('aria-pressed',String(active));
   el.onclick=()=>{setSize=s;page=0;renderCards();renderNumbers();renderResults();};
  });
+}
+function renderBetTabs(){
+ $('betTabs').querySelectorAll('[data-bet-view]').forEach(el=>{
+  const key=el.dataset.betView;
+  const active=key===betView;
+  el.classList.toggle('active',active);
+  el.setAttribute('aria-pressed',String(active));
+  el.onclick=()=>{betView=key;renderBetTabs();renderResults();};
+ });
+}
+function extraBetForPrize(index){
+ if(index===0)return '4A';
+ if(index===1)return '4B';
+ if(index===2)return '4C';
+ if(index>=13&&index<23)return '4E';
+ return null; // 4E does not cover the 10 Special prizes.
 }
 function renderNumbers(){
  if(!dataset)return;
@@ -238,9 +273,16 @@ function getSmallRates(){
 function check(b,s,smallRates){
  const rows=prizeLines(b),signatureSet=new Set();
  for(let n=0;n<10000;n++)if(selected(n,s))signatureSet.add(sig(number(n)));
- const hits=rows.map((p,i)=>({...p,hit:selected(Number(p.n),s),box:signatureSet.has(sig(p.n)),restored:excluded(p.n),last130:last130(Number(p.n)),smallPrice:i<3?smallRates[i]:0}));
+ const hits=rows.map((p,i)=>({...p,hit:selected(Number(p.n),s),box:signatureSet.has(sig(p.n)),restored:excluded(p.n),last130:last130(Number(p.n)),smallPrice:i<3?smallRates[i]:0,extraBet:extraBetForPrize(i)}));
+ const extraPayout={},extraHits={};
+ for(const key of extraBetKeys){
+  extraHits[key]=hits.filter(row=>row.extraBet===key&&row.hit).length;
+  extraPayout[key]=extraHits[key]*extraBetRates[key];
+ }
  return {
   hits,
+  extraPayout,
+  extraHits,
   count:hits.filter(x=>x.hit).length,
   smallHits:hits.slice(0,3).filter(x=>x.hit).length,
   boxOnly:hits.filter(x=>!x.hit&&x.box).length,
@@ -250,18 +292,57 @@ function check(b,s,smallRates){
   smallPayout:hits.reduce((v,x)=>v+(x.hit?x.smallPrice:0),0)
  };
 }
+function renderExtraBetResults(ops,boards,smallRates){
+ const combined=betView==='allFour';
+ const label=combined?'4A + 4B + 4C + 4E':betView;
+ const reason=combined
+  ?'All four separate RM1 bets on every number: 4A, 4B, 4C and 4E. Stake is RM4 per number.'
+  :betView==='4E'
+   ?'RM1 per number for Consolation only (10 prize positions). Special prizes do not qualify.'
+   :'RM1 per number for '+(betView==='4A'?'1st':betView==='4B'?'2nd':'3rd')+' Prize only.';
+ let summary='<h3 style="color:#f4d59a">'+label+' · all five sets</h3><p class="muted">'+reason+' Each operator is calculated separately; only exact matches pay.</p>';
+ summary+='<div class="scroll"><table class="mode-ledger"><thead><tr><th>Operator / set</th><th>Included</th><th>Qualifying hits</th><th>Stake</th><th>Gross payout</th><th>Net profit/loss</th></tr></thead><tbody>';
+ let details='';
+ for(let i=0;i<ops.length;i++){
+  const op=ops[i],b=boards[i];
+  if(!b){
+   summary+='<tr><td><b>'+op+'</b></td><td colspan="5">Awaiting complete results</td></tr>';
+   continue;
+  }
+  for(const s of sizes){
+   const stat=check(b,s,smallRates);
+   const hits=combined?extraBetKeys.reduce((sum,key)=>sum+stat.extraHits[key],0):stat.extraHits[betView];
+   const payout=combined?extraBetKeys.reduce((sum,key)=>sum+stat.extraPayout[key],0):stat.extraPayout[betView];
+   const stake=totalSize(s)*(combined?4:1);
+   const net=payout-stake;
+   summary+='<tr'+(s===setSize?' style="background:#2d2a24"':'')+'><td><b>'+op+'</b><small>Base '+s.toLocaleString('en-MY')+'</small></td><td>'+totalSize(s).toLocaleString('en-MY')+'</td><td class="match">'+hits+'/'+(combined?'13':betView==='4E'?'10':'1')+'</td><td>'+money(stake)+'</td><td>'+money(payout)+'</td><td style="color:'+(net>=0?'#a7e4c5':'#f4a9a9')+'">'+money(net)+'</td></tr>';
+  }
+  const stat=check(b,setSize,smallRates);
+  const cost=totalSize(setSize)*(combined?4:1);
+  const payout=combined?extraBetKeys.reduce((sum,key)=>sum+stat.extraPayout[key],0):stat.extraPayout[betView];
+  details+='<h3 style="color:#f4d59a">'+op+' · '+label+'</h3><p class="muted">Base '+setSize.toLocaleString('en-MY')+' → '+totalSize(setSize).toLocaleString('en-MY')+' numbers · Stake '+money(cost)+' · Gross '+money(payout)+' · Net '+money(payout-cost)+'</p>';
+  details+='<div class="scroll"><table class="mode-ledger"><thead><tr><th>Prize</th><th>Number</th><th>Bet</th><th>Exact hit</th><th>Gross payout</th></tr></thead><tbody>';
+  details+=stat.hits.filter(row=>row.extraBet&&(combined||row.extraBet===betView))
+   .map(row=>'<tr><td>'+row.tier+'</td><td class="num">'+row.n+'</td><td>'+row.extraBet+'</td><td class="'+(row.hit?'match':'miss')+'">'+(row.hit?'✓ HIT':'—')+'</td><td>'+money(row.hit?extraBetRates[row.extraBet]:0)+'</td></tr>').join('');
+  details+='</tbody></table></div>';
+ }
+ summary+='</tbody></table></div><p class="muted">Each bet position is a separate straight-number bet, with no payout for permutation-only matches. 4E applies only to Consolation, not Special. Winnings and costs are simulated using RM1 per number per selected bet type and the payout rates visible in your uploaded BK8 screenshot.</p>';
+ $('summary').innerHTML=summary;
+ $('results').innerHTML=details;
+}
 function renderResults(){
  if(!dataset)return;
  const smallRates=getSmallRates();
- if(!smallRates){
+ if(betView==='standard'&&!smallRates){
   $('smallRateError').textContent='Enter valid Small payout amounts from RM0 to RM1,000,000 for each top-three prize.';
   $('summary').innerHTML='';$('results').innerHTML='';
   return;
  }
- $('smallRateError').textContent='';
+ $('smallRateError').textContent=smallRates?'':'Small payout rates are invalid; Big + Small results are unavailable until corrected.';
  const date=$('drawDate').value,operator=$('operator').value,ops=operator==='ALL'?['MAGNUM','TOTO','DAMACAI']:[operator];
  const boards=ops.map(op=>loadedBoards.find(b=>b.op===op&&b.date===date)||null);
  if(!boards.some(Boolean)){$('summary').innerHTML='<p class="warn">Full results are not yet available for the selected date and operator. Select Check latest results or import a JSON backup after the draw.</p>';$('results').innerHTML='';return;}
+ if(betView!=='standard'){renderExtraBetResults(ops,boards,smallRates||[0,0,0]);return;}
  let summary='<div class="scroll"><table><thead><tr><th>Operator</th><th>Base set</th><th>Numbers / cost per type</th><th>Big hits/23</th><th>Permutation-only*</th><th>First 370 hits</th><th>Final 130 hits</th><th>Big payout</th><th>Big net</th><th>Small hits/3</th><th>Small payout</th><th>Small net</th><th>Big + Small net</th></tr></thead><tbody>';
  let details='';
  for(let i=0;i<ops.length;i++){
@@ -305,7 +386,7 @@ async function init(){
  $('refresh').onclick=()=>refresh(true);
  $('backup').onchange=importBackup;
  for(const id of ['smallFirst','smallSecond','smallThird'])$(id).oninput=renderResults;
- try{renderCards();loadData();renderNumbers();await refresh(true);
+ try{renderCards();renderBetTabs();loadData();renderNumbers();await refresh(true);
   // Results refresh while this mode is open; refresh again on return to the phone app.
   setInterval(()=>{if(!document.hidden)refresh(true);},120000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh(true);});}
