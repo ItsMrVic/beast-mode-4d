@@ -27,18 +27,18 @@ footer{font-size:.8rem;color:#aca7b2;line-height:1.5}.pill{background:#3d2d19;co
 </style>
 </head><body>
 <nav><a href="./index.html">← Back to BEAST MODE 4D</a></nav>
-<h1>🐉 Coverage Lab <span class="pill">v4.38 · +370 restored</span></h1>
-<p class="muted">Updated 15 November 2026: the 370 combinations previously removed from the lists have been restored to every set. One shared list is checked against Magnum, Sports Toto and Da Ma Cai. This is a coverage simulation, not a prediction mode.</p>
+<h1>🐉 Coverage Lab <span class="pill">v4.38 · all 500 restored</span></h1>
+<p class="muted">Updated 15 November 2026: all 500 numbers previously outside the original coverage lists are now included in every set (370 repeated-digit combinations and the final 130). The 9,500 base now covers all 10,000 possible four-digit combinations. This is a coverage simulation, not a prediction mode.</p>
 <section class="panel"><h2>1 · Select a Number Set</h2><div class="layout" id="setCards">
-<button type="button" class="tile active" data-set="5000" aria-pressed="true"><small>TOP</small><strong>5,000</strong><small>5,370 total · RM1 Big: RM 5,370/operator</small></button>
-<button type="button" class="tile" data-set="6000" aria-pressed="false"><small>TOP</small><strong>6,000</strong><small>6,370 total · RM1 Big: RM 6,370/operator</small></button>
-<button type="button" class="tile" data-set="7000" aria-pressed="false"><small>TOP</small><strong>7,000</strong><small>7,370 total · RM1 Big: RM 7,370/operator</small></button>
-<button type="button" class="tile" data-set="8000" aria-pressed="false"><small>TOP</small><strong>8,000</strong><small>8,370 total · RM1 Big: RM 8,370/operator</small></button>
-<button type="button" class="tile" data-set="9500" aria-pressed="false"><small>TOP</small><strong>9,500</strong><small>9,870 total · RM1 Big: RM 9,870/operator</small></button>
+<button type="button" class="tile active" data-set="5000" aria-pressed="true"><small>TOP</small><strong>5,000</strong><small>5,500 total · RM1 Big: RM 5,500/operator</small></button>
+<button type="button" class="tile" data-set="6000" aria-pressed="false"><small>TOP</small><strong>6,000</strong><small>6,500 total · RM1 Big: RM 6,500/operator</small></button>
+<button type="button" class="tile" data-set="7000" aria-pressed="false"><small>TOP</small><strong>7,000</strong><small>7,500 total · RM1 Big: RM 7,500/operator</small></button>
+<button type="button" class="tile" data-set="8000" aria-pressed="false"><small>TOP</small><strong>8,000</strong><small>8,500 total · RM1 Big: RM 8,500/operator</small></button>
+<button type="button" class="tile" data-set="9500" aria-pressed="false"><small>TOP</small><strong>9,500</strong><small>10,000 total · RM1 Big: RM 10,000/operator</small></button>
 </div>
-<p class="muted">Each option includes its original base numbers plus all 370 previously excluded combinations with three or four identical digits. The original 7,000 base set remains the fixed midpoint between the 6,000 and 8,000 base sets. Actual counts and RM1-per-number costs appear on the buttons. Adding numbers increases coverage and cost, not the chance of any individual number being drawn.</p>
+<p class="muted">Each option keeps its original base numbers and adds all 500 numbers formerly outside the selection: 370 with three or four identical digits, plus the final 130 remaining combinations. The 7,000 base is unchanged. Every set's true count and RM1-per-number cost appear on its button. The 9,500 base plus 500 covers all 10,000 combinations; smaller sets still exclude some numbers. Coverage increases with cost, not with predictive accuracy.</p>
 <div class="actions"><label>Search numbers <input id="searchNumber" inputmode="numeric" maxlength="4" placeholder="e.g. 2378"></label>
-<label>Show <select id="numberFilter"><option value="selected">In selected set</option><option value="restored">370 restored combinations</option><option value="missed">Not in selected set</option></select></label></div>
+<label>Show <select id="numberFilter"><option value="selected">In selected set</option><option value="restored">First 370 restored combinations</option><option value="last130">Final 130 added combinations</option><option value="missed">Not in selected set</option></select></label></div>
 <div id="numberStatus" role="status"></div><div class="number-grid" id="numberList"></div>
 <div class="actions"><button id="prevNumbers">← Previous</button><button id="nextNumbers">Next →</button></div>
 </section>
@@ -51,8 +51,8 @@ footer{font-size:.8rem;color:#aca7b2;line-height:1.5}.pill{background:#3d2d19;co
 <section class="panel"><h2>3 · How the Scores Are Calculated</h2>
 <p><b>Exact match (straight)</b> means all four digits match in exactly the same order. <b>Permutation / box</b> means the same digits appear in a different order; this is <b>not</b> a winning Big straight ticket. A result from another operator does not count as a win on an operator where no ticket was purchased.</p>
 <p>BK8 Big stake simulation at RM1 per number: 1st prize RM3,500; 2nd RM1,200; 3rd RM600; 10 Special prizes at RM250 each; and 10 Consolation prizes at RM80 each. Costs are calculated separately for each operator. This does not mean any tickets were actually purchased.</p>
-<p class="warn">Large spending is not recommended: BEAST MODE historical tests have not shown a reliable advantage over random selection. The 9,500 base plus 370 restored numbers costs RM9,870 per operator and would lose at least RM1,270 even if all 23 prizes matched exactly at the listed BK8 payout rates.</p></section>
-<footer>Original base sets date from 2026-11-14; all 370 missing combinations were restored to each set on 2026-11-15. Historical simulations using the revised sets are not evidence of predictions made before the draws. This mode does not alter predictions, history, tickets, or stored results in the main app. Offline checks use data already on your device or imported from a backup.</footer>
+<p class="warn">Large spending is not recommended: historical BEAST MODE tests have not demonstrated a reliable advantage over random selection. At RM1 per number, the complete 10,000-number set costs RM10,000 per operator; even if all 23 prize numbers matched exactly at the listed BK8 rates, the simulation would lose RM1,400 per operator.</p></section>
+<footer>Original base sets date from 2026-11-14; the 370 repeated-digit combinations and the last 130 omitted combinations were added to all five sets on 2026-11-15. Revised-set historical simulations are not proof of pre-draw predictions. This mode does not alter predictions, history, tickets, or stored results in the main app. Offline checks use data already on your device or imported from a backup.</footer>
 <script>
 // Embedded, fixed 14 November 2026 selection data: eliminates external-script and browser-decompression dependencies.
 window.B4D_COVERAGE_DATA="EEEEEEEEEEEAAAAAAAABECCDACABCDECCDBCBCCDEAAAAAAAAAEAAAAAAAAAEAAAABAAAAEAABABAAACEAAAAAAAAAEAAAAAAAAAEABAAAACBABEBAAAABABBCDCAAACCCCDDDBCCDDDAAAAAAAAAAABCAABACAABCBAAAAAABBCCBABBCCBACCAAAACACAABAAAAAAAEAAAAAAAAAAAAAAAAAABAAECAAAABBBDCDCCCCDDAAAAAAAAAAAAAAAAAAAAAAABAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAABBAAAABABCCECBBCCCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEACBAAACAAACBAAAAAABCDDDACBCCCBCCDACBCBCAAAAEAAAAAAABAAAABAABCBBABAAAAABACABBAABAAAAAAAAAAAABAAAAAAAEAAAAAAAAAAAAAAAAAAAAAACABAAAAABADACABBCAAAAAAAAAAAAAAAEAAAAAAAAABAAAAAAACACAAAAAAABAAAAAAAAAAAAAAAAEBBCABACAACDCCACCCBCCDCDACABCCBDCDCCCCBDBBACACAAAAACCBACABABABAAAAEAAACCCDACBBBCACBCAAAAACABBBAAAAACECDDBCCDDDDDDDBDDDDDCDDDACCDCDDEEEDDDDDDCCBDACACCCCDCDCCCDCDDDCDACCCCDCCBDACBEDDCDCDAAACCDBBDCAAABCDEAAAAAADBACCAAAAACABDDDDABADCCDDDDDDCDDDCAAAAAACAABBAAABADABDCABABACABCBACABACCCCCBCAAACECAABAAAABABEACCABADCACCCBABACCCDDDDACCDDDCDDDDDCDDDCABBABACCAAACAACACAABBCAACACBADCCDACCDDDCCCCAAACCCAABAAAAAAEEADCACACBCAECAACAAACBCDDADABCDCDDDDDCDDDBCDCBDACCCAACAACABACACCCADAAACBCCDCDBCCDAABBAAAAACAADAABAAACAECAAAABAAEEEEEEEEEEAEDAAAAACCCEDCBDCDDCBECAABABCCAECAABACAABECAABAABCAECAACBCCBAECAAAAAAAAECAAAAAAAAAAAAAAAAAAEAAAAAAAAAAEAAAAAAABCDDBCBCDDAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABBAAEAAAAAABCAACAAAAACACCDECCBCDCCBBBABAACCAABAAAACAABBCAABAACBBABCBCBCDCAAAAAAAAAAAABAAAAAABAACAAAABAAAECAAAAAABACDCACAACCCCDCADBCCCBCCCECABCCAACAABABAABCCBACAABCBCCCACBCCCAAAAAAAAAAAACAAAAAABAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAACACAABCAAAAABAAAAAAAAAEAAAAAAAAABAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAABCCACABBBCEDBACACCCCCDCACAACCCDDDDDCDDDCDDDADBCCCACDABDACABBCCBACEAACCDDDCDCCDDACCBAAAAACABDBACAABCAABBAAACCBBECBACABCCAACCAAAABBDDDDCDCDDDCCCCADABCCABBAABACBCCCBBABABCCAAACAAAECCAAAAAAAAAAAACAAAAAACAABAAAACBABEAAAAACBACCDCAAABCCDDEDDDCDDDCCCCACACCCAACAACADABCCCAACACCCCCCCBCADCCAABAAAACEBAACAAAABACAACCACACDCCECBACACCCCDDDADACDCDDEDDDDDDDDCDCBDBDDDAACAACACCCCCCBACACCCDDDDDDDDEDBCCCABACCCAACAAAABCEEBCCCCBBCDAABAAAAAADCDEDCDCCDDCCDDDDCCDDAACBACAABCABCBCCABADAAAAAAAAABABBCBCBACDAAAAAAAAACAADAABAAADAABAAAAAAAAEBAAAAAABABEAAAAACBCCDCACCDDDAAAAAAAAAAABDAACBCBCAAAAAAAAAAAACAAAAABBAABAAAAAAAAACAAAAAABAAEAAAAAAAAAEAAAAAACEEEEEEEEEEBCEDCCCCDDAAEAAAAAAAAAEAAABABCAAEAAAAAAAAAEAAAAAABAAEAAAAAAAAAEAAAAAACAAAAAAAACABABAAACACCBAEBAACBDCCCDECCCCDDAAAAAAAACBBACACBCCCCAABAAABAABAAAAAACACCAAAAAAAABCAACAAAAACCAACAAAABBBAACAAAAAACCCECACCCCCACDCBCCCCCAABAEAAAAAABDABCBCBCAACAAABAAAAABAABBABCAAAAAAAAAAAADAAAAAACAAAAAAAAAAAAAAAAAAAAAAEBACAACCAACCADBACCAAAAAAAAAAAACABEABBCAAAAAAAAAAAAAAACAABCAAAAAAAAABAAAAAAAAACACDCCCCCCCCDDCCDDCCDCCEDBCCCCCCDDDDDDDDDCCCCADBBCCCDDCDDCDCDAAAAAAEAAACDDDCDCCCDACCCAAAABCCCDCBCBBCDCCCCCCCCDDDDDDBDDDDDDDEDACCCDDDEEEDDDDEECCCCADBCDDDDDDDDDDDECBBBABBBCCCBBCABBEDDBCCCAAABCDCCDCACBBDDAACAAAADCBCABAAAACBCCCECBCACDCDDEDDDDEDDCABAAAACCCCCDBDDADCDBAAAAAABABCBCBBCACCCAACAAAACECCADAAAACCDAABAAAACCAAACAAAABBBCCECACCCDCCCDDCDCDDDAABAABABCBAACAABACCBAABAAAAAAACAACACCCDCAABAAAAAAAAACAAAAAAEEACCCCBBBABAACABAAAABBCDACAAACCADEDDAABCAAACACAAAAAAAAAAAAAAAAACABAAAAABBDCBAAABAAABAAAAAAAAAAAAAAAAAADBBBBCBACECBABCBBBCCDCAAAABADCDECDDDDCBAAAAAAAAAAACAAAAAAACCCCACBAAACCCCBCCBCAAABBAAAAAAAABAAAAAAAACCCCBCBBACCCCCACABCBCEDAAAACBDDDEDDDCDDAAABAAAAAAAAABBAAAAACCBDCBCABCABADBABABBAAAAAAAAAAAAAAAAAAAACCDEDCDDDCDCCEDCDCDDDCCECABBCCEEEEEEEEEEDBBECCBCCBCABEDBBCAADCCECCCCCCDCCEDCDCDCCBBECABABBBACEAAAAABCDEDDDDDDCDDDDDDDDCDDDDDDDDCDDDDEEDDDDDDDCDDEDCCCCCCDCCDCCABDDDDCDDCCDDDDDDDDDDDBCCCAAAAAACADCACAAACAAABBBAAAABBACACAAAAAACCACAAAACBCECDBACBAAABACAAAAAAABBEAAAABBACACAAAACBCDCDBABAAAACABAAAAAAAAAAAAAADDDDDDDDDCDDDDDDDDCCDDDDCDCBCCDDDEDEDDDDDDDDCDCCCCCCDCDCABAACDCDCCEAACDDDDDDDCDCCCCDCBAAABCBDCBCAAACDDDDDDDDDDEDDDDDDDDDDCDDBCBBCCDEEEEEEEEDDDCDADBCCCDCCDDCCCCCDDCDCCCCDCDDCDCCCEDCCCCDBAABCCCBDDABAABCDCDDDDCDDCDDDDDDCDCCDDDDCCADDCDDEEEEDEDDDCCDBCACCCDCCCDCADAADDCDCCBCCCDDCDDDCDDCDCCDCAACECCADCBAACBCDDDDDDDDDCDDDDDDDDDDDDDEDDCDDDDDEEEEDEDDDDDDCDCDDCCBCCCCADBADCCDCCCCCCEDDEDDDDDDDCCDCBBDCCCACCAAAAAEEADCABACAAAACBAAAAAAACDDACABBCBCDDCCACBCAAABEAAAAAAAAAAAAAAAAAAAAAAAAAABBCAAAAAAAABCAAAAAAAACCAAAAABABDAAAACAAAECAAAACAABCDCAAACBACCDCBCCDCBAAAAEAAAAAABCAAAACAAABBAAAAAAABCCBAAACAAACDCAAACAAAADAAAAAAAAABCAAAAAAACBBAAABAAACEDAAAAAACDDDCCDDDDAAAAEAAAAAAAAAAAAAAAABACAAAAAAAAACAAAAAAAAABAAAAAAAACBAAAAAAAACCAAACBACBCBAABCAABBCDAAAACADCDECCCDDCAAABEAAAAAAAAAAAAAAAAAABAAAAAAAAACAAAAAAAABCAAAAAAAACBAAAAAAACDDECCDCCCCDCECCCCACDEDEDCDCCDDEDEDDDCCEEEEEEEEEEABDCECADAACCDCEBBBABCCDCECCCBAACDCEAACAABBDCEBACBCAABBAAAAAAAABAAAAAAAABDCACAAAAACDDBDBCCAAAAAEAAAAAAACBAEAAAAAAABAAAAAAACCCACABAAABCCAAAAAAAACBAAAAAAACCDABACAACCDCACCCCBCDDDACACBCDDDDDDCDCDBBCCEBAAAAABDCAAABAAAAABAAEAAACCDDACABAAACDDAAAAAABCDCAAAAACDDDECDCDDDDDEDCDDDDDDDDEACBDDDEEEEDEDEEECCDDECACCBCDDDCCBDCCDCCDACBCBBCCCDABAECCCDDDABBDCCDCDDACACCDBBCCAAADBACBCBAAADAACCDDAAADCBDDEDDDDEDDCAACEAACAAAACBAAADAACBBBAAACAACCCCBAACAACCCCAAADEACADCAAACABBCCDABBDCADCDCABBDCBDDDDACCDDCDDEDDDDEDDCBCCEBADBAAACBAAADAABACBAAABAADCDDBCCDDCCCDDAAADCBBADCAAACBEEAAAAAAAAAAAAAAAAAAAACDCAAAAACCCDDCDCCCDAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAACACAAAABCAAAAAAAAAAAAAAAAAAAAAABAAAABAAAEAAAAAAAAACDBAAABAACDDDCDDDCCAAAAAAAAAAAACAAEABAAACBAAAAAAACCCCABCCBBABBAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAACDDDBCDCCDAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAABCCCAAAABBDDDEDDDDDDAAAAAAAAAAAAAAAEABAACCAAAABAABCCBCAACCCCAAAAAAAAAAAAAAAAAAAAABCAAAACAAABAAAAAAAAADDCABBCACCDDDCDDDCDAAAAEAAAAAAABAAEAAAAACCBABBAAACDCCBCCCCCAAAAAAAAAAAACAAAAAAAAAAAAEAAAAAAAAAEAAAAAAAAAEAAAAACCDAEBCCCAAAAAEAAAAEEEEEEEEEEAAAAAEAAAAABACAEAAAAAAAAAEAAAAAAAAAEAAAAABBAAAAAAAACBAAAAAAABDDDAAAAACDDEEDDDDDDBCACABAAAAACBAAEAAAAACAAAAEAAACDCDBCCBBCACAAAAAAAAABCAAAAAABACBCAAACBACCBBAAABACACCCAAAAABDEEEDDDEDDABABAAAAAAACBBAEABAACDACAAAAABCCCCAAAECCACABAAAAAAAACAAAAAABAAAAAAACAAAAAAAAAAAACCDCAAACBBDDEEDDDEDDBAAAAAACAAAAAAAEACAACCAAAAABAADCCCCBACCCABAAAAABEAAABAAAABAABCCCABADCBCDCBAAACBCDDDDBDDDDDDEEEDEEEDDDCCCACBDCCACCAAEADAADDCCABBCBCEDDDCDDDDDCDCCAAADBCBACAAAACAEEABAAAAAAAAAAAAAAAAAAADCAAAAACAACCAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAABAAAEAAAAAAAAAADAAAAAAAAADBAAADABAAAAAAAAAAAACAAAACAAAAAAAAEAAABACBAAABAAAABAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAABCAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAACAABABAAAABACBACCAAACBBCBDECBCDCDAAAAAAABAAAACACAACACAABAAAEBAABAACAAAAABAAAAAAABABAABAAAAAAAAACAAAACAAAABAAAAAAABBDCAAACACAADCABACACAAAAEAAAAAAACAABACAAAABAAAEAAABABCAAAAABAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAEAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAEAAAAACAAAEAAAAACCAAEAABBCDDACECACAAAAAAEAAAAACAABEBAAEEEEEEEEEEAACCAAEAAAAAAAAAEAAAAACAAAEAAABACCABBDCCCCDCABBCBDBBCCAAACBCDDDDCDDDDDAAABAAABABCCCCBCBDBCBAABAAEBABBABCAAAEABAAACAAABACAACAAAAAACAAAAAAACAAAAAAAAAAAAAACAAAABAACBDDBBADBCAAAAAAAAAAAAAAAAACAAAAAAAAEAAAAAABAAAAAAAAAAAAABEAAAAAAAAAAAAACBAAADBBCACAAAACACDCDDACBDDDDCDDCDCDDDCABBABACABAACAABADABAACAAAEBAACBBDBCBDCDAACBAAACACAACAAAAAAEEDDDDDCDCDCDCDCCCBADDEDEDDDCDEDEEEDDDDDECDCDBDBBBDACCCCCABADCDCDCCCBADCDBDCCCECDADCDBBBBADCDDDCCBCCDBCDCBBCDCCDECBABCCBCDDDDBCCCDDDEEDDDDDDDCCBAABABABCDDBBCCCACDDCBACCCACDDCDACDECDCDDCCCCCCDCCDAAAABBCAAACAAAAAABCACAACAACBBEDAABACCDDDEDDDDDEAAAAAAAAAAAAAAAAAAAACCACAACAACAAACAABEABAAABAAAAAAAACCAAAAACDCDDDCDDDDDDCDDCDDDDDDDDCCDCDDDDDEDDDDDDDCCDCCCCCDDDCCDCDCCDDDCDCCDCCDDDCDCCDEDDDDCDCBDCDDDCDDCCCCDDCDDDCDDDCDDDDCBCDCBDDDDDCDDDDDDDDDDDDDDDCCCCECBCACCDDCCCCCACDDDDBCDCBDDDCDCCDECDCDCDAACBACDCDDBCCCBDAAACACABAABCACACBAACCCCDACBBCDDDDEDDDDDDAAABACAAAAACBCCEABACCCBCACBBACBCADACBECDBCBDACBBBDAACCACAAADDDDDDDDDCDEDDDDDDDCDDDDEDDDCDDDDDEDEDDDDDDDDCDDCCDDDDDDDDCBDDDCDCCEBACDDDEDDDEDDDDDDCCDCCDDDDDCDCCCDDDDDCCDEDDEEDEDDDEDEDDDDBCCEDDEEEEEEEEEEDDCDACCEDDDDCDCCCEDDDDCDBCDEDDEEEEEEEEEEDDCDBACEDDDDDDBCCEDDDDDDDDCDDDEDDDCCCDCDEDDDDDCDDDEEEEEEEEEEEDCDCDBDDDDDDDDDCDCDEDDDCCCDCDDDCDCCCEDDDDDDDCCDEDDDDDCCCDDDCCCCCBCDCCDCCCABCCBCDDDDCCCDDDDDDEDDDDDDDCBCACACCCCBCBBBACABCCCBACBCABDCCDBCCEDDDCCDBBCCCCCACBAAACBEEACCACAAACABBAABAAACCDDDADAABDDDDECDCCCDAAAAACAAABAABAABAAAAABBAABAAABBCBCACAAADAAAAAAAAEBAACAAAAAACAAAAAAAAAAAEAAAAAAAAABDAAAAAAACDDDACCCCDAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAEAAABAAAAAAAAAAAAAAAAAACAAAAAAACACECAAAAACDDDECDDCDDAAAAAAAAAAAAAAAAAAAAACBBAAAAACAAACAAAAACAAAAAAAAEAAABAAAAAAAAACBAABBBBDDCCABCBBDCCDDABBBCCDDDEDDDDDDCABAABAAABBBCAABABACDCCCACBBBCDCCDABCACDCCCCAABAECBADAAAAAACAACAAAAAAAACCAAAAAABCDDCACAAACCDDDADCCADAAAAEAAAAAAACAAAAAAABCCAACAAAACCCCABBAACAAAAAAAAEAAADAAAAAAAAAAAAAAAAAAAAAAAAAAAAACBABAAAABCCDADAAACAAAAAAAAAAAAAAAEAAAAAAAAABAAAAAAABACAAAAAAAAAAAAEAAAAAAAAAAAAACAAAAAAACDCBACAAACBCDCACAAACCDDDCDCCBDAAAAABAAAAABCAABAAAAAAAAAAEAAACCCCACAAACABBAAAAAEAABDAAAAAABBCDDACACCCDDDDACCBCDCDDDABAACCDEEEDEDDDECBBCACAAABCCCCACABACCCCCACAAACCBBCAAAEBCACBCAAAAECABDBAAAAACAABAAAABEACBBAAAAAEACCDCABABECDEEEDECDEDCAAAAAAAEAAACAAAABEACCBAABAAEBCBCCBBAAECEEEEEEEEEEBACAAAAAEBBBCCACACCBCDCBACBCBCDDDDADCCDDDEDEDEDDDECBCCACABBCABCAACACABCCCBACABACDDDDBDDDDDCCDCABACECCADBAAAABEEACBAAAAAAAAAAAAAAAACCDDACAABCCCDDCCABCDBAACABAAABAAAAAAAAAAAAAAAAAAAAAABCAAAAACAAAAAAAAAAAABAAAAAAEAAAAAAAAAAAEAAAAAAAABACBAAAABACCDCAABCCCAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAABBAECAAAABBCDDDCCCCDDAAAAAAAAAAAAAAAAAAAACBACAAAAACAAACAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAABAACAAAAAAAAACACBAAAACACCCECABCDCCAAAAAAABAAAAAAAABAACAAAAAAAAACAABAAAACAAAAAAAAAAAAAAAAAAAAEAACAAAABAAAAAAAAAAAACCDCAAAAABCCDCABABBCBAAAEAAAAAAAAAAAAAAACABBAAAAAABACAAAAAAAAAAAAAAAAAAACAAAAAAEAAAAAAAAAAAAAAAAAAAAAACCABAAAACBCCACAACCAAAAAAAAAAAAAAAEAAAABAABABAAAABACBACAAAAAAAAAAAAAAAAAAAAAAAEAACCAAABAACCCCAAAABCCCDCABAABCCCDDCCBCCCCBCCACAABCAACAAAAAAAAAAAAAEAAACCCDACBBBCAAAAAAAAAABBCCAAAAAEBCDDBCBDCCDDCCABBCCCCCDDAAABCCDDEDDDDDDDDCCDACACCCCCCCABACBCDCCCACABCBCBCCAAAECCAAAAAAAAAACACCAAAAAEAAAAAAACAACAAAAAAAAACBCCAAACBBDDDDDDCDDDDAAAAAACAAAAAAAAACAADAAAAAABAACACCBAACBBAAAAAAAAEABABAAAAAAEBACBAAACCEAABAAAAAAEDCDCABACDECCDDCCCDDEDACBABACCEAABAAAABAEAABAAAAAAEDCBDBCCDDEAAAAAAAAAEEEEEEEEEEE";
@@ -79,7 +79,7 @@ const sig=n=>n.split('').sort().join('');
 const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 const money=n=>'RM '+(n<0?'−':'')+Math.abs(n).toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:2});
 const selected=(n,s)=>{
- if(excluded(n))return true;
+ if(dataset[n]==='E')return true; // Include the entire original 500-number exclusion tier in every set.
  const tier=chars.indexOf(dataset[n]);
  if(tier<0)return false;
  if(s===7000)return tier<=1||(tier===2&&midSeven[n]===1);
@@ -87,15 +87,22 @@ const selected=(n,s)=>{
  return tier<=maxTier;
 };
 const excluded=n=>{const x=number(n),m=Math.max(...[...new Set(x)].map(c=>x.split(c).length-1));return m>=3;};
-const totalSize=base=>base+370;
+const last130=n=>dataset[n]==='E'&&!excluded(n);
+const totalSize=base=>base+500;
 function assertData(){
  if(dataset.length!==10000)throw Error('Number-set data length is not 10,000');
- let restored=0;
- for(let n=0;n<10000;n++)if(excluded(n)){
-  restored++;
-  if(dataset[n]!=='E')throw Error('Restored number overlaps with original selections: '+number(n));
+ let restored370=0,last130Count=0,originallyOmitted=0;
+ for(let n=0;n<10000;n++){
+  if(dataset[n]==='E'){
+   originallyOmitted++;
+   if(excluded(n))restored370++;
+   else last130Count++;
+  } else if(excluded(n)){
+   throw Error('Repeated-digit number wrongly listed inside original base: '+number(n));
+  }
  }
- if(restored!==370)throw Error('Expected exactly 370 restored numbers; found '+restored);
+ if(originallyOmitted!==500||restored370!==370||last130Count!==130)
+  throw Error('Expected 370+130 omitted numbers; found '+restored370+'+'+last130Count);
  for(const base of sizes){
   let count=0;
   for(let n=0;n<10000;n++)if(selected(n,base))count++;
@@ -122,6 +129,7 @@ function renderNumbers(){
   const val=number(n);if(q&&!val.includes(q))continue;
   if(filter==='selected'&&!selected(n,setSize))continue;
   if(filter==='restored'&&!excluded(n))continue;
+  if(filter==='last130'&&!last130(n))continue;
   if(filter==='missed'&&selected(n,setSize))continue;
   matches.push(val);
  } const limit=200,maxPage=Math.max(0,Math.ceil(matches.length/limit)-1);page=Math.min(page,maxPage);
@@ -218,31 +226,31 @@ function prizeLines(b){
 function check(b,s){
  const rows=prizeLines(b),signatureSet=new Set();
  for(let n=0;n<10000;n++)if(selected(n,s))signatureSet.add(sig(number(n)));
- const hits=rows.map(p=>({...p,hit:selected(Number(p.n),s),box:signatureSet.has(sig(p.n)),restored:excluded(p.n)}));
- return {hits,count:hits.filter(x=>x.hit).length,boxOnly:hits.filter(x=>!x.hit&&x.box).length,restored:hits.filter(x=>x.restored).length,payout:hits.reduce((v,x)=>v+(x.hit?x.price:0),0)};
+ const hits=rows.map(p=>({...p,hit:selected(Number(p.n),s),box:signatureSet.has(sig(p.n)),restored:excluded(p.n),last130:last130(Number(p.n))}));
+ return {hits,count:hits.filter(x=>x.hit).length,boxOnly:hits.filter(x=>!x.hit&&x.box).length,restored:hits.filter(x=>x.restored).length,last130:hits.filter(x=>x.last130).length,payout:hits.reduce((v,x)=>v+(x.hit?x.price:0),0)};
 }
 function renderResults(){
  if(!dataset)return;
  const date=$('drawDate').value,operator=$('operator').value,ops=operator==='ALL'?['MAGNUM','TOTO','DAMACAI']:[operator];
  const boards=ops.map(op=>loadedBoards.find(b=>b.op===op&&b.date===date)||null);
  if(!boards.some(Boolean)){$('summary').innerHTML='<p class="warn">Full results are not yet available for the selected date and operator. Select Check latest results or import a JSON backup after the draw.</p>';$('results').innerHTML='';return;}
- let summary='<div class="scroll"><table><thead><tr><th>Operator</th><th>Base set</th><th>Numbers / RM1 cost</th><th>Exact hits/23</th><th>Permutation-only*</th><th>Restored matches</th><th>Simulated payout</th><th>Net</th></tr></thead><tbody>';
+ let summary='<div class="scroll"><table><thead><tr><th>Operator</th><th>Base set</th><th>Numbers / RM1 cost</th><th>Exact hits/23</th><th>Permutation-only*</th><th>First 370 hits</th><th>Final 130 hits</th><th>Simulated payout</th><th>Net</th></tr></thead><tbody>';
  let details='';
  for(let i=0;i<ops.length;i++){
   const b=boards[i],op=ops[i];if(!b){
-   summary+='<tr><td>'+op+'</td><td colspan="7">Awaiting complete results</td></tr>';continue;
+   summary+='<tr><td>'+op+'</td><td colspan="8">Awaiting complete results</td></tr>';continue;
   }
   for(const s of sizes){
    const stat=check(b,s),net=stat.payout-totalSize(s);
-   summary+='<tr'+(s===setSize?' style="background:#2d2a24"':'')+'><td>'+op+'</td><td>'+s.toLocaleString('en-MY')+'</td><td>'+money(totalSize(s))+'</td><td class="match">'+stat.count+'/23</td><td>'+stat.boxOnly+'</td><td>'+stat.restored+'</td><td>'+money(stat.payout)+'</td><td style="color:'+(net>=0?'#a7e4c5':'#f4a9a9')+'">'+money(net)+'</td></tr>';
+   summary+='<tr'+(s===setSize?' style="background:#2d2a24"':'')+'><td>'+op+'</td><td>'+s.toLocaleString('en-MY')+'</td><td>'+money(totalSize(s))+'</td><td class="match">'+stat.count+'/23</td><td>'+stat.boxOnly+'</td><td>'+stat.restored+'</td><td>'+stat.last130+'</td><td>'+money(stat.payout)+'</td><td style="color:'+(net>=0?'#a7e4c5':'#f4a9a9')+'">'+money(net)+'</td></tr>';
   }
   const state=check(b,setSize);
-  details+='<h2>'+op+' · '+b.date+'</h2><p class="muted">Source: '+escape(b.source)+' · Base '+setSize.toLocaleString('en-MY')+' + 370 restored = '+totalSize(setSize).toLocaleString('en-MY')+' included · Straight '+state.count+'/23 · Permutation-only '+state.boxOnly+'/23</p>';
-  details+='<div class="scroll"><table><thead><tr><th>Prize</th><th>Number</th><th>Exact match</th><th>Permutation-only*</th><th>Restored combination</th><th>RM for exact hit</th></tr></thead><tbody>';
-  details+=state.hits.map(row=>'<tr><td>'+row.tier+'</td><td class="num">'+row.n+'</td><td class="'+(row.hit?'match':'miss')+'">'+(row.hit?'✓ HIT':'—')+'</td><td class="'+(!row.hit&&row.box?'extra':'miss')+'">'+(!row.hit&&row.box?'Same digits':'—')+'</td><td>'+(row.restored?'Restored':'—')+'</td><td>'+money(row.hit?row.price:0)+'</td></tr>').join('');
+  details+='<h2>'+op+' · '+b.date+'</h2><p class="muted">Source: '+escape(b.source)+' · Base '+setSize.toLocaleString('en-MY')+' + 370 + 130 = '+totalSize(setSize).toLocaleString('en-MY')+' included · Straight '+state.count+'/23 · Permutation-only '+state.boxOnly+'/23</p>';
+  details+='<div class="scroll"><table><thead><tr><th>Prize</th><th>Number</th><th>Exact match</th><th>Permutation-only*</th><th>Added group</th><th>RM for exact hit</th></tr></thead><tbody>';
+  details+=state.hits.map(row=>'<tr><td>'+row.tier+'</td><td class="num">'+row.n+'</td><td class="'+(row.hit?'match':'miss')+'">'+(row.hit?'✓ HIT':'—')+'</td><td class="'+(!row.hit&&row.box?'extra':'miss')+'">'+(!row.hit&&row.box?'Same digits':'—')+'</td><td>'+(row.restored?'First 370':row.last130?'Final 130':'—')+'</td><td>'+money(row.hit?row.price:0)+'</td></tr>').join('');
   details+='</tbody></table></div>';
  }
- summary+='</tbody></table></div><p class="muted">*Permutation-only matches do not pay on Big straight bets. The total included count equals the RM1-per-number cost per operator. All 370 former exclusions are included in each set; incomplete results are not scored.</p>';
+ summary+='</tbody></table></div><p class="muted">*Permutation-only matches do not pay on Big straight bets. The total included count equals the RM1-per-number cost per operator. All 500 former omissions (370 + 130) are included in each set; incomplete results are not scored.</p>';
  $('summary').innerHTML=summary;$('results').innerHTML=details;
 }
 async function importBackup(e){
