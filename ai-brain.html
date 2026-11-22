@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#140e22"><title>BEAST MODE 4D — AI Brain</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#0e101c;color:#f6f1ff}
+*{box-sizing:border-box}body{max-width:1000px;margin:0 auto;padding:14px 12px 55px;background:radial-gradient(ellipse at top,#302143,#0e101c 60%);min-height:100vh}
+a{color:#e6c6ff}h1{font-size:clamp(1.65rem,4vw,2.25rem);color:#f6ca84;margin:14px 0 5px}h2{font-size:1.1rem;margin:0 0 8px;color:#f5d39e}
+.muted{color:#bdbacb}.small{font-size:.83rem;line-height:1.5}.pill{display:inline-block;font-size:.72rem;background:#45365a;color:#e4d2fa;border-radius:100px;padding:4px 9px;vertical-align:middle}
+.panel{background:#181b2d;border:1px solid #49465b;border-radius:16px;padding:15px;margin:15px 0;box-shadow:0 3px 10px #0003}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+label{display:flex;flex-direction:column;gap:6px;font-size:.8rem;color:#c4bdd5;min-width:0}
+input,textarea,select,button{font:inherit;border:1px solid #655c7c;background:#27273f;color:#f7f4ff;border-radius:10px;padding:10px;max-width:100%}
+input,select,button{min-height:42px}label.wide{flex:1;min-width:190px}
+input[type="url"],input[type="password"]{width:100%}
+button{cursor:pointer;background:#6a4f92;font-weight:600}button:disabled{opacity:.5;cursor:default}
+button.secondary{background:#2f324c;font-weight:500}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid #b88dea}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:8px;margin:10px 0}
+.metric{background:#262941;border:1px solid #454963;border-radius:11px;padding:11px}
+.metric small{color:#b7b6c7;display:block}.metric strong{color:#f2d39f;font-size:1.3rem;display:block;margin-top:4px}
+.samples{display:flex;flex-wrap:wrap;gap:6px}.samples button{font-size:.78rem;background:#302d4b;min-height:37px;padding:7px 10px;font-weight:500}
+#chatLog{display:flex;flex-direction:column;gap:10px;max-height:470px;min-height:150px;overflow:auto;padding:10px 5px;scrollbar-color:#75668a #201e33}
+.bubble{border-radius:14px;padding:11px 12px;max-width:93%;white-space:pre-wrap;line-height:1.5;overflow-wrap:anywhere}
+.bubble.user{align-self:flex-end;background:#54417b}
+.bubble.assistant{align-self:flex-start;background:#2d314a}
+.bubble.system{align-self:center;background:#32303f;font-size:.84rem;color:#cac4d3}
+.bubble .who{display:block;font-size:.69rem;opacity:.78;font-weight:700;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+textarea{width:100%;resize:vertical;min-height:86px}
+.state{min-height:20px;color:#c7bed6;font-size:.83rem}
+.notice{font-size:.8rem;color:#e9bf8b;line-height:1.5}
+summary{cursor:pointer;color:#e5ccff;font-size:.82rem}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.72rem;line-height:1.5;color:#c1bacf;max-height:240px;overflow:auto}
+footer{color:#9993ad;font-size:.78rem;line-height:1.6}
+@media(max-width:500px){label.wide{min-width:100%}.bubble{max-width:100%}}
+</style></head>
+<body>
+<nav><a href="./index.html">← BEAST MODE</a> &nbsp; · &nbsp; <a href="./coverage-mode.html">Coverage Lab</a> &nbsp; · &nbsp; <a href="./ibox-715.html">715 iBOX</a></nav>
+<h1>🧠 BEAST MODE AI Brain <span id="badge" class="pill">Setup required</span></h1>
+<p class="muted">Ask an AI assistant to explain your saved draw history, 715 iBOX groups, historical hot/rare sets, and hypothetical profits or losses. All responses are in English.</p>
+<section class="panel">
+<h2>Secure AI connection</h2>
+<p class="small muted">This page is ready, but ChatGPT is not connected automatically. Deploy your private AI backend first. Never enter an OpenAI API key here — only the separate access token configured on your backend.</p>
+<div class="controls">
+<label class="wide">Backend HTTPS URL <input id="endpoint" type="url" inputmode="url" autocomplete="off" placeholder="https://your-worker.your-subdomain.workers.dev"></label>
+<label class="wide">Private backend access token <input id="accessToken" type="password" autocomplete="off" placeholder="Your own AI access token"></label>
+<button id="saveConfig" type="button">Use connection</button>
+</div>
+<p class="state" id="configStatus" role="status">AI is not connected. Your OpenAI API key belongs only in the backend secrets.</p>
+<p class="notice">The endpoint URL can be remembered on this device. The private access token is held in memory for this page session only and is never written to the browser's saved settings.</p>
+</section>
+<section class="panel">
+<h2>Read-only data overview</h2>
+<div class="controls">
+<label>Operators <select id="operator"><option value="ALL">All three</option><option value="MAGNUM">Magnum</option><option value="TOTO">Sports Toto</option><option value="DAMACAI">Da Ma Cai</option></select></label>
+<label>Recent completed dates <select id="window"><option value="30">Last 30</option><option value="100" selected>Last 100</option><option value="all">All available</option></select></label>
+<button id="reloadData" type="button" class="secondary">Refresh local data</button>
+</div>
+<div class="grid" id="metrics"></div>
+<p id="dataStatus" class="small muted"></p>
+<p id="topSets" class="small muted"></p>
+<details><summary>Preview the data summary that will be sent when you ask a question</summary><pre id="contextPreview"></pre></details>
+</section>
+<section class="panel">
+<h2>Ask AI Brain</h2>
+<div class="samples">
+<button type="button" data-question="Explain my 715 iBOX set coverage and why complete coverage may still lose money.">Explain iBOX coverage</button>
+<button type="button" data-question="Compare the historically most frequent digit groups with their fair-draw reference rates. Is there any evidence of a predictive edge?">Review Hot Sets</button>
+<button type="button" data-question="What can we conclude about low-frequency or Rare Sets from the available history?">Analyze Rare Sets</button>
+<button type="button" data-question="Explain a careful virtual backtest for the next 4D draw using a saved watchlist, including how to avoid look-ahead bias.">Plan a virtual backtest</button>
+</div>
+<div id="chatLog" role="log" aria-live="polite">
+ <div class="bubble system">AI Brain is prepared. Connect a secure backend to receive real AI responses. No draw data is transmitted until you press Send.</div>
+</div>
+<form id="askForm">
+<label for="question">Your question</label>
+<textarea id="question" maxlength="1200" placeholder="Example: Which historical iBOX sets appeared most frequently, and how do they compare with random expectation?"></textarea>
+<div class="controls"><button id="send" type="submit">Send to AI Brain</button><button id="clear" type="button" class="secondary">Clear chat</button></div>
+</form>
+<p class="state" id="chatStatus" role="status"></p>
+<p class="notice">Historical frequencies do not prove future winning probabilities. AI Brain cannot purchase tickets or guarantee lottery winnings. This is a separate API assistant, not your ChatGPT conversation or its memory.</p>
+</section>
+<footer>BEAST MODE 4D · AI Brain v4.41 · English-only interface. The local overview works without AI. Live AI answers require separately deployed backend access and may incur OpenAI API charges. Data source accuracy and bet-provider payouts must be verified before using them.</footer>
+<script>
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id);
+const four=v=>typeof v==='string'&&/^\d{4}$/.test(v);
+const sig=s=>String(s).split('').sort().join('');
+const names={MAGNUM:'Magnum',TOTO:'Sports Toto',DAMACAI:'Da Ma Cai'};
+let backend='',accessToken='',history=[],boards=[],activeContext={};
+function dateOK(d){return /^\d{4}-\d{2}-\d{2}$/.test(String(d||''))}
+function normalize(b,origin){
+ const op=String(b.op||b.operator||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+ const operator=op.includes('MAGNUM')?'MAGNUM':op.includes('TOTO')?'TOTO':op.includes('DAMACAI')||op==='DMC'?'DAMACAI':null;
+ const date=b.date;
+ if(!operator||!dateOK(date))return null;
+ let keys=[];
+ if(Array.isArray(b.keys)&&b.keys.length===23&&b.keys.every(four))keys=b.keys.map(sig);
+ else if(Array.isArray(b.top3)&&b.top3.length===3&&Array.isArray(b.special)&&b.special.length===10&&Array.isArray(b.consolation)&&b.consolation.length===10){
+   const all=[...b.top3,...b.special,...b.consolation];
+   if(!all.every(four))return null;
+   keys=all.map(sig);
+ }else return null;
+ return{date,operator,keys,source:String(origin||b.source||'Stored data').slice(0,80)};
+}
+function readArchive(){
+ const data=[];
+ try{
+  const rows=JSON.parse(localStorage.getItem('b4d-ibox715-hit-history-v1')||'[]');
+  if(Array.isArray(rows))for(const b of rows){const n=normalize(b,'Saved iBOX history');if(n)data.push(n)}
+ }catch(e){console.warn('No compatible saved history')}
+ return data;
+}
+async function refreshData(){
+ $('dataStatus').textContent='Reading saved checked draw results…';
+ const merged=new Map();
+ let archive=readArchive();
+ for(const b of archive)merged.set(b.date+'|'+b.operator,b);
+ try{
+  const response=await fetch('./data/verified-results.json',{cache:'no-store'});
+  if(response.ok){
+   const data=await response.json();
+   if(Array.isArray(data.draws))for(const b of data.draws){
+    const row=normalize(b,'Bundled checked draw archive');
+    if(row&&!merged.has(row.date+'|'+row.operator))merged.set(row.date+'|'+row.operator,row);
+   }
+  }
+ }catch(e){/* offline: local records only */}
+ boards=[...merged.values()].sort((a,b)=>b.date.localeCompare(a.date)||a.operator.localeCompare(b.operator));
+ renderContext();
+}
+function readSavedWatchlist(){
+ try{
+  const value=JSON.parse(localStorage.getItem('b4d-ibox715-watchlist-v1')||'null');
+  if(value&&Array.isArray(value.keys))return{
+   through:String(value.through||''),sample:Number(value.sample)||0,
+   threshold:Number(value.threshold)||0,
+   operators:Array.isArray(value.operators)?value.operators.slice(0,3):[],
+   sets:value.keys.slice(0,75).filter(four)
+  };
+ }catch(e){}
+ return null;
+}
+function buildContext(){
+ const operator=$('operator').value;
+ const subset=boards.filter(b=>operator==='ALL'||b.operator===operator);
+ const limit=$('window').value==='all'?Infinity:Number($('window').value);
+ const dates=[...new Set(subset.map(b=>b.date))].slice(0,limit);
+ const selected=new Set(dates);
+ const observations=subset.filter(b=>selected.has(b.date));
+ const frequency=new Map();
+ for(const b of observations){
+  for(const k of new Set(b.keys))frequency.set(k,(frequency.get(k)||0)+1);
+ }
+ const denom=observations.length;
+ const top=[...frequency].map(([group,hits])=>{
+  const counts={};for(const c of group)counts[c]=(counts[c]||0)+1;
+  const fact=[1,1,2,6,24],permutations=24/Object.values(counts).reduce((v,n)=>v*fact[n],1);
+  const baseline=23*permutations/10000;
+  return{group,hitOperatorDraws:hits,observedRatePct:denom?Number((100*hits/denom).toFixed(2)):0,fairDrawReferencePct:Number((100*baseline).toFixed(2)),permutations};
+ }).sort((a,b)=>b.hitOperatorDraws-a.hitOperatorDraws||a.group.localeCompare(b.group));
+ return {
+  contextLabel:'Local BEAST MODE historical draw summary, not future results',
+  selectedOperator:operator,
+  analyzedOperatorDraws:denom,
+  datesAnalyzed:dates.length,
+  latestDate:dates[0]||null,
+  oldestDate:dates.at(-1)||null,
+  prizePositionsPerCompleteDraw:23,
+  distinctDigitGroups:715,
+  totalOrderedOutcomes:10000,
+  topHistoricalGroups:top.slice(0,20),
+  savedVirtualWatchlist:readSavedWatchlist(),
+  recentBoards:observations.slice(0,9).map(b=>({date:b.date,operator:b.operator,numberGroupKeys:b.keys,source:b.source})),
+  limitations:['Historical fit is not a future winning probability.','Results may not cover all archived draws.','Operator prize rates and rebates are not independently verified.','Many winners are in 24-way sets more often by construction.']
+ };
+}
+function renderContext(){
+ activeContext=buildContext();const d=activeContext;
+ const values=[
+  ['Completed boards',d.analyzedOperatorDraws],['Draw dates',d.datesAnalyzed],
+  ['Digit groups',d.distinctDigitGroups],['Last result',d.latestDate||'Pending']
+ ];
+ $('metrics').innerHTML=values.map(([label,value])=>'<div class="metric"><small>'+label+'</small><strong>'+value+'</strong></div>').join('');
+ $('dataStatus').textContent=d.analyzedOperatorDraws?'Local history is ready to summarize. Your data stays on this device until you send a question.':'No compatible results stored yet. Import or sync verified draws in Coverage Lab first.';
+ $('topSets').textContent=d.topHistoricalGroups.length?
+ 'Most frequent historical groups: '+d.topHistoricalGroups.slice(0,6).map(v=>v.group+' ('+v.hitOperatorDraws+' past operator-draws)').join(', ')+'. These are not predictions.':'No historical groups available for analysis.';
+ $('contextPreview').textContent=JSON.stringify(activeContext,null,2);
+}
+function addBubble(role,content){
+ const bubble=document.createElement('div');
+ bubble.className='bubble '+role;
+ const who=document.createElement('span');who.className='who';who.textContent=role==='assistant'?'AI Brain':role==='user'?'You':'Status';
+ const msg=document.createElement('span');msg.textContent=content;
+ bubble.append(who,msg);$('chatLog').append(bubble);$('chatLog').scrollTop=$('chatLog').scrollHeight;
+}
+function validEndpoint(value){
+ try{const u=new URL(value.trim());return u.protocol==='https:'&&!!u.hostname&&!u.username&&!u.password&&!u.search&&!u.hash?u.origin:null}catch{return null}
+}
+function useConnection(){
+ const url=validEndpoint($('endpoint').value);
+ const token=$('accessToken').value.trim();
+ if(!url){$('configStatus').textContent='Enter a valid HTTPS backend URL.';return}
+ if(token.length<24){$('configStatus').textContent='Enter the separate backend access token (at least 24 characters), not an OpenAI API key.';return}
+ backend=url;accessToken=token;$('accessToken').value='';
+ try{localStorage.setItem('b4d-ai-brain-endpoint-v1',url)}catch{}
+ $('badge').textContent='Backend configured';
+ $('configStatus').textContent='Backend address and access token set for this page session. Connection is verified when you send a question.';
+}
+async function submitQuestion(e){
+ e.preventDefault();
+ const message=$('question').value.trim();
+ if(message.length<2){$('chatStatus').textContent='Please enter a question.';return}
+ if(!backend||!accessToken){$('chatStatus').textContent='Configure a secure backend and access token first.';return}
+ const prior=history.slice(-6);
+ $('question').value='';
+ addBubble('user',message);
+ $('chatStatus').textContent='Contacting AI Brain…';$('send').disabled=true;
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),28000);
+ try{
+  const response=await fetch(backend+'/chat',{
+   method:'POST',
+   headers:{'Content-Type':'application/json','Authorization':'Bearer '+accessToken},
+   body:JSON.stringify({message,history:prior,context:activeContext}),
+   signal:controller.signal
+  });
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw Error(data.error||'AI request failed. Check backend configuration.');
+  if(typeof data.answer!=='string'||!data.answer.trim())throw Error('AI returned an empty reply.');
+  addBubble('assistant',data.answer.trim());
+  history.push({role:'user',content:message},{role:'assistant',content:data.answer.trim().slice(0,1500)});
+  history=history.slice(-8);
+  $('badge').textContent='AI connected';
+  $('chatStatus').textContent='AI response received. Responses are not proof of predictable future draws.';
+ }catch(err){
+  addBubble('system','Unable to complete the AI request: '+(err.name==='AbortError'?'request timed out':err.message));
+  $('chatStatus').textContent='Not connected. Check your backend URL, token, allowed site origin, and API configuration.';
+ }finally{clearTimeout(timer);$('send').disabled=false}
+}
+function init(){
+ try{$('endpoint').value=localStorage.getItem('b4d-ai-brain-endpoint-v1')||''}catch{}
+ $('saveConfig').onclick=useConnection;
+ $('clear').onclick=()=>{history=[];$('chatLog').innerHTML='';addBubble('system','Chat cleared from this page. No data was sent by clearing it.')};
+ $('askForm').addEventListener('submit',submitQuestion);
+ $('operator').onchange=renderContext;$('window').onchange=renderContext;
+ $('reloadData').onclick=refreshData;
+ document.querySelectorAll('[data-question]').forEach(btn=>btn.addEventListener('click',()=>{$('question').value=btn.dataset.question;$('question').focus()}));
+ refreshData();
+}
+init();
+})();
+</script></body></html>
