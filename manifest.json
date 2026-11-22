@@ -1,7 +1,7 @@
 {
-  "name": "BEAST MODE 4D v4.39 — Coverage Lab & 715 iBOX Checker",
+  "name": "BEAST MODE 4D v4.40 — 715 iBOX Hot Set Archive",
   "short_name": "Beast 4D",
-  "description": "BEAST MODE 4D with checked Malaysia 4D results, 715-group iBOX full-coverage simulations with automatic win/no-prize separation, and the existing prediction, history, and Coverage Lab features.",
+  "description": "BEAST MODE 4D 715-group iBOX coverage and automatically saved past draw hit-frequency archive, separate high-frequency and below-cutoff sets, optional virtual next-draw watchlist, checked results, existing predictions and Coverage Lab.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
