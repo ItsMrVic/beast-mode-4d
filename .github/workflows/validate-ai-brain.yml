@@ -1,0 +1,23 @@
+name: Validate BEAST MODE AI Brain
+on:
+  push:
+    paths:
+      - "ai-brain.html"
+      - "ai-backend/**"
+      - "scripts/check-ai-brain.mjs"
+      - ".github/workflows/validate-ai-brain.yml"
+  pull_request:
+    paths:
+      - "ai-brain.html"
+      - "ai-backend/**"
+      - "scripts/check-ai-brain.mjs"
+      - ".github/workflows/validate-ai-brain.yml"
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node scripts/check-ai-brain.mjs
