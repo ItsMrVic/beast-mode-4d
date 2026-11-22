@@ -1,0 +1,22 @@
+name: Validate 715 iBOX coverage
+on:
+  push:
+    paths:
+      - "ibox-715.html"
+      - "data/verified-results.json"
+      - "scripts/check-ibox715.mjs"
+      - ".github/workflows/validate-ibox715.yml"
+  pull_request:
+    paths:
+      - "ibox-715.html"
+      - "data/verified-results.json"
+      - "scripts/check-ibox715.mjs"
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node scripts/check-ibox715.mjs
