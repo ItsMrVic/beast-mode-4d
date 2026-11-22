@@ -1,0 +1,8 @@
+# Never commit live API keys, tokens or backend credentials.
+.dev.vars
+.dev.vars.*
+.env
+.env.*
+node_modules/
+.wrangler/
+dist/
