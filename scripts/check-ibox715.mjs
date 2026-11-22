@@ -48,7 +48,7 @@ const plugin=fs.readFileSync(new URL('../ibox-hot-archive-v440.js',import.meta.u
 new vm.Script(plugin);
 const elements={},defaults={hotThrough:'2026-11-21',hotWindow:'all',hotThreshold:'20',hotSearch:''};
 function ui(id){return elements[id]||(elements[id]={value:defaults[id]||'',textContent:'',innerHTML:'',disabled:false,addEventListener(){},onclick:null});}
-const buttons=['hot','rare','hit','all'].map(hotFilter=>({dataset:{hotFilter},addEventListener(){},setAttribute(){}}));
+const buttons=['top20','hot','rare','hit','all'].map(hotFilter=>({dataset:{hotFilter},addEventListener(){},setAttribute(){}}));
 const memory=new Map(),storage={getItem:k=>memory.get(k)||null,setItem:(k,v)=>memory.set(k,v)};
 const windowStub={B4D_IBOX715_BRIDGE:{
  getGroups:()=>groups,
