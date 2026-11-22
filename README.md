@@ -1,3 +1,15 @@
+# BEAST MODE 4D v4.42 — Optional AI Prediction Review (22 Nov 2026)
+
+- New **AI Prediction Review** toggle, displayed in the main **Predict** and **Oracle / Hot Hand / Deep Learn** screens, with an optional secure backend URL and a separate AI access token. The UI stays **English-only**.
+- When enabled and configured, the app generates the original candidates with the existing algorithms and then asks the secure \`/review\` endpoint to select **0–5 provisional research picks** per operator/mode/date before showing the candidate list. Only the returned candidate IDs appear in the reviewed list. No numbers are fabricated by AI.
+- If the API is not connected, fails or times out, reviewed lists remain **hidden**, with a clear error; users can turn the toggle **OFF** to view originals. This feature defaults to OFF until deliberately enabled. The token is held in memory and must be re-entered after reopening the page.
+- Original outputs, score data, History and Random Control remain unmodified for comparisons; individual reviewed decisions and excluded candidates are saved locally under \`b4d-ai-review-history-v1\`. Rejected numbers are **not deleted**. Cross-operator sniper banners, conviction buys, fusion and dodge/cross-op experimental picks are hidden while strict review is on, to avoid exposing unreviewed alternatives.
+- This is a screen-level research filter, **not** a payout/probability model. LLM opinions and historical-fit scores cannot validate increased odds in a genuinely independent draw. It does not place or block purchases on external betting websites. OpenAI's API and the deployed backend are required for actual AI selection. No model has demonstrated a reliable positive expectation on Malaysian 4D.
+- The existing AI Brain chat remains a separate feature. Backend code in \`ai-backend/worker.js\` now supports a strictly validated \`POST /review\` endpoint using Structured Outputs, and requires the same private Worker authentication as chat.
+- See \`ai-backend/README.md\` for deployment and token setup. Deployment/live Android testing remain unverified.
+
+---
+
 # BEAST MODE 4D v4.41 — AI Brain (22 Nov 2026)
 
 - A new **AI Brain** link in the existing Coverage Lab opens \`ai-brain.html\`; the 715 iBOX checker also links directly to it. All labels, prompts, status messages and AI backend instructions are English-only.
