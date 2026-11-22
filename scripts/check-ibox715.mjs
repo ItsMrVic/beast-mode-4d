@@ -41,3 +41,43 @@ for(const [date,expected] of Object.entries(expectTotal)){
  assert(Number.isFinite(withRebate));
 }
 console.log('PASS: 715 unique groups, 10,000 covered numbers, repeated-digit permutations, and historical prize totals.');
+
+
+// v4.40: verify the separate per-operator/date archive and historical cutoff.
+const plugin=fs.readFileSync(new URL('../ibox-hot-archive-v440.js',import.meta.url),'utf8');
+new vm.Script(plugin);
+const elements={},defaults={hotThrough:'2026-11-21',hotWindow:'all',hotThreshold:'20',hotSearch:''};
+function ui(id){return elements[id]||(elements[id]={value:defaults[id]||'',textContent:'',innerHTML:'',disabled:false,addEventListener(){},onclick:null});}
+const buttons=['hot','rare','hit','all'].map(hotFilter=>({dataset:{hotFilter},addEventListener(){},setAttribute(){}}));
+const memory=new Map(),storage={getItem:k=>memory.get(k)||null,setItem:(k,v)=>memory.set(k,v)};
+const windowStub={B4D_IBOX715_BRIDGE:{
+ getGroups:()=>groups,
+ getBoards:()=>resultArchive.draws.map(d=>({...d,op:d.operator})),
+ getDate:()=>ui('hotThrough').value,
+ getSelectedOps:()=>['MAGNUM','TOTO','DAMACAI']
+}};
+vm.runInNewContext(plugin,{window:windowStub,document:{getElementById:ui,querySelectorAll:()=>buttons},localStorage:storage,console});
+const hot=windowStub.B4D_IBOX_HOT;
+assert(hot,'Hot frequency archive did not initialize');
+assert.equal(hot.archiveCount(),resultArchive.draws.length,'Incomplete/duplicate saved archive');
+assert.equal(hot.study().n,resultArchive.draws.length);
+assert.equal(hot.study().rows.length,715);
+assert.equal(hot.study().hot.length,0,'Must not shortlist before 30 operator-draws');
+assert(memory.has('b4d-ibox715-hit-history-v1'),'Archive was not persisted');
+const sampleBoard=resultArchive.draws.find(d=>d.operator==='TOTO');
+const historical=Array.from({length:31},(_,i)=>({
+ op:'TOTO',date:'2026-10-'+String(i+1).padStart(2,'0'),
+ top3:i<9?['1234',sampleBoard.top3[1],sampleBoard.top3[2]]:sampleBoard.top3,
+ special:sampleBoard.special,consolation:sampleBoard.consolation,
+ source:'Regression test'
+}));
+hot.ingest(historical);
+assert.equal(hot.archiveCount(),resultArchive.draws.length+31);
+hot.ingest(historical);
+assert.equal(hot.archiveCount(),resultArchive.draws.length+31,'Repeated draw ingestion double-counted records');
+ui('hotThrough').value='2026-10-31';
+assert.equal(hot.study().n,31,'Analysis included future results beyond selected end date');
+assert.equal(hot.study().rows.length,715);
+const saved=JSON.parse(memory.get('b4d-ibox715-hit-history-v1'));
+assert.equal(saved.length,resultArchive.draws.length+31,'Persisted archive did not capture new draws');
+console.log('PASS: persistent deduplicated hot-set archive, 30-draw minimum, and historical date cutoff.');
