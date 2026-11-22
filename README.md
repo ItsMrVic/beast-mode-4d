@@ -5,6 +5,7 @@
 - Draw-date / operator aware: reads saved same-origin BEAST MODE results, bundled checked history, optionally imports JSON backups, and queries the existing 4dlivetoday checked-result endpoint while open/on return. No result is fabricated. A group without a matching prize stays **pending** until every selected operator has a complete 23-prize board.
 - Green **Winning** groups list matching prize number(s), tier(s), operator(s), permutations and gross hypothetical payout. **No prize** is shown only when all selected results are complete; all groups are individually searchable and paginated.
 - Defaults are the user-supplied iLotto4D BIG rates RM3800 / RM1250 / RM750 / RM210 / RM70 per RM1 straight stake. iBOX estimates divide by the group's permutation count and multiply by selected stake; identical-digit groups are treated as 1-way straight entries. Optional 5% rebate is **off by default** because BK8/iBOX eligibility is unconfirmed. Results show aggregate gross, stake and net only when every selected result is complete.
+- Regression tests: `node scripts/check-ibox715.mjs` verifies all 715 groups and 10,000 ordered numbers, the five permutation counts, and the combined 18/21 Nov 2026 payouts from the checked archive. GitHub Actions also runs it when related files change.
 - This screen does not place bets. Full coverage is not a prediction and cannot ensure a profit; results, platform rounding and ticket eligibility must be confirmed with the provider. Android/PWA device testing remains necessary.
 
 ---
