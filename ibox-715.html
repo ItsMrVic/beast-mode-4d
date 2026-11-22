@@ -39,7 +39,7 @@ th,td{text-align:left;padding:8px 6px;border-bottom:1px solid #393a50}th{color:#
 </head>
 <body>
 <nav><a href="./index.html">← BEAST MODE</a> &nbsp; · &nbsp; <a href="./coverage-mode.html">Coverage Lab</a></nav>
-<h1>🐉 715 iBOX Coverage <span class="pill">v4.39</span></h1>
+<h1>🐉 715 iBOX Coverage <span class="pill">v4.40</span></h1>
 <p class="muted">One unique digit-multiset per set, covering every 4-digit outcome including leading zeroes. <b>This is a full-coverage simulation, not a prediction.</b></p>
 <section class="panel">
 <h2>Draw &amp; payout settings</h2>
@@ -70,6 +70,36 @@ th,td{text-align:left;padding:8px 6px;border-bottom:1px solid #393a50}th{color:#
 <div class="summary" id="metrics"></div>
 <div id="perOperator"></div>
 <p id="missing" class="notice" role="status"></p>
+</section>
+<section class="panel" id="hotArchive">
+<h2>🔥 Historical Hot Set Archive <span class="pill">v4.40</span></h2>
+<p class="muted">Each checked, complete operator-draw is archived once on this phone. Winning digit sets are collected automatically across historical results, while all other sets remain below the hit-frequency cutoff. Use the results for research or a <b>virtual next-draw watchlist</b>, not as guaranteed winning numbers.</p>
+<div class="controls">
+<label>Study results through <input type="date" id="hotThrough"></label>
+<label>Recent draw dates <select id="hotWindow"><option value="30">Last 30 available dates</option><option value="100" selected>Last 100 available dates</option><option value="300">Last 300 available dates</option><option value="all">All historical dates</option></select></label>
+<label>Historical hit-rate cutoff (%) <input id="hotThreshold" type="number" min="0" max="100" step="0.5" value="20"></label>
+<label>Find set/permutation <input id="hotSearch" inputmode="numeric" placeholder="e.g. 5117" maxlength="4"></label>
+</div>
+<p class="notice">A historical 20% hit rate is <b>not</b> a 20% chance of winning the next draw. This rate is calculated as the number of past completed operator-draws containing the set divided by the number of completed operator-draws studied. Group size affects the normal hit frequency: a 24-way group covers 24 times as many outcomes as a single-number group.</p>
+<p id="hotStatus" class="status" role="status">Loading archived results…</p>
+<div class="summary" id="hotMetrics"></div>
+<p id="hotWarning" class="notice" role="status"></p>
+<div class="filters" role="group" aria-label="Historical match filters">
+<button data-hot-filter="hot" aria-pressed="true">🔥 High frequency</button>
+<button data-hot-filter="rare" aria-pressed="false">🧊 Below cutoff</button>
+<button data-hot-filter="hit" aria-pressed="false">✅ Ever matched</button>
+<button data-hot-filter="all" aria-pressed="false">All 715 sets</button>
+</div>
+<div class="controls">
+<button id="hotSave" type="button">💾 Save research watchlist</button>
+<button id="hotDownload" type="button">⬇ Export history CSV</button>
+</div>
+<p id="hotSaved" class="muted" role="status"></p>
+<p id="hotListInfo" class="muted"></p>
+<div id="hotList" class="numbers"></div>
+<div id="hotPagination" class="controls" style="justify-content:center;margin-top:12px">
+<button id="hotPrev">← Prev</button><span id="hotPageInfo"></span><button id="hotNext">Next →</button>
+</div>
 </section>
 <section class="panel">
 <h2>715 digit sets — automatically separated</h2>
@@ -113,6 +143,7 @@ function makeGroups(){
 }
 const GROUPS=makeGroups();
 let boards=new Map(),filter='winning',page=0,filterRows=[],onlineMessage='';
+window.B4D_IBOX715_BRIDGE={getGroups:()=>GROUPS,getBoards:()=>[...boards.values()],getDate:()=>$('drawDate').value,getSelectedOps:()=>OPS[$('operator').value]||OPS.ALL};
 function opName(v){
  const s=String(v||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
  if(s.includes('MAGNUM'))return'MAGNUM';
@@ -150,6 +181,7 @@ function collect(raw,source,priority){
  return out;
 }
 function integrate(list){
+ if(window.B4D_IBOX_HOT)window.B4D_IBOX_HOT.ingest(list);
  for(const b of list){
   const k=b.date+'|'+b.op,old=boards.get(k);
   if(!old||b.priority>=old.priority)boards.set(k,b);
@@ -242,6 +274,7 @@ function metric(label,value,extraClass){
  return '<div class="metric"><small>'+esc(label)+'</small><b class="'+(extraClass||'')+'">'+esc(value)+'</b></div>';
 }
 function render(){
+ if(window.B4D_IBOX_HOT)window.B4D_IBOX_HOT.render();
  const data=assess();
  if(!data){
   $('sourceStatus').textContent='Enter valid non-negative payout rates, rebate 0–100%, and a positive stake.';
@@ -325,4 +358,5 @@ async function init(){
 init().catch(e=>{$('sourceStatus').textContent='Unable to load iBOX Coverage: '+e.message;console.error(e)});
 })();
 </script>
+<script src="./ibox-hot-archive-v440.js?v=440"></script>
 </body></html>
