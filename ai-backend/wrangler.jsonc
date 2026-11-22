@@ -1,0 +1,16 @@
+{
+  "name": "beast-mode-ai-brain",
+  "main": "worker.js",
+  "compatibility_date": "2026-11-01",
+  "workers_dev": true,
+  "vars": {
+    "ALLOWED_ORIGIN": "https://itsmrvic.github.io",
+    "OPENAI_MODEL": "gpt-5.4-mini"
+  },
+  "secrets": {
+    "required": [
+      "OPENAI_API_KEY",
+      "BEAST_AI_ACCESS_TOKEN"
+    ]
+  }
+}
