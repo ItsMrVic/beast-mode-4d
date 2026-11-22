@@ -1,3 +1,14 @@
+# BEAST MODE 4D v4.41 — AI Brain (22 Nov 2026)
+
+- A new **AI Brain** link in the existing Coverage Lab opens \`ai-brain.html\`; the 715 iBOX checker also links directly to it. All labels, prompts, status messages and AI backend instructions are English-only.
+- AI Brain provides a read-only summary of local 715 iBOX hit-history plus checked bundled results, selected by operator and available history window. It offers an explicit context preview so users can inspect what will be sent.
+- The separate chat page does not connect to the current ChatGPT account or its memory. Users must deploy the personal Cloudflare Worker in \`ai-backend/worker.js\` with their **own OpenAI API key stored as a Worker secret**, set an additional independent access token and the permitted app origin, and configure that Worker URL on the AI Brain page. API billing is independent of ChatGPT.
+- The UI does not send draw data automatically: it transmits a capped context only after the user clicks Send. The Worker validates requests, requires an access token, allows only one configured HTTPS Origin, bounds request size, uses the Responses API with \`store:false\` and never returns internal error details or API keys. The browser never stores the backend access token persistently.
+- This is an assistant for historical research and payoff explanations, **not** a trading or betting agent. It cannot buy tickets or establish an edge over independently random draws. The existing 16 prediction methods, saved tickets, results and archive remain unchanged.
+- **Important:** The code is committed to GitHub, but live AI is not connected until the user deploys their own secure backend and configures its secrets and endpoint. Android/iPhone browser testing and external hosting deployment are unverified. See \`ai-backend/README.md\`.
+
+---
+
 # BEAST MODE 4D v4.40 — Historical 715 iBOX Hit-Frequency Archive (22 Nov 2026)
 
 - **New research section within the 715 iBOX Checker:** each complete operator-draw is normalized into the 23 prize positions, converted to sorted-digit group keys, and saved once per draw date + operator in the device's local storage. Duplicate refreshes do not inflate the totals; corrected complete results replace earlier data for the same operator and date.
