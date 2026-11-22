@@ -53,3 +53,12 @@ Do not commit \`.dev.vars\`, \`.env\`, secret tokens, logs containing headers, o
 ## Validation
 
 The repository includes \`scripts/check-ai-brain.mjs\` which checks the Worker authentication gate, origin restriction, request-size cap, response mapping and \`store:false\` behavior against a mocked OpenAI response, without spending API credits. Use \`node scripts/check-ai-brain.mjs\` on Node 22+.
+
+## Optional v4.42 AI Prediction Review
+
+After deploying the Worker and secrets for AI Brain, open the main **Predict** tab or **Oracle → Hot Hand / Deep Learn**. Enable **AI Prediction Review**, enter the same Worker origin and **separate access token**, and generate a prediction. The app will use \`POST /review\` to ask the model to compare only the numbers the selected engine already generated.
+
+**The review is not live until the backend has been deployed and configured.** The browser never stores the access token, and the OpenAI API key must remain a Worker secret. The review UI intentionally shows no shortlisted numbers if the endpoint is unreachable: toggle review OFF to see original engine outputs.
+
+Reviews are date-locked; only data with historical dates before the target draw is passed. A strict Structured Outputs schema returns up to five candidates from the original list. Original and excluded numbers are saved separately for audit and evaluation. Random Control is not filtered, preserving a meaningful benchmark. AI cannot know which fair-draw numbers are more likely to win, and the screen does not buy or prohibit buying tickets on any third-party site.
+
