@@ -44,6 +44,7 @@ function connect(){
  const candidate=(document.getElementById('reviewToken')?.value||'').trim();
  if(!url||candidate.length<24){const el=document.getElementById('reviewSettingsStatus');if(el)el.textContent='Enter the secure backend HTTPS origin and your separate 24+ character access token.';return}
  backend=url;token=candidate;document.getElementById('reviewToken').value='';
+ for(const [id,entry] of states)if(entry.status==='needs-setup'||entry.status==='error')states.delete(id);
  try{localStorage.setItem(ENDPOINT,url)}catch(e){}
  if(typeof render==='function')render();
 }
