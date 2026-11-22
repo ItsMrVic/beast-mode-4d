@@ -1,7 +1,7 @@
 {
-  "name": "BEAST MODE 4D v4.40 — 715 iBOX Hot Set Archive",
+  "name": "BEAST MODE 4D v4.41 — AI Brain and Coverage Lab",
   "short_name": "Beast 4D",
-  "description": "BEAST MODE 4D 715-group iBOX coverage and automatically saved past draw hit-frequency archive, separate high-frequency and below-cutoff sets, optional virtual next-draw watchlist, checked results, existing predictions and Coverage Lab.",
+  "description": "BEAST MODE 4D with AI Brain English-language interface (requires secure personal backend), complete draw history review, 715 iBOX full coverage and historical hit-frequency archive; no guaranteed predictions.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
