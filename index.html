@@ -461,6 +461,7 @@ body[data-festival="christmas"] .header{background:linear-gradient(180deg,rgba(2
 </style>
 
 <link rel="stylesheet" href="./festive-engine-v432.css?v=435">
+<script src="./ai-prediction-review-v442.js?v=442"></script>
 </head>
 <body>
 
@@ -1369,6 +1370,7 @@ function renderPredict(){
   const todayZodiac=getZodiacDay(new Date());
   const mantra=getTodayMantra();
   const shichen=getCurrentShichen();
+  h+=window.B4D_REVIEW?window.B4D_REVIEW.controls():'';
   
   h+=`<div style="background:linear-gradient(135deg,rgba(220,38,38,0.08),rgba(245,146,0,0.06));border:1px solid rgba(220,38,38,0.2);border-radius:12px;padding:10px 12px;margin-bottom:10px">
     <div style="display:flex;align-items:center;gap:10px">
@@ -1463,7 +1465,7 @@ function renderPredict(){
     const tDay=document.getElementById('tDay')?.value||'Sat';
     
     // SNIPER MODE: Cross-operator hot numbers (show only once on first operator)
-    if(activeOp===0&&Object.keys(lastResults).length>=2){
+    if(activeOp===0&&!window.B4D_REVIEW?.enabled()&&Object.keys(lastResults).length>=2){
       const crossOp=crossOperatorFusion(lastResults);
       if(crossOp.playAllOps.length>0){
         const opC={MAGNUM:'#D4A017',TOTO:'#DC2626',DAMACAI:'#2563EB'};
@@ -1494,7 +1496,10 @@ function renderPredict(){
     h+=`<div class="card" style="border-color:var(--border);font-size:10px;line-height:1.5;color:var(--dim2)">🔬 <b>Research mode:</b> Pattern index /100 is NOT winning probability. Exact 4D chance is 0.01% for first prize, approximately 0.23% across 23 distinct Big-prize results. No validated advantage over random selection.</div>`;
     h+=`<div class="section-title" style="color:${op.color}">🏆 ${op.name} — Predictions <span style="font-size:9px;color:var(--dim2)">(${tDay})</span></div>`;
     
-    const predsConf=res.predsWithConf||res.predictions.slice(0,10).map(([n,s])=>({num:n,score:s,confidence:s}));
+    const originalPredsConf=res.predsWithConf||res.predictions.slice(0,10).map(([n,s])=>({num:n,score:s,confidence:s}));
+    const reviewDate=nextTargetDateMYT(tDay);
+    const predsConf=window.B4D_REVIEW?window.B4D_REVIEW.filter('PREDICT',op.name,reviewDate,originalPredsConf):originalPredsConf;
+    if(window.B4D_REVIEW)h+=window.B4D_REVIEW.banner('PREDICT',op.name,reviewDate,originalPredsConf);
     predsConf.slice(0,10).forEach((pred,i)=>{
       const num=pred.num,score=pred.score,conf=pred.confidence;
       const isTop=i<3;const pct=Math.round((score/maxS)*100);
@@ -8855,7 +8860,7 @@ function renderOracleBody(){
   
   // 🎯 ORACLE RESEARCH MATCH — cross-operator consensus numbers
   const snipers=computeOracleSniper();
-  if(snipers.length>0){
+  if(snipers.length>0&&!window.B4D_REVIEW?.enabled()){
     h+=`<div style="background:linear-gradient(135deg,rgba(255,60,60,0.15),rgba(255,165,0,0.08));border:2px solid #ff6633;border-radius:12px;padding:14px;margin-bottom:14px;box-shadow:0 4px 16px rgba(255,102,51,0.2)">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
         <div style="font-size:28px">🎯</div>
@@ -8971,7 +8976,11 @@ function renderOracleBody(){
 
       // Oracle Picks (Top 3 — engines rank from full pool, output best 3)
       h+=`<div style="font-size:8px;color:var(--dim3);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">🎡 Oracle Picks</div>`;
-      res.predictions.slice(0,3).forEach((p,i)=>{
+      const oracleDate=nextTargetDateMYT(selectedOracleDay);
+      const originalOraclePicks=res.predictions.slice(0,3).map(p=>({...p,score:Number(p.strength)||0}));
+      const oraclePicks=window.B4D_REVIEW?window.B4D_REVIEW.filter('ORACLE',opName,oracleDate,originalOraclePicks):originalOraclePicks;
+      if(window.B4D_REVIEW)h+=window.B4D_REVIEW.banner('ORACLE',opName,oracleDate,originalOraclePicks);
+      oraclePicks.forEach((p,i)=>{
         const pct=Math.round((p.strength/p.maxStrength)*100);
         const strengthColor=pct>=75?'#22c55e':pct>=50?'#f59e0b':'#888';
         const dayBadge=p.dayCount>=3
@@ -8991,7 +9000,7 @@ function renderOracleBody(){
       });
 
       // P4: Operator Dodge Variants
-      if(res.dodgeVariants&&res.dodgeVariants.length>0){
+      if(res.dodgeVariants&&res.dodgeVariants.length>0&&!window.B4D_REVIEW?.enabled()){
         h+=`<div style="margin-top:12px;padding:10px;background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.2);border-radius:8px">`;
         h+=`<div style="font-size:8px;color:#ef4444;font-weight:800;margin-bottom:3px;text-transform:uppercase;letter-spacing:0.5px">🎰 Operator Dodge Variants</div>`;
         h+=`<div style="font-size:8px;color:var(--dim3);margin-bottom:8px;line-height:1.4">No evidence of operator manipulation; cold-digit variants are hypothetical. These swaps are exploratory only; they have no demonstrated winning advantage.</div>`;
@@ -9017,7 +9026,7 @@ function renderOracleBody(){
       }
 
       // Cross-operator migration candidates
-      if(res.crossOp&&res.crossOp.candidates.length>0){
+      if(res.crossOp&&res.crossOp.candidates.length>0&&!window.B4D_REVIEW?.enabled()){
         const otherNames=(['MAGNUM','TOTO','DAMACAI'].filter(n=>n!==opName)).join(' & ');
         h+=`<div style="margin-top:12px;padding:10px;background:rgba(255,165,0,0.05);border:1px solid rgba(255,165,0,0.25);border-radius:8px">`;
         h+=`<div style="font-size:8px;color:#f59e0b;font-weight:800;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px">🔀 Cross-Op Migration (from ${otherNames})</div>`;
@@ -9580,7 +9589,8 @@ function renderEngines(){
   const deepActive=engineMode==='deeplearn';
   
   // Mode switcher at top
-  let h=`<div style="display:flex;gap:6px;margin-bottom:14px;background:#0a0a15;border:1px solid #1a1a3a;border-radius:12px;padding:5px">
+  let h=window.B4D_REVIEW?window.B4D_REVIEW.controls():'';
+  h+=`<div style="display:flex;gap:6px;margin-bottom:14px;background:#0a0a15;border:1px solid #1a1a3a;border-radius:12px;padding:5px">
     <button onclick="setEngineMode('oracle')" style="flex:1;background:${oracleActive?'linear-gradient(135deg,#8b5cf6,#ec4899)':'transparent'};border:none;color:${oracleActive?'#fff':'var(--dim2)'};padding:12px 8px;border-radius:8px;cursor:pointer;font-family:inherit;transition:all 0.2s">
       <div style="font-size:11px;font-weight:800;letter-spacing:1.2px">🔮 ORACLE</div>
       <div style="font-size:8px;margin-top:2px;opacity:0.85">Multi-window comparison</div>
@@ -9643,7 +9653,11 @@ function renderEngines(){
       }
       h+=`<div style="font-size:8px;color:var(--dim2);margin-bottom:8px">Analyzed ${res.learnedFrom} past top-3 winners across ${res.drawsAnalyzed} draws · hot digits: <b style="color:${c}">${res.hotDigits.join(' ')}</b> · common sum: ${res.commonSum}</div>`;
       h+=`<div style="display:flex;flex-direction:column;gap:6px">`;
-      res.top5.forEach((p,i)=>{
+      const deepDate=nextTargetDateMYT(deepSelectedDay);
+      const originalDeepPicks=res.top5.map(p=>({...p,score:Number(p.score)||0}));
+      const deepPicks=window.B4D_REVIEW?window.B4D_REVIEW.filter('DEEPLEARN',opN,deepDate,originalDeepPicks):originalDeepPicks;
+      if(window.B4D_REVIEW)h+=window.B4D_REVIEW.banner('DEEPLEARN',opN,deepDate,originalDeepPicks);
+      deepPicks.forEach((p,i)=>{
         h+=`<div style="display:flex;align-items:center;gap:10px;background:#12122a;border-radius:8px;padding:8px 10px">
           <div style="font-size:11px;font-weight:900;color:${c};min-width:22px">#${i+1}</div>
           <div style="font-family:monospace;font-size:20px;font-weight:900;color:${c};letter-spacing:3px">${p.num}</div>
@@ -9663,7 +9677,7 @@ function renderEngines(){
   
   // FUSION indicator banner if any fusion picks exist
   const fusionPicks=computeFusionPicks();
-  if(fusionPicks.length>0){
+  if(fusionPicks.length>0&&!window.B4D_REVIEW?.enabled()){
     h+=`<div style="background:linear-gradient(135deg,rgba(234,179,8,0.18),rgba(250,204,21,0.08));border:1px solid rgba(234,179,8,0.45);border-radius:10px;padding:12px;margin-bottom:14px">
       <div style="display:flex;align-items:center;gap:10px">
         <div style="font-size:24px">💎</div>
@@ -9681,7 +9695,7 @@ function renderEngines(){
   
   // 🎯 CONVICTION BOARD — top picks ranked by cross-engine agreement (v4.8)
   const convictionPicks=computeConvictionScores();
-  if(convictionPicks.length>0){
+  if(convictionPicks.length>0&&!window.B4D_REVIEW?.enabled()){
     const top10=convictionPicks.slice(0,10);
     h+=`<div style="background:linear-gradient(135deg,rgba(34,197,94,0.10),rgba(168,85,247,0.06));border:1px solid rgba(34,197,94,0.35);border-radius:12px;padding:12px;margin-bottom:14px">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
@@ -9786,7 +9800,7 @@ function renderHotHandBody(){
   if(lastHotHandResults){
     // 🎯 HOT HAND SNIPER — cross-lane consensus (MAGNUM + TOTO+DMC agree)
     const hhSnipers=computeHotHandSniper();
-    if(hhSnipers.length>0){
+    if(hhSnipers.length>0&&!window.B4D_REVIEW?.enabled()){
       h+=`<div style="background:linear-gradient(135deg,rgba(255,60,60,0.15),rgba(255,165,0,0.08));border:2px solid #ff6633;border-radius:12px;padding:14px;margin-bottom:14px;box-shadow:0 4px 16px rgba(255,102,51,0.2)">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
           <div style="font-size:28px">🎯</div>
@@ -9872,7 +9886,7 @@ function renderHotHandBody(){
     // TOTO+DMC pooled lane
     if(lastHotHandResults.toto){h+=renderHotHandLane('🔴 SPORTS TOTO (independent)','#dc2626',lastHotHandResults.toto,lastHotHandResults.fusionByOperator?.TOTO||[]);}
     if(lastHotHandResults.damacai){h+=renderHotHandLane('🔵 DA MA CAI (independent)','#2563eb',lastHotHandResults.damacai,lastHotHandResults.fusionByOperator?.DAMACAI||[]);}
-    if(lastHotHandResults.totoDmc){h+=`<details style="font-size:10px;color:var(--dim2)"><summary>Research only: TOTO + DAMACAI pooled sample (not used for picks)</summary>`+renderHotHandLane('COMBINED — DIAGNOSTIC ONLY','#94a3b8',lastHotHandResults.totoDmc,[])+`</details>`;}
+    if(lastHotHandResults.totoDmc&&!window.B4D_REVIEW?.enabled()){h+=`<details style="font-size:10px;color:var(--dim2)"><summary>Research only: TOTO + DAMACAI pooled sample (not used for picks)</summary>`+renderHotHandLane('COMBINED — DIAGNOSTIC ONLY','#94a3b8',lastHotHandResults.totoDmc,[])+`</details>`;}
   }else{
     h+=`<div style="background:#0a0a15;border:1px dashed #2a2a4a;border-radius:10px;padding:24px;text-align:center">
       <div style="font-size:32px;margin-bottom:8px">🎯</div>
@@ -9904,7 +9918,12 @@ function renderHotHandLane(title,color,result,fusionNums){
     
     <div style="font-size:9px;color:var(--dim3);margin-bottom:6px;letter-spacing:0.5px">🔥 HOT PICKS</div>`;
   
-  result.picks.slice(0,3).forEach((p,i)=>{
+  const reviewOp=title.includes('MAGNUM')?'MAGNUM':title.includes('TOTO')?'TOTO':title.includes('DA MA CAI')?'DAMACAI':null;
+  const hotDate=nextTargetDateMYT(localStorage.getItem('b4d_hotHandDay')||'Wed');
+  const originalHotPicks=result.picks.slice(0,3).map(p=>({...p,score:Number(p.stars)||0}));
+  const hotPicks=window.B4D_REVIEW&&reviewOp?window.B4D_REVIEW.filter('HOTHAND',reviewOp,hotDate,originalHotPicks):originalHotPicks;
+  if(window.B4D_REVIEW&&reviewOp)h+=window.B4D_REVIEW.banner('HOTHAND',reviewOp,hotDate,originalHotPicks);
+  hotPicks.forEach((p,i)=>{
     const isFusion=fusionNums.includes(p.num);
     const starStr='★'.repeat(p.stars)+'☆'.repeat(3-p.stars);
     h+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:${isFusion?'linear-gradient(90deg,rgba(234,179,8,0.18),rgba(250,204,21,0.05))':'#0a0a15'};border:${isFusion?'2px solid #eab308':'1px solid #1a1a3a'};border-radius:8px;margin-bottom:4px">
