@@ -10,6 +10,7 @@ on:
   pull_request:
     paths:
       - "ibox-715.html"
+      - "ibox-hot-archive-v440.js"
       - "data/verified-results.json"
       - "scripts/check-ibox715.mjs"
 jobs:
