@@ -1,7 +1,7 @@
 {
-  "name": "BEAST MODE 4D v4.38 — Coverage Lab & Live Results",
+  "name": "BEAST MODE 4D v4.39 — Coverage Lab & 715 iBOX Checker",
   "short_name": "Beast 4D",
-  "description": "BEAST MODE 4D with automatically refreshed, validated Malaysia 4D results for Magnum, Sports Toto and Da Ma Cai, offline archive, five selectable base sets 5000/6000/7000/8000/9500 plus all 500 original omissions (370 repeated-digit combinations and final 130) in each; the largest covers all 10000 combinations; Big and editable Small simulations plus screenshot-based 4A/4B/4C/4E straight-bet payout, profit/loss, and combined-bet comparisons, predictions and purchased-number tracker. Verify prize claims with official operators. Includes Magnum+Toto, Toto+Da Ma Cai, Magnum+Da Ma Cai, and combined operator profit/loss calculations.",
+  "description": "BEAST MODE 4D with checked Malaysia 4D results, 715-group iBOX full-coverage simulations with automatic win/no-prize separation, and the existing prediction, history, and Coverage Lab features.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
