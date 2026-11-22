@@ -1,3 +1,14 @@
+# BEAST MODE 4D v4.39 — 715 iBOX Coverage Checker (22 Nov 2026)
+
+- The existing **Coverage Lab** now links to a dedicated **715 iBOX Checker** (`ibox-715.html`). This is a new simulation view and does **not** change the 16 prediction methods, History, stored bets, or earlier Coverage Lab.
+- Generates all 715 unique sorted-digit families locally (705 groups with >1 permutation and 10 identical-digit straight groups). Validates that each group is unique and all groups collectively cover 10,000 ordered 4-digit numbers, including leading zeros.
+- Draw-date / operator aware: reads saved same-origin BEAST MODE results, bundled checked history, optionally imports JSON backups, and queries the existing 4dlivetoday checked-result endpoint while open/on return. No result is fabricated. A group without a matching prize stays **pending** until every selected operator has a complete 23-prize board.
+- Green **Winning** groups list matching prize number(s), tier(s), operator(s), permutations and gross hypothetical payout. **No prize** is shown only when all selected results are complete; all groups are individually searchable and paginated.
+- Defaults are the user-supplied iLotto4D BIG rates RM3800 / RM1250 / RM750 / RM210 / RM70 per RM1 straight stake. iBOX estimates divide by the group's permutation count and multiply by selected stake; identical-digit groups are treated as 1-way straight entries. Optional 5% rebate is **off by default** because BK8/iBOX eligibility is unconfirmed. Results show aggregate gross, stake and net only when every selected result is complete.
+- This screen does not place bets. Full coverage is not a prediction and cannot ensure a profit; results, platform rounding and ticket eligibility must be confirmed with the provider. Android/PWA device testing remains necessary.
+
+---
+
 # BEAST MODE 4D v4.38 — Coverage Lab (15 Nov 2026)
 
 - New **Coverage Lab** button on the app home screen opens `coverage-mode.html` as a separate phone-friendly read-only mode; original prediction algorithms, history and ticket ledger remain unchanged.
