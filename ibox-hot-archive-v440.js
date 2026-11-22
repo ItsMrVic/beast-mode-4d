@@ -13,7 +13,7 @@ const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
 const pct=n=>(n*100).toFixed(2)+'%';
 const groups=bridge.getGroups(),groupsByKey=new Map(groups.map(g=>[g.key,g]));
 const archive=new Map();
-let savedCount=0,storageMessage='',statRows=[],currentSummary=null,filter='hot',page=0,watchlist=null;
+let savedCount=0,storageMessage='',statRows=[],currentSummary=null,filter='top20',page=0,watchlist=null;
 const validDate=d=>typeof d==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(d);
 const keyOf=e=>e.date+'|'+e.op;
 function fromBoard(b){
@@ -74,7 +74,7 @@ function sample(){
  const n=observations.length;
  const rows=groups.map(g=>{
   const hit=hits.get(g.key),observed=n?hit.drawHits/n:0,baseline=23*g.perms/10000;
-  return{key:g.key,perms:g.perms,hitDraws:hit.drawHits,prizePositions:hit.prizePositions,observed,baseline,dates:hit.dates.slice(0,8),hot:n>=30&&observed*100>=threshold};
+  return{key:g.key,perms:g.perms,hitDraws:hit.drawHits,prizePositions:hit.prizePositions,observed,baseline,dates:hit.dates.slice(0,8),hot:n>=30&&hit.drawHits>0&&observed*100>=threshold};
  });
  rows.sort((a,b)=>b.observed-a.observed||b.hitDraws-a.hitDraws||a.key.localeCompare(b.key));
  return{ops,through,limit,dates,boards:observations,threshold,rows,hot:rows.filter(r=>r.hot),n};
@@ -93,11 +93,11 @@ function render(){
  'Historical hit frequency is hits ÷ completed operator-draws, not the chance of winning the next draw. A 24-way set covers more outcomes than a 4-way set, so raw hit rates are not directly comparable. The fair-draw reference rate is shown for each set.';
  $('hotSave').disabled=!s.hot.length||s.n<30;
  $('hotDownload').disabled=noHistory;
- const selected=filter==='hot'?s.rows.filter(r=>r.hot):filter==='rare'?s.rows.filter(r=>!r.hot):filter==='hit'?s.rows.filter(r=>r.hitDraws>0):s.rows;
+ const selected=filter==='top20'?s.rows.filter(r=>r.hitDraws>0).slice(0,20):filter==='hot'?s.rows.filter(r=>r.hot):filter==='rare'?s.rows.filter(r=>!r.hot):filter==='hit'?s.rows.filter(r=>r.hitDraws>0):s.rows;
  const search=$('hotSearch').value.replace(/\D/g,'').slice(0,4);
  const rows=selected.filter(r=>!search||(search.length===4?r.key===sig(search):r.key.includes(search)));
  const pages=Math.max(1,Math.ceil(rows.length/60));page=Math.min(page,pages-1);
- $('hotListInfo').textContent=rows.length+' sets · '+(filter==='hot'?'high-frequency study group':filter==='rare'?'below cutoff or insufficient history':filter==='hit'?'ever matched a prize':'all 715')+'.';
+ $('hotListInfo').textContent=rows.length+' sets · '+(filter==='top20'?'highest observed hit counts (historical, not predicted)':filter==='hot'?'above historical cutoff':filter==='rare'?'below cutoff or insufficient history':filter==='hit'?'ever matched a prize':'all 715')+'.';
  $('hotList').innerHTML=rows.slice(page*60,(page+1)*60).map(r=>
  '<article class="group '+(r.hot?'win':r.hitDraws?'':'no-prize')+'"><div class="name">'+r.key+'</div>'+
  '<div class="sub">'+r.perms+'-way · '+r.hitDraws+'/'+s.n+' draw boards · '+r.prizePositions+' prize positions</div>'+
