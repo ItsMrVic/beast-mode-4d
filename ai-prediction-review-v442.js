@@ -71,6 +71,17 @@ function filter(mode,operator,targetDate,picks){
  const allowed=new Set(Array.isArray(entry.keep)?entry.keep:[]);
  return rows.filter(r=>allowed.has(r.num)).map(r=>r.raw);
 }
+function contextFor(operator,targetDate){
+ try{
+  const op=typeof operators!=='undefined'&&Array.isArray(operators)?operators.find(x=>x.name===operator):null;
+  const past=(op&&Array.isArray(op.draws)?op.draws:[]).filter(x=>typeof x.date==='string'&&x.date<targetDate).sort((a,b)=>b.date.localeCompare(a.date));
+  return {priorDrawCount:past.length,verifiedPriorDraws:past.slice(0,25).map(x=>({
+    date:x.date,top3:Array.isArray(x.top3)?x.top3.slice(0,3):[],
+    special:Array.isArray(x.special)?x.special.slice(0,10):[],
+    consolation:Array.isArray(x.consolation)?x.consolation.slice(0,10):[]
+  }))};
+ }catch{return{priorDrawCount:0,verifiedPriorDraws:[]}}
+}
 async function request(id,mode,operator,targetDate,rows){
  const url=validEndpoint(backend);const secret=token;
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),25000);
@@ -78,7 +89,7 @@ async function request(id,mode,operator,targetDate,rows){
   const response=await fetch(url+'/review',{
    method:'POST',
    headers:{'Content-Type':'application/json','Authorization':'Bearer '+secret},
-   body:JSON.stringify({mode,operator,targetDate,candidates:rows.map(({num,score})=>({num,score}))}),
+   body:JSON.stringify({mode,operator,targetDate,candidates:rows.map(({num,score})=>({num,score})),context:contextFor(operator,targetDate)}),
    signal:controller.signal
   });
   const data=await response.json().catch(()=>({}));
