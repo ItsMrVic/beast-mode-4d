@@ -111,6 +111,51 @@ function render(){
  if(watchlist&&Array.isArray(watchlist.keys)){
   $('hotSaved').textContent='Saved research watchlist: '+watchlist.keys.length+' sets · through '+watchlist.through+' · '+watchlist.sample+' recorded operator-draws · '+watchlist.threshold+'% historical cutoff. Not an automatic bet.';
  }else $('hotSaved').textContent='No watchlist saved. Your historical hit archive saves automatically.';
+ renderWatchResult();
+}
+
+function renderWatchResult(){
+ const container=$('hotWatchResults');
+ if(!container)return;
+ if(!watchlist||!Array.isArray(watchlist.keys)||!watchlist.keys.length){
+  container.innerHTML='';return;
+ }
+ const target=bridge.getDate(),through=watchlist.through;
+ const chosen=[...new Set((Array.isArray(watchlist.operators)?watchlist.operators:[]).filter(op=>operators.includes(op)))];
+ if(!chosen.length||!validDate(through)){container.textContent='Saved watchlist has incomplete draw/operator settings.';return}
+ if(!validDate(target)||target<=through){
+  container.innerHTML='<p class="muted">Next-draw watchlist is saved. Choose a draw date after '+escape(through)+' above to check it against new results.</p>';
+  return;
+ }
+ const resultBoards=bridge.getBoards().filter(b=>b.date===target&&chosen.includes(b.op)&&fromBoard(b));
+ const unique=new Map(resultBoards.map(b=>[b.op,b]));
+ const missing=chosen.filter(op=>!unique.has(op));
+ if(missing.length){
+  container.innerHTML='<p class="notice">⏳ Watchlist check for '+escape(target)+' is pending complete results from '+missing.map(op=>escape(labels[op])).join(', ')+'. No saved sets will be marked as losses yet.</p>';
+  return;
+ }
+ const watched=[...new Set(watchlist.keys.filter(k=>typeof k==='string'&&groupsByKey.has(k)))];
+ const wins=new Map();
+ for(const b of unique.values()){
+  const all=[...b.top3,...b.special,...b.consolation];
+  for(const n of all){
+   const key=sig(n);
+   if(!watched.includes(key))continue;
+   if(!wins.has(key))wins.set(key,[]);
+   wins.get(key).push(labels[b.op]+' '+n);
+  }
+ }
+ const misses=watched.filter(k=>!wins.has(k));
+ container.innerHTML='<div class="panel" style="border-color:#5a4a79">'+
+ '<h2>📌 Saved watchlist — next draw check ('+escape(target)+')</h2>'+
+ '<p class="muted">'+watched.length+' sets were frozen from records through '+escape(through)+'. These matches are an out-of-sample check; they do not guarantee profit.</p>'+
+ '<div class="summary">'+
+ '<div class="metric"><small>Winning watched sets</small><b class="positive">'+wins.size+'</b></div>'+
+ '<div class="metric"><small>Watched sets without a prize</small><b class="negative">'+misses.length+'</b></div>'+
+ '<div class="metric"><small>Prize matches</small><b>'+[...wins.values()].reduce((n,v)=>n+v.length,0)+'</b></div>'+
+ '</div>'+
+ (wins.size?'<p class="positive">✅ Matched: '+[...wins].map(([k,values])=>escape(k)+' ('+values.map(escape).join('; ')+')').join(' · ')+'</p>':'<p class="muted">No saved watchlist sets matched this draw.</p>')+
+ '<details><summary>Show '+misses.length+' unmatched saved sets</summary><p class="muted">'+misses.map(escape).join(', ')+'</p></details></div>';
 }
 function saveWatchlist(){
  const s=sample();
