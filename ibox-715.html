@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#120e1f">
+<title>BEAST MODE 4D — 715 iBOX Coverage</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;background:#0b0d18;color:#eeeaf6}
+*{box-sizing:border-box}body{max-width:980px;margin:auto;padding:16px 12px 60px;background:radial-gradient(ellipse at top,#262039,#0b0d18 55%)}
+a{color:#ddbcfa}h1{color:#efb56b;font-size:1.6rem;margin:13px 0 5px}h2{font-size:1.12rem;color:#efc88f;margin:0 0 10px}
+p{line-height:1.5}.muted{color:#b7b4c8}.notice{color:#f3c38c;font-size:.88rem}
+.panel{background:#171a2a;border:1px solid #3b3d54;border-radius:16px;margin:15px 0;padding:15px}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+label{display:flex;flex-direction:column;gap:5px;color:#c7c2d5;font-size:.83rem}
+input,select,button{background:#292b43;color:#f8f3fb;border:1px solid #67627c;border-radius:9px;padding:10px;min-height:42px;font:inherit;max-width:100%}
+input[type="checkbox"]{min-height:auto;accent-color:#aa83ff}
+input[type="number"]{width:100px}button{cursor:pointer;background:#564074}button:disabled{opacity:.5;cursor:default}
+button[aria-pressed="true"]{background:#7961ab;border-color:#cdbaff}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:9px;margin:12px 0}
+.metric{background:#24263c;border:1px solid #45465e;border-radius:11px;padding:11px}
+.metric small{display:block;color:#b5b0c5;font-size:.75rem}.metric b{display:block;color:#f5cc8c;font-size:1.3rem;margin-top:4px}
+.positive{color:#92e2b8!important}.negative{color:#f4a0ab!important}
+.status{font-size:.86rem;color:#c9c5d7;min-height:22px}
+.filters{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}
+.filters button{font-size:.85rem;padding:8px 10px}
+.numbers{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:9px;margin-top:14px}
+.group{border:1px solid #4f5268;background:#222539;border-radius:12px;padding:10px;min-height:87px}
+.group.win{border-color:#56ad82;background:#16392d}.group.no-prize{opacity:.77}.group.pending{border-style:dashed}
+.group .name{font-family:ui-monospace,monospace;font-size:1.16rem;font-weight:800;letter-spacing:2px}
+.group .sub{font-size:.72rem;color:#c2bdd0;line-height:1.4;margin-top:4px}
+.group .wintext{color:#9cebc4;font-size:.78rem;margin-top:4px;font-weight:600}
+.scroll{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:.86rem;min-width:540px}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid #393a50}th{color:#f1cb88}
+.pill{display:inline-block;border-radius:99px;padding:3px 9px;background:#402c51;color:#dfc1f1;font-size:.74rem}
+#pagination{display:flex;gap:8px;align-items:center;justify-content:center;margin:15px 0}
+.checkrow{display:flex;flex-direction:row;gap:8px;align-items:center;margin-top:10px}
+@media(max-width:440px){.numbers{grid-template-columns:repeat(2,minmax(0,1fr))}.metric b{font-size:1.1rem}}
+</style>
+</head>
+<body>
+<nav><a href="./index.html">← BEAST MODE</a> &nbsp; · &nbsp; <a href="./coverage-mode.html">Coverage Lab</a></nav>
+<h1>🐉 715 iBOX Coverage <span class="pill">v4.39</span></h1>
+<p class="muted">One unique digit-multiset per set, covering every 4-digit outcome including leading zeroes. <b>This is a full-coverage simulation, not a prediction.</b></p>
+<section class="panel">
+<h2>Draw &amp; payout settings</h2>
+<div class="controls">
+<label>Draw date <input id="drawDate" type="date"></label>
+<label>Operator(s)
+<select id="operator"><option value="ALL">All 3 operators</option><option value="MAGNUM">Magnum</option><option value="TOTO">Sports Toto</option><option value="DAMACAI">Da Ma Cai</option><option value="MAGNUM+TOTO">Magnum + Toto</option><option value="TOTO+DAMACAI">Toto + Da Ma Cai</option><option value="MAGNUM+DAMACAI">Magnum + Da Ma Cai</option></select>
+</label>
+<label>RM stake / set <input id="stake" type="number" min="0.01" step="0.01" value="1"></label>
+<button id="refresh" type="button">🔄 Check results</button>
+</div>
+<p class="muted" style="font-size:.82rem">BIG payouts per RM1 straight stake, based on the iLotto4D Normal Package screenshot. Editable because BK8/iBOX settlement is not independently confirmed.</p>
+<div class="controls">
+<label>1st <input id="first" type="number" min="0" value="3800"></label>
+<label>2nd <input id="second" type="number" min="0" value="1250"></label>
+<label>3rd <input id="third" type="number" min="0" value="750"></label>
+<label>Special <input id="special" type="number" min="0" value="210"></label>
+<label>Consolation <input id="consolation" type="number" min="0" value="70"></label>
+</div>
+<label class="checkrow"><input id="useRebate" type="checkbox"> Include hypothetical rebate (iBOX eligibility unconfirmed)</label>
+<label>Rebate % <input id="rebate" type="number" min="0" max="100" step="0.1" value="5"></label>
+<div class="controls"><label>Import app JSON backup <input id="backup" type="file" accept=".json,application/json"></label></div>
+<p id="sourceStatus" role="status" class="status">Checking saved draw results…</p>
+<p class="notice">705 groups have 4–24 permutations. The 10 groups with four identical digits (0000, 1111, etc.) have only one arrangement and are treated as straight entries. A provider may have different ticket eligibility or rounding rules.</p>
+</section>
+<section class="panel">
+<h2>Automatic draw assessment</h2>
+<div class="summary" id="metrics"></div>
+<div id="perOperator"></div>
+<p id="missing" class="notice" role="status"></p>
+</section>
+<section class="panel">
+<h2>715 digit sets — automatically separated</h2>
+<div class="controls">
+<label>Find set or any permutation <input id="search" placeholder="e.g. 5117" inputmode="numeric" maxlength="4"></label>
+</div>
+<div id="filters" class="filters" role="group" aria-label="Number status filter">
+<button data-filter="winning" aria-pressed="true">✅ Winning</button>
+<button data-filter="no-prize" aria-pressed="false">❌ No prize</button>
+<button data-filter="pending" aria-pressed="false">⏳ Pending</button>
+<button data-filter="all" aria-pressed="false">All 715</button>
+</div>
+<p class="muted" id="listInfo" aria-live="polite"></p>
+<div id="numbers" class="numbers"></div>
+<div id="pagination"><button id="prev">← Prev</button><span id="pageInfo"></span><button id="next">Next →</button></div>
+</section>
+<footer class="muted" style="font-size:.8rem">A green group means at least one prize number matches its digits in any order, on a selected operator with a complete result for this date. Several prize numbers can belong to the same group. Non-winners are marked only when all selected operators have complete results. A winning group does not imply overall profit. No tickets are placed by this screen. Results and rebate rules should be confirmed with the operator or betting provider.</footer>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const OPS={ALL:['MAGNUM','TOTO','DAMACAI'],MAGNUM:['MAGNUM'],TOTO:['TOTO'],DAMACAI:['DAMACAI'],'MAGNUM+TOTO':['MAGNUM','TOTO'],'TOTO+DAMACAI':['TOTO','DAMACAI'],'MAGNUM+DAMACAI':['MAGNUM','DAMACAI']};
+const LABELS={MAGNUM:'Magnum',TOTO:'Sports Toto',DAMACAI:'Da Ma Cai'};
+const names=['1st','2nd','3rd','Special','Consolation'];
+const cacheKey='b4d-ibox715-boards-v1';
+const num=n=>String(n).padStart(4,'0');
+const sig=s=>String(s).split('').sort().join('');
+const fact=[1,1,2,6,24];
+const fm=n=>'RM '+(n<0?'−':'')+Math.abs(n).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
+function makeGroups(){
+ const groups=[];
+ for(let a=0;a<10;a++)for(let b=a;b<10;b++)for(let c=b;c<10;c++)for(let d=c;d<10;d++){
+  const key=''+a+b+c+d,counts={};
+  for(const digit of key)counts[digit]=(counts[digit]||0)+1;
+  const perms=24/Object.values(counts).reduce((p,v)=>p*fact[v],1);
+  groups.push({key,perms});
+ }
+ if(groups.length!==715||groups.reduce((s,x)=>s+x.perms,0)!==10000||new Set(groups.map(g=>g.key)).size!==715)throw Error('715 permutation-group validation failed');
+ return groups;
+}
+const GROUPS=makeGroups();
+let boards=new Map(),filter='winning',page=0,filterRows=[],onlineMessage='';
+function opName(v){
+ const s=String(v||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+ if(s.includes('MAGNUM'))return'MAGNUM';
+ if(s.includes('TOTO'))return'TOTO';
+ if(s.includes('DAMACAI')||s==='DMC')return'DAMACAI';
+ return null;
+}
+function validNum(v){
+ if(typeof v==='number'&&Number.isInteger(v)&&v>=0&&v<=9999)return num(v);
+ return typeof v==='string'&&/^\d{1,4}$/.test(v)?num(v):null;
+}
+function normalize(op,date,top3,special,consolation,source,priority){
+ if(!op||!/^\d{4}-\d{2}-\d{2}$/.test(String(date||'')))return null;
+ const arrays=[top3,special,consolation];
+ if(arrays.some((arr,i)=>!Array.isArray(arr)||arr.length!==[3,10,10][i]))return null;
+ const mapped=arrays.map(arr=>arr.map(validNum));
+ if(mapped.some(a=>a.some(v=>!v)))return null;
+ return{op,date,top3:mapped[0],special:mapped[1],consolation:mapped[2],source,priority};
+}
+function collect(raw,source,priority){
+ const out=[];
+ if(!raw||typeof raw!=='object')return out;
+ const data=raw.data&&typeof raw.data==='object'?raw.data:raw;
+ function add(d,fallback){
+  const op=opName(d.operator||d.operator_name||d.name||fallback);
+  const board=normalize(op,d.date,d.top3||[d.first,d.second,d.third],d.special,d.consolation,source,priority);
+  if(board&&d.status!=='pending')out.push(board);
+ }
+ if(Array.isArray(data.draws))data.draws.forEach(d=>add(d));
+ if(Array.isArray(data.results))data.results.forEach(d=>add(d));
+ if(Array.isArray(data.operators))for(const o of data.operators){
+  if(Array.isArray(o.draws))o.draws.forEach(d=>add(d,o.name||o.operator||o.operator_name));
+ }
+ if(Array.isArray(data))data.forEach(d=>add(d));
+ return out;
+}
+function integrate(list){
+ for(const b of list){
+  const k=b.date+'|'+b.op,old=boards.get(k);
+  if(!old||b.priority>=old.priority)boards.set(k,b);
+ }
+ try{
+  const recent=[...boards.values()].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,180);
+  localStorage.setItem(cacheKey,JSON.stringify(recent));
+ }catch(e){console.warn('iBOX cache not stored',e)}
+}
+function scanDevice(){
+ const rows=[];
+ try{
+  const cached=JSON.parse(localStorage.getItem(cacheKey)||'[]');
+  for(const b of Array.isArray(cached)?cached:[]){
+   const v=normalize(opName(b.op),b.date,b.top3,b.special,b.consolation,b.source||'Saved iBOX cache',1);
+   if(v)rows.push(v);
+  }
+  for(let i=0;i<localStorage.length;i++){
+   const key=localStorage.key(i);
+   if(key===cacheKey)continue;
+   const data=localStorage.getItem(key);
+   if(!data||data.length>18000000||(!data.includes('"draws"')&&!data.includes('"results"')))continue;
+   try{rows.push(...collect(JSON.parse(data),'BEAST MODE device data',2))}catch(e){}
+  }
+ }catch(e){console.warn('Storage not available',e)}
+ integrate(rows);
+}
+async function bundled(){
+ try{
+  const res=await fetch('./data/verified-results.json',{cache:'no-store'});
+  if(!res.ok)return;
+  const data=await res.json();
+  integrate(collect(data,'Bundled checked result archive',1));
+ }catch(e){/* use local archive if offline */}
+}
+async function live(date){
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
+ try{
+  const res=await fetch('https://4dlivetoday.com/api/v1/results/'+encodeURIComponent(date),{cache:'no-store',signal:controller.signal});
+  if(!res.ok)throw Error('HTTP '+res.status);
+  const json=await res.json();
+  if(json.source!=='4dlivetoday.com'||!Array.isArray(json.data?.results))throw Error('Invalid live source');
+  const checked=json.data.results.filter(x=>String(x.status||'').toLowerCase()==='checked');
+  return collect({results:checked},'Checked results: 4dlivetoday.com',3).filter(b=>b.date===date);
+ }finally{clearTimeout(timer)}
+}
+async function refresh(){
+ const date=$('drawDate').value;
+ $('sourceStatus').textContent='Checking saved results and live source…';
+ scanDevice();
+ try{
+  const rows=await live(date);
+  if(rows.length)integrate(rows);
+  onlineMessage=rows.length?'Checked live data retrieved':'Live source has no checked complete results yet';
+ }catch(e){onlineMessage='Live source unavailable; showing saved data if available'}
+ render();
+}
+function settings(){
+ const ids=['first','second','third','special','consolation'];
+ const rates=ids.map(id=>Number($(id).value));
+ const stake=Number($('stake').value),rebate=Number($('rebate').value);
+ if(!Number.isFinite(stake)||stake<=0||rates.some(v=>!Number.isFinite(v)||v<0)||!Number.isFinite(rebate)||rebate<0||rebate>100)return null;
+ return{rates,stake,rebate:$('useRebate').checked?rebate:0};
+}
+function assess(){
+ const cfg=settings();if(!cfg)return null;
+ const selected=OPS[$('operator').value]||OPS.ALL,date=$('drawDate').value;
+ const found=selected.map(op=>boards.get(date+'|'+op)||null);
+ const complete=found.every(Boolean);
+ const hits=new Map(GROUPS.map(g=>[g.key,[]]));
+ let prizeCount=0,gross=0;
+ for(let i=0;i<found.length;i++){
+  const board=found[i];if(!board)continue;
+  const entries=[...board.top3.map((n,j)=>({n,tier:names[j],rate:cfg.rates[j]})),...board.special.map(n=>({n,tier:'Special',rate:cfg.rates[3]})),...board.consolation.map(n=>({n,tier:'Consolation',rate:cfg.rates[4]}))];
+  for(const e of entries){
+   const key=sig(e.n),group=hits.get(key),perms=GROUPS.find(g=>g.key===key).perms;
+   const pay=e.rate*cfg.stake/perms;
+   group.push({op:selected[i],number:e.n,tier:e.tier,amount:pay});
+   gross+=pay;prizeCount++;
+  }
+ }
+ const rows=GROUPS.map(g=>{
+  const matches=hits.get(g.key),amount=matches.reduce((s,v)=>s+v.amount,0);
+  return{...g,matches,amount,status:matches.length?'winning':complete?'no-prize':'pending'};
+ });
+ const stake=715*selected.length*cfg.stake,rebate=complete?stake*cfg.rebate/100:0;
+ return{cfg,selected,found,complete,rows,stake,rebate,gross,prizeCount,winning:rows.filter(x=>x.status==='winning').length};
+}
+function metric(label,value,extraClass){
+ return '<div class="metric"><small>'+esc(label)+'</small><b class="'+(extraClass||'')+'">'+esc(value)+'</b></div>';
+}
+function render(){
+ const data=assess();
+ if(!data){
+  $('sourceStatus').textContent='Enter valid non-negative payout rates, rebate 0–100%, and a positive stake.';
+  $('metrics').innerHTML='';$('perOperator').innerHTML='';$('missing').textContent='';$('numbers').innerHTML='';return;
+ }
+ const available=data.found.filter(Boolean).length;
+ $('sourceStatus').textContent=available+'/'+data.selected.length+' selected operator(s) have complete results for '+$('drawDate').value+'. '+onlineMessage;
+ let html=metric('Unique groups','715')+metric('Numbers covered','10,000')+metric('Prize positions matched',data.prizeCount+'/'+(23*data.selected.length));
+ html+=metric('Winning groups',String(data.winning));
+ html+=metric(data.complete?'No-prize groups':'Groups still pending',String(data.rows.filter(x=>x.status===(data.complete?'no-prize':'pending')).length));
+ if(data.complete){
+  const net=data.gross+data.rebate-data.stake;
+  html+=metric('Simulated stake',fm(data.stake));
+  html+=metric('Gross prizes',fm(data.gross));
+  html+=metric('Potential rebate',fm(data.rebate));
+  html+=metric('Net result',fm(net),net>=0?'positive':'negative');
+ }else html+=metric('Simulated full stake',fm(data.stake));
+ $('metrics').innerHTML=html;
+ let rows='<div class="scroll"><table><thead><tr><th>Operator</th><th>Result source</th><th>Prizes</th><th>Stake</th><th>Gross</th><th>Net incl. assumed rebate</th></tr></thead><tbody>';
+ for(let i=0;i<data.selected.length;i++){
+  const op=data.selected[i],board=data.found[i];
+  if(!board){rows+='<tr><td>'+esc(LABELS[op])+'</td><td colspan="5">⏳ Pending complete results</td></tr>';continue}
+  const perHits=data.rows.flatMap(g=>g.matches.filter(x=>x.op===op));
+  const sum=perHits.reduce((v,x)=>v+x.amount,0);
+  const cost=715*data.cfg.stake,net=sum+cost*data.cfg.rebate/100-cost;
+  rows+='<tr><td>'+esc(LABELS[op])+'</td><td>'+esc(board.source)+'</td><td>'+perHits.length+'/23</td><td>'+fm(cost)+'</td><td>'+fm(sum)+'</td><td class="'+(net>=0?'positive':'negative')+'">'+fm(net)+'</td></tr>';
+ }
+ rows+='</tbody></table></div>';
+ $('perOperator').innerHTML=rows;
+ $('missing').textContent=data.complete?'All selected results are present. Green groups have a prize match; other groups did not receive a prize on this draw.':'Incomplete draw: groups with no match yet remain PENDING, not losses. Results will be checked again when you return to this screen.';
+ filterRows=data.rows.filter(g=>{
+  if(filter!=='all'&&g.status!==filter)return false;
+  const search=$('search').value.replace(/\D/g,'').slice(0,4);
+  if(!search)return true;
+  return search.length===4?g.key===sig(search):g.key.includes(search)||g.matches.some(m=>m.number.includes(search));
+ });
+ if(filter==='all')filterRows.sort((a,b)=>(b.status==='winning')-(a.status==='winning')||a.key.localeCompare(b.key));
+ const pages=Math.max(1,Math.ceil(filterRows.length/80));page=Math.min(page,pages-1);
+ const show=filterRows.slice(page*80,(page+1)*80);
+ $('listInfo').textContent=filterRows.length+' matching groups · '+(filter==='winning'?'Prize-matching sets':filter==='no-prize'?'Sets with no prize':filter==='pending'?'Awaiting complete results':'All groups')+'.';
+ $('numbers').innerHTML=show.map(g=>{
+  const sub=g.matches.map(m=>esc(LABELS[m.op])+' · '+esc(m.tier)+' '+esc(m.number)+' ('+fm(m.amount)+')').join('<br>');
+  return '<article class="group '+g.status+'"><div class="name">'+g.key+'</div><div class="sub">'+g.perms+'-way · '+(g.perms===1?'Straight only':g.status==='no-prize'?'No prize':g.status==='pending'?'Awaiting results':'iBOX')+'</div>'+(g.matches.length?'<div class="wintext">✅ '+g.matches.length+' prize match'+(g.matches.length===1?'':'es')+' · '+fm(g.amount)+'</div><div class="sub">'+sub+'</div>':g.status==='no-prize'?'<div class="sub">❌ No match this draw</div>':'<div class="sub">⏳ Results pending</div>')+'</article>';
+ }).join('')||'<p class="muted">No groups in this category for the selected date and operator(s).</p>';
+ $('pageInfo').textContent=(page+1)+' / '+pages;
+ $('prev').disabled=page===0;$('next').disabled=page>=pages-1;
+}
+function malaysiaToday(){
+ const p=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kuala_Lumpur',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+ const x=Object.fromEntries(p.map(y=>[y.type,y.value]));
+ return x.year+'-'+x.month+'-'+x.day;
+}
+async function importBackup(e){
+ const file=e.target.files?.[0];if(!file)return;
+ try{
+  if(file.size>30000000)throw Error('Backup is over 30MB');
+  const data=JSON.parse(await file.text()),b=collect(data,'Imported BEAST MODE backup',2);
+  if(!b.length)throw Error('No complete draw boards in this backup');
+  integrate(b);onlineMessage=b.length+' complete draw records imported';render();
+ }catch(err){$('sourceStatus').textContent='Import failed: '+err.message}
+}
+async function init(){
+ $('drawDate').value=malaysiaToday();
+ for(const id of ['stake','first','second','third','special','consolation','rebate','useRebate'])$(id).addEventListener('input',render);
+ $('operator').addEventListener('change',()=>{page=0;render()});
+ $('drawDate').addEventListener('change',()=>{page=0;refresh()});
+ $('refresh').addEventListener('click',refresh);
+ $('backup').addEventListener('change',importBackup);
+ $('search').addEventListener('input',()=>{page=0;render()});
+ document.querySelectorAll('[data-filter]').forEach(btn=>btn.addEventListener('click',()=>{
+  filter=btn.dataset.filter;page=0;
+  document.querySelectorAll('[data-filter]').forEach(x=>x.setAttribute('aria-pressed',String(x===btn)));
+  render();
+ }));
+ $('prev').onclick=()=>{page=Math.max(0,page-1);render()};
+ $('next').onclick=()=>{page++;render()};
+ scanDevice();render();await bundled();render();await refresh();
+ setInterval(()=>{if(!document.hidden)refresh()},120000);
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});
+}
+init().catch(e=>{$('sourceStatus').textContent='Unable to load iBOX Coverage: '+e.message;console.error(e)});
+})();
+</script>
+</body></html>
