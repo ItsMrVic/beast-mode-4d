@@ -1,7 +1,7 @@
 {
-  "name": "BEAST MODE 4D v4.41 — AI Brain and Coverage Lab",
+  "name": "BEAST MODE 4D v4.42 — Optional AI Prediction Review",
   "short_name": "Beast 4D",
-  "description": "BEAST MODE 4D with AI Brain English-language interface (requires secure personal backend), complete draw history review, 715 iBOX full coverage and historical hit-frequency archive; no guaranteed predictions.",
+  "description": "BEAST MODE 4D with opt-in AI research review of Predict, Oracle, Hot Hand and Deep Learn candidates, secure private API backend required, original predictions retained, 715 iBOX history and coverage lab.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
